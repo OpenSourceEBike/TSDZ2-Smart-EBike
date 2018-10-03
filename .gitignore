@@ -1,0 +1,15 @@
+**/*.asm
+**/*.elf
+**/*.ihx
+**/*.cdb
+**/*.lk
+**/*.map
+**/*.adb
+**/*.lst
+**/*.rel
+**/*.rst
+**/*.sym
+
+Debug
+
+**/Result.log
