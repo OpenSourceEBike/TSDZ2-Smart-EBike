@@ -6,7 +6,7 @@ It has the following benefits compared to the stock firmware:
 
 This project is being developed and maintained for free by a community of users. Some of them are developers who work professionally developing this type of technology for very well known companies.
 
-For more details, see [https://github.com/OpenSource-EBike-firmware/TSDZ2_wiki/wiki our project page]. 
+For more details, see our project page here: https://github.com/OpenSource-EBike-firmware/TSDZ2_wiki/wiki 
 
 **IMPORTANT NOTES**
 * Installing this firmware will void your warranty of the TSDZ2 motor and KT-LCD3
