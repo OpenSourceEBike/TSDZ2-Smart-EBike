@@ -151,7 +151,7 @@ void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
 void calc_battery_soc_watts_hour (void);
 void calc_odometer (void);
 static void automatic_power_off_management (void);
-void lcd_power_off (void);
+void lcd_power_off (uint8_t updateDistanceOdo);
 void lcd_enable_vol_symbol (uint8_t ui8_state);
 void lcd_enable_w_symbol (uint8_t ui8_state);
 void lcd_enable_odometer_point_symbol (uint8_t ui8_state);
@@ -1014,8 +1014,9 @@ void lcd_execute_menu_config_submenu_lcd (void)
         if (ui8_reset_to_defaults_counter > 9)
         {
           eeprom_erase_key_value ();
-          // disables the power of LCD
-          GPIO_WriteLow(LCD3_ONOFF_POWER__PORT, LCD3_ONOFF_POWER__PIN);
+          
+          // Turn off LCD, when the user turns it on again it will rewrite the defaults
+          lcd_power_off (0);
         }
       }
 
@@ -1413,12 +1414,11 @@ uint8_t first_time_management (void)
 void power_off_management (void)
 {
   // turn off
-  if (get_button_onoff_long_click_event ()) { lcd_power_off (); }
+  if (get_button_onoff_long_click_event ()) { lcd_power_off (1); }
 }
 
 void temperature (void)
 {
-
   // if motor current is being limited due to temperature, force showing temperature!!
   if (motor_controller_data.ui8_temperature_current_limiting_value != 255)
   {
@@ -2246,7 +2246,7 @@ static void automatic_power_off_management (void)
       ui8_lcd_power_off_time_counter_minutes++;
       if (ui8_lcd_power_off_time_counter_minutes >= configuration_variables.ui8_lcd_power_off_time_minutes)
       {
-        lcd_power_off ();
+        lcd_power_off (1);
       }
     }
   }
@@ -2393,11 +2393,14 @@ void calc_battery_soc_watts_hour (void)
   }
 }
 
-void lcd_power_off (void)
+void lcd_power_off (uint8_t updateDistanceOdo)
 {
-  configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
-  configuration_variables.ui32_odometer_x10 += ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-  eeprom_write_variables ();
+  if (updateDistanceOdo)
+  {
+    configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
+    configuration_variables.ui32_odometer_x10 += ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
+    eeprom_write_variables ();
+  } 
 
   // clear LCD so it is clear to user what is happening
   lcd_clear ();

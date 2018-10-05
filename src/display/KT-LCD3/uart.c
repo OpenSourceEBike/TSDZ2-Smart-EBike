@@ -198,8 +198,10 @@ void clock_uart_data (void)
 
       // set lights state
       // walk assist level state
+      // set offroad state
       ui8_tx_buffer[4] = (p_motor_controller_data->ui8_lights & 1) |
-          ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1);
+          ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1) |
+          ((p_motor_controller_data->ui8_offroad_mode & 1) << 2);
 
       // battery max current in amps
       ui8_tx_buffer[5] = p_configuration_variables->ui8_battery_max_current;

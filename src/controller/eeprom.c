@@ -152,10 +152,10 @@ static void eeprom_write_array (uint8_t *array)
 {
   uint8_t ui8_i;
 
-  if (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == 0)
-  {
-    FLASH_Unlock (FLASH_MEMTYPE_DATA);
-  }
+  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
+  
+  FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
+  while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
 
   for (ui8_i = 0; ui8_i < EEPROM_BYTES_STORED; ui8_i++)
   {

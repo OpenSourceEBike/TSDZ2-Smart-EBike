@@ -326,11 +326,15 @@ void communications_controller (void)
 
       // assist level
       configuration_variables.ui8_power_regular_state_div25 = ui8_rx_buffer [3];
+      
       // head light
       configuration_variables.ui8_lights = (ui8_rx_buffer [4] & (1 << 0)) ? 1: 0;
       lights_set_state (configuration_variables.ui8_lights);
       // walk assist
       configuration_variables.ui8_walk_assist = (ui8_rx_buffer [4] & (1 << 1)) ? 1: 0;
+      // offroad mode
+      configuration_variables.ui8_offroad_mode = (ui8_rx_buffer [4]) & (1 << 2) ? 1: 0;
+
       // battery max current
       configuration_variables.ui8_battery_max_current = ui8_rx_buffer [5];
       ebike_app_set_battery_max_current (configuration_variables.ui8_battery_max_current);
