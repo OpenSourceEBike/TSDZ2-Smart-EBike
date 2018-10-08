@@ -1,7 +1,7 @@
 /*
  * TongSheng TSDZ2 motor controller firmware/
  *
- * Copyright (C) Casainho, 2018.
+ * Copyright (C) Casainho and EndlessCadence, 2018.
  *
  * Released under the GPL License, Version 3
  */
@@ -12,10 +12,10 @@
 #include <stdint.h>
 #include "main.h"
 
-#define EBIKE_APP_STATE_MOTOR_COAST   0
-#define EBIKE_APP_STATE_MOTOR_STOP  1
+#define EBIKE_APP_STATE_MOTOR_COAST     0
+#define EBIKE_APP_STATE_MOTOR_STOP      1
 #define EBIKE_APP_STATE_MOTOR_STARTUP   2
-#define EBIKE_APP_STATE_MOTOR_COOL  3
+#define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
 
 typedef struct _configuration_variables
@@ -70,7 +70,6 @@ extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
 void ebike_app_init (void);
 void ebike_app_controller (void);
-void read_pas_cadence (void);
 struct_configuration_variables* get_configuration_variables (void);
 
 #endif /* _EBIKE_APP_H_ */
