@@ -117,6 +117,8 @@ static uint16_t ui16_lcd_power_off_time_counter = 0;
 static uint8_t offroad_mode_assist_symbol_state = 0;
 static uint8_t offroad_mode_assist_symbol_state_blink_counter = 0;
 
+static uint16_t ui16_battery_voltage_soc_x10;
+
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
 void lcd_enable_lights_symbol (uint8_t ui8_state);
@@ -137,6 +139,7 @@ void power_off_management (void);
 uint8_t first_time_management (void);
 void temperature (void);
 void battery_soc (void);
+void calc_battery_voltage_soc (void);
 void low_pass_filter_pedal_torque (void);
 static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
@@ -252,6 +255,7 @@ void clock_lcd (void)
   // filter using only each 500ms values
   if (ui8_lcd_menu_counter_500ms_state) { low_pass_filter_pedal_cadence (); }
   calc_wh ();
+  calc_battery_voltage_soc ();
   calc_odometer ();
   automatic_power_off_management ();
 
@@ -464,7 +468,7 @@ void lcd_execute_menu_config_submenu_wheel_config (void)
 
 void lcd_execute_menu_config_submenu_battery (void)
 {
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -550,6 +554,11 @@ void lcd_execute_menu_config_submenu_battery (void)
       {
         lcd_print (configuration_variables.ui16_battery_pack_resistance_x1000, ODOMETER_FIELD, 1);
       }
+    break;
+
+    // battery voltage SOC
+    case 4:
+      lcd_print (ui16_battery_voltage_soc_x10, ODOMETER_FIELD, 0);
     break;
   }
 
@@ -1488,27 +1497,19 @@ void battery_soc (void)
   static uint8_t ui8_timmer_counter;
   static uint8_t ui8_battery_state_of_charge;
   uint8_t ui8_battery_cells_number_x10;
-  uint16_t ui16_battery_voltage_x10;
-  uint16_t ui16_fluctuate_battery_voltage_x10;
 
   // update battery level value only at every 100ms / 10 times per second and this helps to visual filter the fast changing values
   if (ui8_timmer_counter++ >= 10)
   {
     ui8_timmer_counter = 0;
 
-    // calculate flutuate voltage, that depends on the current and battery pack resistance
-    ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
-    // now add fluctuate voltage value
-    ui16_battery_voltage_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
-
     // to keep same scale as voltage of x10
     ui8_battery_cells_number_x10 = configuration_variables.ui8_battery_cells_number * 10;
 
-    if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_80))) { ui8_battery_state_of_charge = 5; } // 4 bars | full
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_60))) { ui8_battery_state_of_charge = 4; } // 3 bars
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_40))) { ui8_battery_state_of_charge = 3; } // 2 bars
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_20))) { ui8_battery_state_of_charge = 2; } // 1 bar
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_10))) { ui8_battery_state_of_charge = 1; } // empty
+    if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_83))) { ui8_battery_state_of_charge = 4; } // 4 bars | full
+    else if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_50))) { ui8_battery_state_of_charge = 3; } // 3 bars
+    else if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_17))) { ui8_battery_state_of_charge = 2; } // 2 bars
+    else if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_0))) { ui8_battery_state_of_charge = 1; } // 1 bar
     else { ui8_battery_state_of_charge = 0; } // flashing
   }
 
@@ -1534,24 +1535,34 @@ void battery_soc (void)
     break;
 
     case 1:
-      ui8_lcd_frame_buffer[23] |= 16;
-    break;
-
-    case 2:
       ui8_lcd_frame_buffer[23] |= 144;
     break;
 
-    case 3:
+    case 2:
       ui8_lcd_frame_buffer[23] |= 145;
     break;
 
-    case 4:
+    case 3:
       ui8_lcd_frame_buffer[23] |= 209;
     break;
 
-    case 5:
+    case 4:
       ui8_lcd_frame_buffer[23] |= 241;
     break;
+  }
+}
+
+void calc_battery_voltage_soc (void)
+{
+  uint16_t ui16_fluctuate_battery_voltage_x10;
+
+  // update battery level value only at every 100ms / 10 times per second and this helps to visual filter the fast changing values
+  if (ui8_lcd_menu_counter_100ms_state)
+  {
+    // calculate flutuate voltage, that depends on the current and battery pack resistance
+    ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
+    // now add fluctuate voltage value
+    ui16_battery_voltage_soc_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
   }
 }
 
