@@ -31,7 +31,7 @@
 #define DEAFULT_VALUE_SHOW_NUMERIC_BATTERY_SOC                      0
 #define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                           16 // 16 amps
-#define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      20 // 20 * 25 = 500
+#define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      0 // e.g. 20 = 20 * 25 = 500, 0 is disabled
 #define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13 // 13 --> 48V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48v battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
@@ -46,6 +46,7 @@
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_7                         64
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_8                         72
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_9                         80
+#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED     0
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_STATE               1
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1      8 // 200W
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_2      16
@@ -67,7 +68,7 @@
 #define DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS                  1 // 1 = 5%
 #define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0                     130 // 48v battery, 13S5P measured 130 milli ohms
 #define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1                     0
-#define DEFAULT_VALUE_OFFROAD_FUNC_ENABLED                          0
+#define DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED                          0
 #define DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP               0
 #define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT                           25
 #define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED                   0

@@ -1,5 +1,5 @@
 /*
- * TongSheng TSDZ2 motor controller firmware/
+ * TongSheng TSDZ2 motor controller firmware
  *
  * Copyright (C) Casainho and EndlessCadence, 2018.
  *
@@ -145,7 +145,6 @@ static void ebike_control_motor (void)
   uint8_t ui8_adc_max_battery_current = 0;
   uint8_t ui8_startup_enable;
   uint8_t ui8_boost_enabled_and_applied = 0;
-  // uint32_t ui32_temp;
   uint8_t ui8_tmp_max_speed;
 
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
@@ -172,14 +171,11 @@ static void ebike_control_motor (void)
       ui8_adc_max_battery_current = ui32_adc_max_battery_current_regular_state_x4 >> 2;
     }
 
-    if (1 == 0) // feature toggle max power on display, always off for now
+    if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature?
     {
-      if (configuration_variables.ui8_target_battery_max_power_div25 > 0)
-      {
-        ui32_adc_max_battery_current_x4 = (((uint32_t) configuration_variables.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
-        ui8_adc_max_battery_current = ui32_adc_max_battery_current_x4 >> 2;
-      }
-    }    
+      ui32_adc_max_battery_current_x4 = (((uint32_t) configuration_variables.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
+      ui8_adc_max_battery_current = ui32_adc_max_battery_current_x4 >> 2;
+    }
   }
 
   // start when we press the pedals
@@ -195,7 +191,7 @@ static void ebike_control_motor (void)
     if (ui8_pas_cadence_rpm < 10) { ui8_tmp_pas_cadence_rpm = 0; }
   }
 
-  if (1 == 0) // boost feature toggle, now always off
+  if (configuration_variables.ui8_startup_motor_power_boost_feature_enabled)
   {
     boost_run_statemachine ();  
     ui8_boost_enabled_and_applied = apply_boost (ui8_tmp_pas_cadence_rpm, ui32_adc_max_battery_current_boost_state_x4, &ui8_adc_battery_target_current);
@@ -213,19 +209,6 @@ static void ebike_control_motor (void)
     // human power: pedal torque * pedal cadence
     ui8_pedal_human_power = ((((uint16_t) ui8_torque_sensor) * ui16_temp) >> 8);
 
-    /*
-    ui32_temp = map ((uint32_t) ui8_pedal_human_power,
-           (uint32_t) 0,
-           (uint32_t) 254, // 254 because max of (255 * 255) >> 8 is 254
-           (uint32_t) 0,
-           (uint32_t) ui32_adc_max_battery_current_regular_state_x4);
-
-    ui32_temp >>= 2;
-
-    if (ui32_temp > 255) { ui8_adc_battery_target_current = 255; }
-    else { ui8_adc_battery_target_current = (uint8_t) ui32_temp; }
-    */
-
     ui8_adc_battery_target_current = map ((uint32_t) ui8_pedal_human_power,
            (uint32_t) 0,
            (uint32_t) 254, // 254 because max of (255 * 255) >> 8 is 254
@@ -234,33 +217,27 @@ static void ebike_control_motor (void)
   }
 
   /* Boost: make transition from boost to regular level */
-  if (1 == 0) // boost feature toggle, now always off
+  if (configuration_variables.ui8_startup_motor_power_boost_feature_enabled)
   {
     apply_boost_fade_out (&ui8_adc_battery_target_current);
   }  
 
   /* Throttle */
-  if (1 == 0)
-  {
-    apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
-  }
+  apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
 
   ui8_tmp_max_speed = configuration_variables.ui8_wheel_max_speed;
 
   /* Offroad mode (limit speed if offroad mode is not active) */
-  if (1 == 0 && configuration_variables.ui8_offroad_func_enabled) 
+  if (configuration_variables.ui8_offroad_feature_enabled) 
   {
     apply_offroad_mode (ui16_battery_voltage_filtered, &ui8_tmp_max_speed, &ui8_adc_battery_target_current);
   }
 
   /* Speed limit */
-  if (1 == 0)
-  {
-    apply_speed_limit (ui16_wheel_speed_x10, ui8_tmp_max_speed, &ui8_adc_battery_target_current);
-  }
+  apply_speed_limit (ui16_wheel_speed_x10, ui8_tmp_max_speed, &ui8_adc_battery_target_current);
 
   /* User configured max power on display */
-  if (1 == 0)
+  if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature?
   {
     // limit the current to max value defined by user on LCD max power, if:
     // - user defined to make that limitation
@@ -274,14 +251,14 @@ static void ebike_control_motor (void)
   }
 
   /* Limit current if motor temperature too high and this feature is enabled by the user */
-  if (1 == 0)
+  if (configuration_variables.ui8_temperature_limit_feature_enabled)
   {
     apply_temperature_limiting (&ui8_adc_battery_target_current);
   }
   else
   {
-    // TODO: remove later as this is also done by apply_temperature_limiting()
-    // keep ui8_temperature_current_limiting_value = 255 because 255 means no current limiting happening
+    // TODO: keep ui8_temperature_current_limiting_value = 255 because 255 means no current limiting happening
+    // otherwise temperature symbol on display will be blinking
     configuration_variables.ui8_temperature_current_limiting_value = 255;
   }
 
@@ -372,7 +349,7 @@ static void communications_controller (void)
           configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;
           configuration_variables.ui8_motor_voltage_type = (ui8_rx_buffer [7] & 2) >> 1;
           configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 4) >> 2;
-          configuration_variables.ui8_throttle_adc_measures_motor_temperature = (ui8_rx_buffer [7] & 8) >> 3;
+          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 8) >> 3;
 
           configuration_variables.ui8_startup_motor_power_boost_state = ui8_rx_buffer [8] & 1;
           configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [8] & 2) >> 1;
@@ -388,6 +365,7 @@ static void communications_controller (void)
         case 5:
           // startup motor power boost fade time
           configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [7];
+          configuration_variables.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer [8] & 1;
         break;
 
         case 6:
@@ -398,7 +376,7 @@ static void communications_controller (void)
 
         case 7:
           // offroad mode configuration
-          configuration_variables.ui8_offroad_func_enabled = ui8_rx_buffer [7] & 1;
+          configuration_variables.ui8_offroad_feature_enabled = ui8_rx_buffer [7] & 1;
           configuration_variables.ui8_offroad_enabled_on_startup = (ui8_rx_buffer [7]) & (1 << 1);
           configuration_variables.ui8_offroad_speed_limit = ui8_rx_buffer [8];
         break;
@@ -463,7 +441,7 @@ static void uart_send_package (void)
     ui8_tx_buffer[8] &= ~1;
   }
 
-  if (configuration_variables.ui8_throttle_adc_measures_motor_temperature)
+  if (configuration_variables.ui8_temperature_limit_feature_enabled)
   {
     ui8_tx_buffer[9] = UI8_ADC_THROTTLE;
     ui8_tx_buffer[10] = configuration_variables.ui8_motor_temperature;
@@ -636,37 +614,29 @@ static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enabl
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)
 {
-  if (configuration_variables.ui8_throttle_adc_measures_motor_temperature)
+  // min temperature value can't be equal or higher than max temperature value...
+  if (configuration_variables.ui8_motor_temperature_min_value_to_limit >= configuration_variables.ui8_motor_temperature_max_value_to_limit)
   {
-    // min temperature value can't be equal or higher than max temperature value...
-    if (configuration_variables.ui8_motor_temperature_min_value_to_limit >= configuration_variables.ui8_motor_temperature_max_value_to_limit)
-    {
-      *ui8_target_current = 0;
-      configuration_variables.ui8_temperature_current_limiting_value = 0;
-    }
-    else
-    {
-      // reduce motor current if over temperature
-      *ui8_target_current = 
-        (uint8_t) (map ((uint32_t) configuration_variables.ui16_motor_temperature_x2,
-                        (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_min_value_to_limit) << 1),
-                        (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_max_value_to_limit) << 1),
-                        (uint32_t) *ui8_target_current,
-                        (uint32_t) 0));
-
-      // get a value linear to the current limitation, just to show to user
-      configuration_variables.ui8_temperature_current_limiting_value = 
-        (uint8_t) (map ((uint32_t) configuration_variables.ui16_motor_temperature_x2,
-                        (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_min_value_to_limit) << 1),
-                        (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_max_value_to_limit) << 1),
-                        (uint32_t) 255,
-                        (uint32_t) 0));
-    }
+    *ui8_target_current = 0;
+    configuration_variables.ui8_temperature_current_limiting_value = 0;
   }
   else
   {
-    // keep ui8_temperature_current_limiting_value = 255 because 255 means no current limiting happening
-    configuration_variables.ui8_temperature_current_limiting_value = 255;
+    // reduce motor current if over temperature
+    *ui8_target_current = 
+      (uint8_t) (map ((uint32_t) configuration_variables.ui16_motor_temperature_x2,
+                      (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_min_value_to_limit) << 1),
+                      (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_max_value_to_limit) << 1),
+                      (uint32_t) *ui8_target_current,
+                      (uint32_t) 0));
+
+    // get a value linear to the current limitation, just to show to user
+    configuration_variables.ui8_temperature_current_limiting_value = 
+      (uint8_t) (map ((uint32_t) configuration_variables.ui16_motor_temperature_x2,
+                      (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_min_value_to_limit) << 1),
+                      (uint32_t) (((uint16_t) configuration_variables.ui8_motor_temperature_max_value_to_limit) << 1),
+                      (uint32_t) 255,
+                      (uint32_t) 0));
   }
 }
 
