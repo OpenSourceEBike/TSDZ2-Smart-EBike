@@ -743,7 +743,7 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
     if (get_button_up_click_event ())
     {
       clear_button_up_click_event ();
-      configuration_variables.ui8_startup_motor_power_boost_feature_enabled  = 1;
+      configuration_variables.ui8_startup_motor_power_boost_feature_enabled = 1;
     }
 
     if (get_button_down_click_event ())
@@ -758,7 +758,7 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
     }
   }
   // enabled on startup when wheel speed is zero or always when cadence was zero
-  if (ui8_lcd_menu_config_submenu_state == 1)
+  else if (ui8_lcd_menu_config_submenu_state == 1)
   {
     if (get_button_up_click_event ())
     {
@@ -844,18 +844,18 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
     {
       clear_button_up_click_event ();
       // the BATTERY_POWER_FIELD can't show higher value
-      configuration_variables.ui8_startup_motor_power_boost [(ui8_lcd_menu_config_submenu_state - 4)]++;
+      configuration_variables.ui8_startup_motor_power_boost [(ui8_lcd_menu_config_submenu_state - 5)]++;
     }
 
     if (get_button_down_click_event ())
     {
       clear_button_down_click_event ();
-      configuration_variables.ui8_startup_motor_power_boost [(ui8_lcd_menu_config_submenu_state - 4)]--;
+      configuration_variables.ui8_startup_motor_power_boost [(ui8_lcd_menu_config_submenu_state - 5)]--;
     }
 
     if (ui8_lcd_menu_flash_state)
     {
-      lcd_print (configuration_variables.ui8_startup_motor_power_boost [ui8_lcd_menu_config_submenu_state - 4] * 25, ODOMETER_FIELD, 1);
+      lcd_print (configuration_variables.ui8_startup_motor_power_boost [ui8_lcd_menu_config_submenu_state - 5] * 25, ODOMETER_FIELD, 1);
     }
   }
 

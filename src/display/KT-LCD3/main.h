@@ -68,7 +68,7 @@
 #define DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS                  1 // 1 = 5%
 #define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0                     130 // 48v battery, 13S5P measured 130 milli ohms
 #define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1                     0
-#define DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED                          0
+#define DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED                       0
 #define DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP               0
 #define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT                           25
 #define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED                   0

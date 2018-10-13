@@ -171,7 +171,7 @@ static void ebike_control_motor (void)
       ui8_adc_max_battery_current = ui32_adc_max_battery_current_regular_state_x4 >> 2;
     }
 
-    if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature?
+    if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
     {
       ui32_adc_max_battery_current_x4 = (((uint32_t) configuration_variables.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
       ui8_adc_max_battery_current = ui32_adc_max_battery_current_x4 >> 2;
@@ -237,7 +237,7 @@ static void ebike_control_motor (void)
   apply_speed_limit (ui16_wheel_speed_x10, ui8_tmp_max_speed, &ui8_adc_battery_target_current);
 
   /* User configured max power on display */
-  if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature?
+  if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
   {
     // limit the current to max value defined by user on LCD max power, if:
     // - user defined to make that limitation

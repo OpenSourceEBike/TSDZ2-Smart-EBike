@@ -252,7 +252,7 @@ void clock_uart_data (void)
           // startup motor power boost fade time
           ui8_tx_buffer[7] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
           // boost feature enabled
-          ui8_tx_buffer[8] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
+          ui8_tx_buffer[8] = (p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled & 1) ? 1 : 0;
         break;
 
         case 6:
