@@ -47,6 +47,7 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_8,
     DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_9,
     DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS,
+    DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED,
     DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_STATE,
     DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1,
     DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_2,
@@ -68,7 +69,7 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS,
     DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0,
     DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1,
-    DEFAULT_VALUE_OFFROAD_FUNC_ENABLED,
+    DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED,
     DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP,
     DEFAULT_VALUE_OFFROAD_SPEED_LIMIT,
     DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED,
@@ -186,7 +187,7 @@ static void eeprom_read_values_to_variables (void)
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_motor_voltage_type = ui8_temp & 1;
   p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 2) >> 1;
-  p_configuration_variables->ui8_throttle_adc_measures_motor_temperature = (ui8_temp & 4) >> 2;
+  p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 4) >> 2;
   p_configuration_variables->ui8_temperature_field_config = (ui8_temp & 24) >> 3;
 
   p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte (ADDRESS_NUMBER_OF_ASSIST_LEVELS);
@@ -195,6 +196,7 @@ static void eeprom_read_values_to_variables (void)
     p_configuration_variables->ui8_assist_level_power [ui8_index] = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL_FACTOR_1 + ui8_index);
   }
 
+  p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED);
   p_configuration_variables->ui8_startup_motor_power_boost_state = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_STATE);
   p_configuration_variables->ui8_startup_motor_power_boost_time = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_TIME);
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
@@ -221,11 +223,11 @@ static void eeprom_read_values_to_variables (void)
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
   p_configuration_variables->ui16_battery_pack_resistance_x1000 = ui16_temp;
 
-  p_configuration_variables->ui8_offroad_func_enabled = FLASH_ReadByte (ADDRESS_DEFAULT_VALUE_OFFROAD_FUNC_ENABLED);
-  p_configuration_variables->ui8_offroad_enabled_on_startup = FLASH_ReadByte (ADDRESS_DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP);
-  p_configuration_variables->ui8_offroad_speed_limit = FLASH_ReadByte (ADDRESS_DEFAULT_VALUE_OFFROAD_SPEED_LIMIT);
-  p_configuration_variables->ui8_offroad_power_limit_enabled = FLASH_ReadByte (ADDRESS_DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED);
-  p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25);
+  p_configuration_variables->ui8_offroad_feature_enabled = FLASH_ReadByte (ADDRESS_OFFROAD_FEATURE_ENABLED);
+  p_configuration_variables->ui8_offroad_enabled_on_startup = FLASH_ReadByte (ADDRESS_OFFROAD_MODE_ENABLED_ON_STARTUP);
+  p_configuration_variables->ui8_offroad_speed_limit = FLASH_ReadByte (ADDRESS_OFFROAD_SPEED_LIMIT);
+  p_configuration_variables->ui8_offroad_power_limit_enabled = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_ENABLED);
+  p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_DIV25);
 
   ui32_temp = FLASH_ReadByte (ADDRESS_ODOMETER_X10_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_ODOMETER_X10_1);
@@ -273,7 +275,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [21] = p_configuration_variables->ui8_pas_max_cadence;
   ui8_array [22] = (p_configuration_variables->ui8_motor_voltage_type & 1) |
                       ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 1) |
-                      ((p_configuration_variables->ui8_throttle_adc_measures_motor_temperature & 1) << 2) |
+                      ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 2) |
                       ((p_configuration_variables->ui8_temperature_field_config & 3) << 3);
 
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
@@ -282,35 +284,36 @@ static void variables_to_array (uint8_t *ui8_array)
   }
   ui8_array [32] = p_configuration_variables->ui8_number_of_assist_levels;
 
-  ui8_array [33] = p_configuration_variables->ui8_startup_motor_power_boost_state;
+  ui8_array [33] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
+  ui8_array [34] = p_configuration_variables->ui8_startup_motor_power_boost_state;
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    ui8_array [34 + ui8_index] = p_configuration_variables->ui8_startup_motor_power_boost [ui8_index];
+    ui8_array [35 + ui8_index] = p_configuration_variables->ui8_startup_motor_power_boost [ui8_index];
   }
-  ui8_array [43] = p_configuration_variables->ui8_startup_motor_power_boost_time;
-  ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
-  ui8_array [45] = p_configuration_variables->ui8_motor_temperature_min_value_to_limit;
-  ui8_array [46] = p_configuration_variables->ui8_motor_temperature_max_value_to_limit;
+  ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_time;
+  ui8_array [45] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
+  ui8_array [46] = p_configuration_variables->ui8_motor_temperature_min_value_to_limit;
+  ui8_array [47] = p_configuration_variables->ui8_motor_temperature_max_value_to_limit;
 
-  ui8_array [47] = p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 & 255;
-  ui8_array [48] = (p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 >> 8) & 255;
+  ui8_array [48] = p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 & 255;
+  ui8_array [49] = (p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 >> 8) & 255;
 
-  ui8_array [49] = p_configuration_variables->ui8_lcd_power_off_time_minutes;
-  ui8_array [50] = p_configuration_variables->ui8_lcd_backlight_on_brightness;
-  ui8_array [51] = p_configuration_variables->ui8_lcd_backlight_off_brightness;
+  ui8_array [50] = p_configuration_variables->ui8_lcd_power_off_time_minutes;
+  ui8_array [51] = p_configuration_variables->ui8_lcd_backlight_on_brightness;
+  ui8_array [52] = p_configuration_variables->ui8_lcd_backlight_off_brightness;
 
-  ui8_array [52] = p_configuration_variables->ui16_battery_pack_resistance_x1000 & 255;
-  ui8_array [53] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
+  ui8_array [53] = p_configuration_variables->ui16_battery_pack_resistance_x1000 & 255;
+  ui8_array [54] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
 
-  ui8_array [54] = p_configuration_variables->ui8_offroad_func_enabled;
-  ui8_array [55] = p_configuration_variables->ui8_offroad_enabled_on_startup;
-  ui8_array [56] = p_configuration_variables->ui8_offroad_speed_limit;
-  ui8_array [57] = p_configuration_variables->ui8_offroad_power_limit_enabled;
-  ui8_array [58] = p_configuration_variables->ui8_offroad_power_limit_div25;
+  ui8_array [55] = p_configuration_variables->ui8_offroad_feature_enabled;
+  ui8_array [56] = p_configuration_variables->ui8_offroad_enabled_on_startup;
+  ui8_array [57] = p_configuration_variables->ui8_offroad_speed_limit;
+  ui8_array [58] = p_configuration_variables->ui8_offroad_power_limit_enabled;
+  ui8_array [59] = p_configuration_variables->ui8_offroad_power_limit_div25;
 
-  ui8_array [59] = p_configuration_variables->ui32_odometer_x10 & 255;
-  ui8_array [60] = (p_configuration_variables->ui32_odometer_x10 >> 8) & 255;
-  ui8_array [61] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
+  ui8_array [60] = p_configuration_variables->ui32_odometer_x10 & 255;
+  ui8_array [61] = (p_configuration_variables->ui32_odometer_x10 >> 8) & 255;
+  ui8_array [62] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
 }
 
 static void eeprom_write_array (uint8_t *array, uint8_t ui8_len)

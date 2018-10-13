@@ -1,7 +1,7 @@
 /*
  * TongSheng TSDZ2 motor controller firmware/
  *
- * Copyright (C) Casainho, 2018.
+ * Copyright (C) Casainho and EndlessCadence, 2018.
  *
  * Released under the GPL License, Version 3
  */
@@ -12,10 +12,10 @@
 #include <stdint.h>
 #include "main.h"
 
-#define EBIKE_APP_STATE_MOTOR_COAST   0
-#define EBIKE_APP_STATE_MOTOR_STOP  1
+#define EBIKE_APP_STATE_MOTOR_COAST     0
+#define EBIKE_APP_STATE_MOTOR_STOP      1
 #define EBIKE_APP_STATE_MOTOR_STARTUP   2
-#define EBIKE_APP_STATE_MOTOR_COOL  3
+#define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
 
 typedef struct _configuration_variables
@@ -35,18 +35,19 @@ typedef struct _configuration_variables
   uint8_t ui8_target_battery_max_power_div25;
   uint8_t ui8_cruise_control;
   uint8_t configuration_variables;
+  uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_div25;
   uint8_t ui8_startup_motor_power_boost_state;
   uint8_t ui8_startup_motor_power_boost_limit_to_max_power;
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_throttle_adc_measures_motor_temperature;
+  uint8_t ui8_temperature_limit_feature_enabled;
   uint8_t ui8_motor_temperature_min_value_to_limit;
   uint8_t ui8_motor_temperature_max_value_to_limit;
   uint8_t ui8_temperature_current_limiting_value;
   uint16_t ui16_motor_temperature_x2;
   uint8_t ui8_motor_temperature;
-  uint8_t ui8_offroad_func_enabled;
+  uint8_t ui8_offroad_feature_enabled;
   uint8_t ui8_offroad_enabled_on_startup;
   uint8_t ui8_offroad_speed_limit;
   uint8_t ui8_offroad_power_limit_enabled;
@@ -70,7 +71,6 @@ extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
 void ebike_app_init (void);
 void ebike_app_controller (void);
-void read_pas_cadence (void);
 struct_configuration_variables* get_configuration_variables (void);
 
 #endif /* _EBIKE_APP_H_ */
