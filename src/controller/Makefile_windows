@@ -17,6 +17,9 @@ PLATFORM = stm8
 #Product name
 PNAME = main
 
+# Don't include TSDZ2 throttle functionality by default
+THROTTLE = 0
+
 #Directory for helpers
 IDIR = ../common/STM8S_StdPeriph_Lib/inc
 SDIR = ../common/STM8S_StdPeriph_Lib/src
@@ -61,7 +64,7 @@ ebike_app.h utils.h pins.h config.h eeprom.h lights.h
 RELS = $(EXTRASRCS:.c=.rel)
 
 INCLUDES = -I$(IDIR) -I. 
-CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
+CFLAGS   = -m$(PLATFORM) -Ddouble=float -DTHROTTLE=${THROTTLE} --std-c99 --nolospre 
 ELF_FLAGS = --out-fmt-ihx --debug
 LIBS     = 
 
