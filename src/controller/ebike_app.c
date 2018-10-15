@@ -112,8 +112,11 @@ static uint16_t calc_filtered_battery_voltage (void);
 
 static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
-static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
+
+#if THROTTLE
+  static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
+#endif
 
 static void boost_run_statemachine (void);
 static uint8_t apply_boost (uint8_t ui8_pas_cadence, uint32_t ui32_max_current_boost_state_x4, uint8_t *ui8_target_current);
@@ -222,8 +225,10 @@ static void ebike_control_motor (void)
     apply_boost_fade_out (&ui8_adc_battery_target_current);
   }  
 
+#if THROTTLE
   /* Throttle */
   apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
+#endif
 
   ui8_tmp_max_speed = configuration_variables.ui8_wheel_max_speed;
 
@@ -599,18 +604,20 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
                                         (uint32_t) 0));
 }
 
-static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
-{
-  uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_throttle_value,
-                                    (uint32_t) 0,
-                                    (uint32_t) 255,
-                                    (uint32_t) 0,
-                                    (uint32_t) ui8_adc_battery_current_max));
-  *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
+#if THROTTLE
+  static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
+  {
+    uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_throttle_value,
+                                      (uint32_t) 0,
+                                      (uint32_t) 255,
+                                      (uint32_t) 0,
+                                      (uint32_t) ui8_adc_battery_current_max));
+    *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
 
-  // flag that motor assistance should happen because we may be running with throttle
-  if (*ui8_target_current) { *ui8_motor_enable = 1; }
-}
+    // flag that motor assistance should happen because we may be running with throttle
+    if (*ui8_target_current) { *ui8_motor_enable = 1; }
+  }
+#endif
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)
 {

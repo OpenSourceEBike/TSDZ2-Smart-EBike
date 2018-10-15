@@ -7,17 +7,23 @@ SET home_dir=%~dp0
 SET release_folder=releases\%new_version%
 
 IF NOT EXIST %release_folder% (
+	MKDIR %release_folder%
+
+	:: Throttle version
     CD src\controller
-    CALL compile.bat || GOTO :error
-    CD %home_dir%
+    CALL compile.bat THROTTLE=1 || GOTO :error
+	CD %home_dir%
+	COPY .\src\controller\main.ihx %release_folder%\TSDZ2-throttle-v%new_version%.hex
+    
+	:: Non throttle version
+	CD src\controller
+	CALL compile.bat THROTTLE=0 || GOTO :error	
+	CD %home_dir%
+	COPY .\src\controller\main.ihx %release_folder%\TSDZ2-v%new_version%.hex
 
     CD src\display\KT-LCD3
     CALL compile.bat || GOTO :error
     CD %home_dir%
-
-    MKDIR %release_folder%
-
-    COPY .\src\controller\main.ihx %release_folder%\TSDZ2-v%new_version%.hex
     COPY .\src\display\KT-LCD3\main.ihx %release_folder%\KT-LCD3-v%new_version%.hex
 
     ECHO:
