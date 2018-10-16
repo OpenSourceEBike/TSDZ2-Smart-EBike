@@ -103,6 +103,7 @@ uint8_t ui8_adc_battery_target_current;
 static void ebike_control_motor (void);
 static void ebike_app_set_battery_max_current (uint8_t ui8_value);
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
+static void ebike_run_motor (uint8_t ui8_target_current);
 
 static void communications_controller (void);
 static void uart_send_package (void);
@@ -121,8 +122,6 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
 static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
 static void apply_boost (uint8_t ui8_adc_max_battery_current, uint16_t ui16_battery_voltage_filtered, uint8_t *ui8_target_current);
-
-static void ebike_run_motor (uint8_t ui8_target_current);
 
 void ebike_app_init (void)
 {
