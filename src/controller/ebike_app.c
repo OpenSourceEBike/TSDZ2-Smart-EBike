@@ -145,9 +145,12 @@ void ebike_app_controller (void)
 static void ebike_control_motor (void)
 {
   
-  uint8_t ui8_adc_max_battery_current = 0;
-  uint8_t ui8_max_speed = configuration_variables.ui8_wheel_max_speed;
-  uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
+  volatile uint8_t ui8_adc_max_battery_current = 0;
+  volatile uint8_t ui8_max_speed = configuration_variables.ui8_wheel_max_speed;
+  volatile uint16_t ui16_battery_voltage_filtered = 0;
+
+  ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
+  ui16_battery_voltage_filtered = ui16_battery_voltage_filtered >> 9;
 
   /* Calc max power for assist levels */
   calc_assist_power (ui16_battery_voltage_filtered,&ui8_adc_max_battery_current);
@@ -493,6 +496,9 @@ static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_
 static void calc_assist_power(uint16_t ui16_battery_voltage_filtered,  uint8_t *ui8_adc_max_battery_current)
 {
 
+  volatile uint32_t ui32_adc_max_battery_current_regular_state_x4 = 0;
+  volatile uint32_t ui32_adc_max_battery_current_x4 = 0;
+
   // voltage higher than 15
   if (ui16_battery_voltage_filtered > 15)
   {
@@ -504,15 +510,15 @@ static void calc_assist_power(uint16_t ui16_battery_voltage_filtered,  uint8_t *
     // calc max currents for regular state
     if (configuration_variables.ui8_power_regular_state_div25 > 0)
     {
-      uint32_t ui32_adc_max_battery_current_regular_state_x4 = (((uint32_t) configuration_variables.ui8_power_regular_state_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
-      ui8_adc_max_battery_current = ui32_adc_max_battery_current_regular_state_x4 >> 2;
+      ui32_adc_max_battery_current_regular_state_x4 = (((uint32_t) configuration_variables.ui8_power_regular_state_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
+      *ui8_adc_max_battery_current = (uint8_t) ui32_adc_max_battery_current_regular_state_x4 >> 2;
     }
 
     // calc max currents for max power state
     if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
     {
-      uint32_t ui32_adc_max_battery_current_x4 = (((uint32_t) configuration_variables.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
-      ui8_adc_max_battery_current = ui32_adc_max_battery_current_x4 >> 2;
+      ui32_adc_max_battery_current_x4 = (((uint32_t) configuration_variables.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
+      *ui8_adc_max_battery_current = (uint8_t) ui32_adc_max_battery_current_x4 >> 2;
     }
   }
 }
