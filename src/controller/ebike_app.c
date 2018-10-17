@@ -55,6 +55,11 @@ volatile uint8_t ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t ui8_adc_target_battery_max_current;
 uint8_t ui8_adc_battery_current_max;
 
+volatile uint8_t ui8_safe_torque_sensor = 0;
+volatile uint8_t ui8_safe_throttle = 0;
+volatile uint8_t ui8_safe_pas_cadence_rpm = 0;
+volatile uint16_t ui16_safe_wheel_speed_x10 = 0;
+
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_pas_direction = 0;
 uint8_t ui8_pas_cadence_rpm = 0;
@@ -131,10 +136,8 @@ void ebike_app_init (void)
 }
 
 void ebike_app_controller (void)
-{
-  #if THROTTLE
-    throttle_read ();
-  #endif
+{  
+  throttle_read ();
   torque_sensor_read ();
   read_pas_cadence ();
   calc_wheel_speed ();
@@ -455,6 +458,8 @@ static void calc_wheel_speed (void)
   {
     ui16_wheel_speed_x10 = 0;
   }
+
+  ui16_safe_wheel_speed_x10 = ui16_wheel_speed_x10;
 }
 
 static void calc_motor_temperature (void)
@@ -526,6 +531,7 @@ static void calc_assist_power(uint16_t ui16_battery_voltage_filtered,  uint8_t *
 
 static void ebike_run_motor(uint8_t ui8_adc_battery_target_current)
 {
+
   /* Safetiy Checks before running Motor */
   ui8_motor_state = MOTOR_OFF;  
   // check brake and Assist Level > 0
@@ -535,23 +541,23 @@ static void ebike_run_motor(uint8_t ui8_adc_battery_target_current)
     if(!configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation)
     {
       // no throttle mode
-      if(ui8_throttle==0)
+      if(ui8_safe_throttle==0)
       {
         // cadence torque and wheel speed > 0 then start motor
-        if ((ui8_pas_cadence_rpm > 0) && (ui8_torque_sensor_raw > 0) && (ui16_wheel_speed_x10 > 0)) { ui8_motor_state = MOTOR_ON;}
+        if ((ui8_safe_pas_cadence_rpm > 0) && (ui8_safe_torque_sensor > 0) && (ui16_wheel_speed_x10 > 0)) { ui8_motor_state = MOTOR_ON;}
       } 
       // throttle mode
-      else if (ui8_throttle > 0)
+      else if (ui8_safe_throttle > 0)
       {
         // wheel turns then start motor
-        if(ui16_wheel_speed_x10 > 0) { ui8_motor_state = MOTOR_ON;}
+        if(ui16_safe_wheel_speed_x10 > 0) { ui8_motor_state = MOTOR_ON;}
       }
     // instant assistance enabled / risky mode
     } else {
        // throttle or torque 
-       if (ui8_throttle > 0 || ui8_torque_sensor > 0){
+       if (ui8_safe_throttle > 0 || ui8_safe_torque_sensor > 0){
          // only active until 5kmh (safety)
-         if(ui16_wheel_speed_x10 < 5) { ui8_motor_state = MOTOR_ON;}
+         if(ui16_safe_wheel_speed_x10 < 5) { ui8_motor_state = MOTOR_ON;}
        }
     }
   }
@@ -793,20 +799,22 @@ static void read_pas_cadence (void)
       ui8_pas_cadence_rpm = configuration_variables.ui8_pas_max_cadence;
     }
   }
+
+  ui8_safe_pas_cadence_rpm = ui8_pas_cadence_rpm;
 }
 
 static void torque_sensor_read (void)
 {
   // map value from 0 up to 255
   // map value from 0 up to 255
-  ui8_torque_sensor_raw = (uint8_t) (map (
+  ui8_torque_sensor = (uint8_t) (map (
       UI8_ADC_TORQUE_SENSOR,
       (uint8_t) ui8_adc_torque_sensor_min_value,
       (uint8_t) ui8_adc_torque_sensor_max_value,
       (uint8_t) 0,
       (uint8_t) 255));
 
-  ui8_torque_sensor = ui8_torque_sensor_raw;
+  ui8_safe_torque_sensor = ui8_torque_sensor;
 }
 
 static void throttle_read (void)
@@ -818,6 +826,8 @@ static void throttle_read (void)
         (uint8_t) ADC_THROTTLE_MAX_VALUE,
         (uint8_t) 0,
         (uint8_t) 255));
+
+    ui8_safe_throttle = ui8_throttle;
 }
 
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
