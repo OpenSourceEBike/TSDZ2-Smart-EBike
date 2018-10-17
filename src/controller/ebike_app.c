@@ -132,7 +132,9 @@ void ebike_app_init (void)
 
 void ebike_app_controller (void)
 {
-  throttle_read ();
+  #if THROTTLE
+    throttle_read ();
+  #endif
   torque_sensor_read ();
   read_pas_cadence ();
   calc_wheel_speed ();
@@ -809,13 +811,13 @@ static void torque_sensor_read (void)
 
 static void throttle_read (void)
 {
-  // map value from 0 up to 255
-  ui8_throttle = (uint8_t) (map (
-      UI8_ADC_THROTTLE,
-      (uint8_t) ADC_THROTTLE_MIN_VALUE,
-      (uint8_t) ADC_THROTTLE_MAX_VALUE,
-      (uint8_t) 0,
-      (uint8_t) 255));
+    // map value from 0 up to 255
+    ui8_throttle = (uint8_t) (map (
+        UI8_ADC_THROTTLE,
+        (uint8_t) ADC_THROTTLE_MIN_VALUE,
+        (uint8_t) ADC_THROTTLE_MAX_VALUE,
+        (uint8_t) 0,
+        (uint8_t) 255));
 }
 
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
