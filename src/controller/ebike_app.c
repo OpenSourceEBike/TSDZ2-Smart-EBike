@@ -544,7 +544,7 @@ static void ebike_run_motor(uint8_t ui8_adc_battery_target_current)
       if(ui8_safe_throttle==0)
       {
         // cadence torque and wheel speed > 0 then start motor
-        if ((ui8_safe_pas_cadence_rpm > 0) && (ui8_safe_torque_sensor > 0) && (ui16_wheel_speed_x10 > 0)) { ui8_motor_state = MOTOR_ON;}
+        if ((ui8_safe_pas_cadence_rpm > 0) && (ui8_safe_torque_sensor > 0) && (ui16_safe_wheel_speed_x10 > 0)) { ui8_motor_state = MOTOR_ON;}
       } 
       // throttle mode
       else if (ui8_safe_throttle > 0)
