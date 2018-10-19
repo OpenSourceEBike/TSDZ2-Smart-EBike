@@ -10,6 +10,6 @@
 #define COMMON_COMMON_H_
 
 #define ERROR_STATE_NO_ERRORS                             0
-#define ERROR_STATE_MOTOR_OR_EBIKE_WHEEL_BLOCKED          1
+#define ERROR_STATE_EBIKE_WHEEL_BLOCKED          1
 
 #endif /* COMMON_COMMON_H_ */

@@ -952,7 +952,7 @@ static void safe_tests (void)
     // 3 seconds should be safe enough value, mosfets should not burn in 3 seconds if ebike wheel is blocked
     if (safe_tests_state_machine_counter > 30)
     {
-      configuration_variables.ui8_error_states |= ERROR_STATE_MOTOR_OR_EBIKE_WHEEL_BLOCKED;
+      configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
       safe_tests_state_machine_counter = 0;
       safe_tests_state_machine = 2;
       break;
@@ -975,7 +975,7 @@ static void safe_tests (void)
 
       if (safe_tests_state_machine_counter > 30)
       {
-        configuration_variables.ui8_error_states &= ~ERROR_STATE_MOTOR_OR_EBIKE_WHEEL_BLOCKED;
+        configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
         safe_tests_state_machine = 0;
         break;
       }
