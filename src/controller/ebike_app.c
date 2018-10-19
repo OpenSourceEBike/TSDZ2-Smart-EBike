@@ -152,6 +152,7 @@ static void ebike_control_motor (void)
   uint8_t ui8_tmp_pas_cadence_rpm;
   uint32_t ui32_adc_max_battery_current_x4;
   uint8_t ui8_adc_max_battery_current = 0;
+  uint8_t ui8_adc_max_battery_power_current = 0;
   uint8_t ui8_startup_enable;
   uint8_t ui8_boost_enabled_and_applied = 0;
   uint8_t ui8_tmp_max_speed;
@@ -183,7 +184,7 @@ static void ebike_control_motor (void)
     if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
     {
       ui32_adc_max_battery_current_x4 = (((uint32_t) configuration_variables.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
-      ui8_adc_max_battery_current = ui32_adc_max_battery_current_x4 >> 2;
+      ui8_adc_max_battery_power_current = ui32_adc_max_battery_current_x4 >> 2;
     }
   }
 
@@ -257,7 +258,7 @@ static void ebike_control_motor (void)
         (!((ui8_boost_enabled_and_applied == 1) || (ui8_startup_boost_fade_enable == 1))))
     {
       // now let's limit the target battery current to battery max current (use min value of both)
-      ui8_adc_battery_target_current = ui8_min (ui8_adc_battery_target_current, ui8_adc_max_battery_current);
+      ui8_adc_battery_target_current = ui8_min (ui8_adc_battery_target_current, ui8_adc_max_battery_power_current);
     }
   }
 
