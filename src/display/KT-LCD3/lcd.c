@@ -1670,71 +1670,82 @@ void odometer (void)
     odometer_increase_field_state ();
   }
 
-  switch (configuration_variables.ui8_odometer_field_state)
+  // if there are errors, show the error number on odometer field instead of any other information
+  if (motor_controller_data.ui8_error_states != ERROR_STATE_NO_ERRORS)
   {
-    // DST Single Trip Distance OR
-    case 0:
-      lcd_print ((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 0);
-//      lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
-      lcd_enable_km_symbol (1);
-    break;
+    if (ui8_lcd_menu_flash_state)
+    {
+      lcd_print (motor_controller_data.ui8_error_states, ODOMETER_FIELD, 1);
+    }
+  }
+  else
+  {
+    switch (configuration_variables.ui8_odometer_field_state)
+    {
+      // DST Single Trip Distance OR
+      case 0:
+        lcd_print ((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 0);
+  //      lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
+        lcd_enable_km_symbol (1);
+      break;
 
-    // ODO Total Trip Distance
-    case 1:
-      uint32_temp = configuration_variables.ui32_odometer_x10 + ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-      lcd_print (uint32_temp, ODOMETER_FIELD, 0);
-      lcd_enable_odo_symbol (1);
-      lcd_enable_km_symbol (1);
-    break;
+      // ODO Total Trip Distance
+      case 1:
+        uint32_temp = configuration_variables.ui32_odometer_x10 + ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
+        lcd_print (uint32_temp, ODOMETER_FIELD, 0);
+        lcd_enable_odo_symbol (1);
+        lcd_enable_km_symbol (1);
+      break;
 
-    // voltage value
-    case 2:
-      lcd_print (ui16_battery_voltage_filtered_x10, ODOMETER_FIELD, 0);
-      lcd_enable_vol_symbol (1);
-    break;
+      // voltage value
+      case 2:
+        lcd_print (ui16_battery_voltage_filtered_x10, ODOMETER_FIELD, 0);
+        lcd_enable_vol_symbol (1);
+      break;
 
-    // current value
-    case 3:
-      lcd_print (ui16_battery_current_filtered_x5 << 1, ODOMETER_FIELD, 0);
-    break;
+      // current value
+      case 3:
+        lcd_print (ui16_battery_current_filtered_x5 << 1, ODOMETER_FIELD, 0);
+      break;
 
-    // Wh value
-    case 4:
-      lcd_print (ui32_wh_x10, ODOMETER_FIELD, 0);
-    break;
+      // Wh value
+      case 4:
+        lcd_print (ui32_wh_x10, ODOMETER_FIELD, 0);
+      break;
 
-    // pedal cadence value
-    case 5:
-      lcd_print (motor_controller_data.ui8_pedal_cadence, ODOMETER_FIELD, 1);
-    break;
+      // pedal cadence value
+      case 5:
+        lcd_print (motor_controller_data.ui8_pedal_cadence, ODOMETER_FIELD, 1);
+      break;
 
-    // battery SOC in watts/hour
-    case 6:
-      if (configuration_variables.ui8_show_numeric_battery_soc & 1)
-      {
-        lcd_print (ui16_battery_soc_watts_hour, ODOMETER_FIELD, 1);
-      }
-      else
-      {
-        odometer_increase_field_state ();
-      }
-    break;
+      // battery SOC in watts/hour
+      case 6:
+        if (configuration_variables.ui8_show_numeric_battery_soc & 1)
+        {
+          lcd_print (ui16_battery_soc_watts_hour, ODOMETER_FIELD, 1);
+        }
+        else
+        {
+          odometer_increase_field_state ();
+        }
+      break;
 
-    // motor temperature
-    case 7:
-      if (configuration_variables.ui8_temperature_limit_feature_enabled)
-      {
-        lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 1);
-      }
-      else
-      {
-        odometer_increase_field_state ();
-      }
-    break;
+      // motor temperature
+      case 7:
+        if (configuration_variables.ui8_temperature_limit_feature_enabled)
+        {
+          lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 1);
+        }
+        else
+        {
+          odometer_increase_field_state ();
+        }
+      break;
 
-    default:
-    configuration_variables.ui8_odometer_field_state = 0;
-    break;
+      default:
+      configuration_variables.ui8_odometer_field_state = 0;
+      break;
+    }
   }
 }
 
