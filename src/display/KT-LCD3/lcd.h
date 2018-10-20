@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include "stm8s_gpio.h"
+#include "common/common.h"
 
 //ui8_rx_buffer[2] == 8 if torque sensor
 //ui8_rx_buffer[2] == 4 if motor running
@@ -25,7 +26,7 @@ typedef struct _motor_controller_data
   uint8_t ui8_pedal_torque_sensor;
   uint8_t ui8_pedal_human_power;
   uint8_t ui8_duty_cycle;
-  uint8_t ui8_error_code;
+  uint8_t ui8_error_states;
   uint16_t ui16_wheel_speed_x10;
   uint8_t ui8_motor_controller_state_2;
   uint8_t ui8_braking;

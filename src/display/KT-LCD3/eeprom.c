@@ -92,7 +92,7 @@ void eeprom_init (void)
   ui8_data = FLASH_ReadByte (ADDRESS_KEY);
   if (ui8_data != KEY) // verify if our key exist
   {
-    eeprom_write_array (array_default_values, ((uint32_t) EEPROM_BYTES_STORED));
+    eeprom_write_array (array_default_values, ((uint8_t) EEPROM_BYTES_STORED));
   }
 }
 
@@ -320,7 +320,7 @@ static void eeprom_write_array (uint8_t *array, uint8_t ui8_len)
 {
   uint8_t ui8_i;
 
-  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
+  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
   
   FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
@@ -335,7 +335,7 @@ static void eeprom_write_array (uint8_t *array, uint8_t ui8_len)
 
 void eeprom_erase_key_value (void)
 {
-  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
+  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
 
   FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
