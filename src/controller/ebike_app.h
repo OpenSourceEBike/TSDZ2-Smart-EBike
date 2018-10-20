@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include "main.h"
-#include "../common/common.h"
+#include "common/common.h"
 
 #define EBIKE_APP_STATE_MOTOR_COAST     0
 #define EBIKE_APP_STATE_MOTOR_STOP      1

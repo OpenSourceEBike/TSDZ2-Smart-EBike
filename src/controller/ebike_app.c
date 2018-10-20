@@ -872,7 +872,7 @@ static void throttle_read (void)
       (uint8_t) ADC_THROTTLE_MIN_VALUE,
       (uint8_t) ADC_THROTTLE_MAX_VALUE,
       (uint8_t) 0,
-      (uint8_t) 255))
+      (uint8_t) 255));
 #else
   ui8_throttle = 0;
 #endif

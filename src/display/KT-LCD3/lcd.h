@@ -11,7 +11,7 @@
 
 #include "main.h"
 #include "stm8s_gpio.h"
-#include "../../common/common.h"
+#include "common/common.h"
 
 //ui8_rx_buffer[2] == 8 if torque sensor
 //ui8_rx_buffer[2] == 4 if motor running
