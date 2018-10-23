@@ -84,5 +84,5 @@ hex:
 
 clean:
 	@echo "Cleaning files..."
-	@clean.bat
+	@cmd /C clean.bat
 	@echo "Done."
