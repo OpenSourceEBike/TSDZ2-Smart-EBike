@@ -1194,19 +1194,20 @@ void lcd_execute_menu_config_submenu_various (void)
       if (get_button_up_click_event ())
       {
         clear_button_up_click_event ();
-        configuration_variables.ui8_motor_voltage_type |= 1;
+        configuration_variables.ui8_motor_type++;
       }
 
       if (get_button_down_click_event ())
       {
         clear_button_down_click_event ();
-        configuration_variables.ui8_motor_voltage_type &= ~1;
+        configuration_variables.ui8_motor_type--;
       }
 
-      ui8_temp = ((configuration_variables.ui8_motor_voltage_type & 1) ? 1 : 0);
+      if (configuration_variables.ui8_motor_type > 2) { configuration_variables.ui8_motor_type = 2; }
+
       if (ui8_lcd_menu_flash_state)
       {
-        lcd_print (ui8_temp, ODOMETER_FIELD, 1);
+        lcd_print (configuration_variables.ui8_motor_type, ODOMETER_FIELD, 1);
       }
     break;
 
