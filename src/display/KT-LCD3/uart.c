@@ -235,9 +235,9 @@ void clock_uart_data (void)
           // bit 1: motor voltage type: 36V or 48V
           // bit 2: MOTOR_ASSISTANCE_CAN_START_WITHOUT_PEDAL_ROTATION
           ui8_tx_buffer[7] = ((p_configuration_variables->ui8_cruise_control & 1) |
-                             ((p_configuration_variables->ui8_motor_voltage_type & 1) << 1) |
-                              ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
-                              ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3));
+                             ((p_configuration_variables->ui8_motor_type & 3) << 1) |
+                              ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 3) |
+                              ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 4));
           ui8_tx_buffer[8] = p_configuration_variables->ui8_startup_motor_power_boost_state;
         break;
 

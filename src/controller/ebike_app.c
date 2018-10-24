@@ -353,9 +353,9 @@ static void communications_controller (void)
 
         case 3:
           configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;
-          configuration_variables.ui8_motor_voltage_type = (ui8_rx_buffer [7] & 2) >> 1;
-          configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 4) >> 2;
-          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 8) >> 3;
+          configuration_variables.ui8_motor_type = (ui8_rx_buffer [7] & 6) >> 1;
+          configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 8) >> 3;
+          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 16) >> 4;
 
           configuration_variables.ui8_startup_motor_power_boost_state = ui8_rx_buffer [8] & 1;
           configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [8] & 2) >> 1;

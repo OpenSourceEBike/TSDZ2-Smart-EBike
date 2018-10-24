@@ -123,7 +123,7 @@ void eeprom_init_variables (void)
 //      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 > 630) ||
 //      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 < 160) ||
 //      (p_configuration_variables->ui8_cruise_control > 1) ||
-//      (p_configuration_variables->ui8_motor_voltage_type > 1) ||
+//      (p_configuration_variables->ui8_motor_type > 2) ||
 //      (p_configuration_variables->ui8_motor_temperature_min_value_to_limit < 124) ||
 //      (p_configuration_variables->ui8_motor_temperature_max_value_to_limit < 124) ||
 //      (p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation > 1))
@@ -185,10 +185,10 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_pas_max_cadence = FLASH_ReadByte (ADDRESS_PAS_MAX_CADENCE);
 
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
-  p_configuration_variables->ui8_motor_voltage_type = ui8_temp & 1;
-  p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 2) >> 1;
-  p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 4) >> 2;
-  p_configuration_variables->ui8_temperature_field_config = (ui8_temp & 24) >> 3;
+  p_configuration_variables->ui8_motor_type = ui8_temp & 3;
+  p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
+  p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 8) >> 3;
+  p_configuration_variables->ui8_temperature_field_config = (ui8_temp & 48) >> 4;
 
   p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte (ADDRESS_NUMBER_OF_ASSIST_LEVELS);
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
@@ -273,10 +273,10 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [19] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
   ui8_array [20] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
   ui8_array [21] = p_configuration_variables->ui8_pas_max_cadence;
-  ui8_array [22] = (p_configuration_variables->ui8_motor_voltage_type & 1) |
-                      ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 1) |
-                      ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 2) |
-                      ((p_configuration_variables->ui8_temperature_field_config & 3) << 3);
+  ui8_array [22] = (p_configuration_variables->ui8_motor_type & 3) |
+                      ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
+                      ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3) |
+                      ((p_configuration_variables->ui8_temperature_field_config & 3) << 4);
 
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {

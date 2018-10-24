@@ -102,8 +102,8 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_pas_max_cadence = FLASH_ReadByte (ADDRESS_PAS_MAX_CADENCE);
 
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_1);
-  p_configuration_variables->ui8_motor_voltage_type = ui8_temp & 1;
-  p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 2) >> 1;
+  p_configuration_variables->ui8_motor_type = ui8_temp & 3;
+  p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
 
   ui8_temp = FLASH_ReadByte (ADDRESS_OFFROAD_CONFIG);
   p_configuration_variables->ui8_offroad_feature_enabled = ui8_temp & 1;
@@ -139,8 +139,8 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [8] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
   ui8_array [9] = p_configuration_variables->ui8_wheel_max_speed;
   ui8_array [10] = p_configuration_variables->ui8_pas_max_cadence;
-  ui8_array [11] = (p_configuration_variables->ui8_motor_voltage_type & 1) |
-                      ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 1);
+  ui8_array [11] = (p_configuration_variables->ui8_motor_type & 3) |
+                      ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2);
   ui8_array [12] = (p_configuration_variables->ui8_offroad_feature_enabled & 1) |
                       ((p_configuration_variables->ui8_offroad_enabled_on_startup & 1) << 1) |
                         ((p_configuration_variables->ui8_offroad_power_limit_enabled & 1) << 2);

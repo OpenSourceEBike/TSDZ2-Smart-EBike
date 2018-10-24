@@ -28,7 +28,8 @@
 #define MOTOR_ROTOR_ANGLE_330   (233 + MOTOR_ROTOR_OFFSET_ANGLE)
 #define MOTOR_ROTOR_ANGLE_30    (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
-#define MOTOR_OVER_SPEED_ERPS 520 // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS               520 // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL  700 // experimental max motor speed to allow a higher cadence
 
 #define WHEEL_SPEED_PI_CONTROLLER_KP_DIVIDEND	100
 #define WHEEL_SPEED_PI_CONTROLLER_KP_DIVISOR	4

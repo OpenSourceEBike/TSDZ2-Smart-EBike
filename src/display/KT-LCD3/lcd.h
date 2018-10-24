@@ -57,7 +57,7 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_low_voltage_cut_off_x10;
   uint16_t ui16_battery_voltage_reset_wh_counter_x10;
   uint16_t ui16_battery_pack_resistance_x1000;
-  uint8_t ui8_motor_voltage_type;
+  uint8_t ui8_motor_type;
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
   uint8_t ui8_pas_max_cadence;
   uint8_t ui8_cruise_control;

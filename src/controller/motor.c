@@ -417,6 +417,8 @@ uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
 uint16_t ui16_wheel_speed_sensor_counter = 0;
 
+uint8_t experimental_high_cadence_mode = 0;
+
 void read_battery_voltage (void);
 void read_battery_current (void);
 void calc_foc_angle (void);
@@ -645,12 +647,16 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   else if ((ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS) && // motor speed over max ERPS, reduce duty_cycle
       (ui8_motor_over_speed_erps_flag == 0))
   {
-    ui8_motor_over_speed_erps_flag = 1;
-
-    if (ui8_duty_cycle > 0)
+    // test for high cadence mode (experimental)
+    if (!experimental_high_cadence_mode || (ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL))
     {
-      ui8_duty_cycle--;
-    }
+      ui8_motor_over_speed_erps_flag = 1;
+
+      if (ui8_duty_cycle > 0)
+      {
+        ui8_duty_cycle--;
+      }
+    }    
   }
   else // nothing to limit, so, adjust duty_cycle to duty_cycle_target, including ramping
   {
@@ -1018,13 +1024,27 @@ void calc_foc_angle (void)
   // ---------------------------------------------------------------------------------------------------------------------
   // ui32_l_x1048576 = 142 <--- THIS VALUE WAS verified experimentaly on 2018.07 to be near the best value for a 48V motor,
   // test done with a fixed mechanical load, duty_cycle = 200 and 100 and measured battery current was 16 and 6 (10 and 4 amps)
-  if (p_configuration_variables->ui8_motor_voltage_type)
+  switch (p_configuration_variables->ui8_motor_type)
   {
-    ui32_l_x1048576 = 80; // 36V motor
-  }
-  else
-  {
-    ui32_l_x1048576 = 142; // 48V motor
+    case 0:
+      ui32_l_x1048576 = 142; // 48V motor
+      experimental_high_cadence_mode = 0;
+    break;
+
+    case 1:
+      ui32_l_x1048576 = 80; // 36V motor
+      experimental_high_cadence_mode = 0;
+    break;
+    
+    case 2: // experimental high cadence mode
+      ui32_l_x1048576 = 115; // confirmed working with the 36V motor (only) by jbalat so far
+      experimental_high_cadence_mode = 1;
+    break;
+
+    default:
+      ui32_l_x1048576 = 142; // 48V motor
+      experimental_high_cadence_mode = 0;
+    break;
   }
 
   // calc IwL
