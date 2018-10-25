@@ -932,6 +932,14 @@ struct_configuration_variables* get_configuration_variables (void)
 
 static void safe_tests (void)
 {
+  // the state machine should restart if:
+  if (brake_is_set() || // we hit brakes
+      configuration_variables.ui8_power_regular_state_div25 == 0) // we choose assist power assist level = 0
+  {
+    configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enable
+    safe_tests_state_machine = 0;
+  }
+
   switch (safe_tests_state_machine)
   {
     // start when we have torque sensor or throttle
@@ -964,6 +972,12 @@ static void safe_tests (void)
       safe_tests_state_machine_counter = 0;
       safe_tests_state_machine = 3;
       break;
+    }
+
+    // release of throttle or torque sensor, restart
+    if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
+    {
+      safe_tests_state_machine = 0;
     }
     break;
 
