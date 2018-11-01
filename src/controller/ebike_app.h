@@ -18,6 +18,9 @@
 #define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
 
+#define MIN_ADC_TORQUE_UNITS            2
+#define MIN_CADENCE_RPM                25
+
 typedef struct _configuration_variables
 {
   uint8_t ui8_power_regular_state_div25;

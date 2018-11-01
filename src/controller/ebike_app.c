@@ -150,6 +150,8 @@ static void ebike_control_motor (void)
   uint8_t ui8_startup_enable;
   uint8_t ui8_boost_enabled_and_applied = 0;
   uint8_t ui8_tmp_max_speed;
+  uini8_t ui8_human_cadence;
+  uini8_t ui8_human_torque;
 
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
 
@@ -203,13 +205,17 @@ static void ebike_control_motor (void)
 
   if (!ui8_boost_enabled_and_applied)
   {
-    // cadence percentage (in x256)
-    ui16_temp = (uint16_t) (map (((uint32_t) ui8_tmp_pas_cadence_rpm),
-           (uint32_t) 0,
+    //human cadence has a minimum value of MIN_CADENCE_RPM while wheel speed is not 0
+    ui8_human_cadence = (ui8_tmp_pas_cadence_rpm > MIN_CADENCE_RPM && ui16_wheel_speed_x10 > 0) ? ui8_tmp_pas_cadence_rpm : MIN_CADENCE_RPM;
+	// cadence percentage (in x256)
+    ui16_temp = (uint16_t) (map (((uint32_t) ui8_human_cadence),
+           (uint32_t) MIN_CADENCE_RPM,
            (uint32_t) configuration_variables.ui8_pas_max_cadence,
            (uint32_t) 0,
            (uint32_t) 255));
 
+    //human torque has minimum MIN_TORQUE_UNITS(32 * ADC_TORQUE_UNITS = 256 TORQUE_UNITS so 1/8) over min torque value
+    ui8_human_torque = ui8_torque_sensor > MIN_ADC_TORQUE_UNITS * 8 ? ui8_torque_sensor : MIN_ADC_TORQUE_UNITS * 8;
     // human power: pedal torque * pedal cadence
     ui8_pedal_human_power = ((((uint16_t) ui8_torque_sensor) * ui16_temp) >> 8);
 
@@ -790,7 +796,6 @@ static void read_pas_cadence (void)
 
 static void torque_sensor_read (void)
 {
-  // map value from 0 up to 255
   // map value from 0 up to 255
   ui8_torque_sensor_raw = (uint8_t) (map (
       UI8_ADC_TORQUE_SENSOR,
