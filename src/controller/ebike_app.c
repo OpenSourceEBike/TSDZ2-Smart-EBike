@@ -151,10 +151,10 @@ static void ebike_control_motor (void)
   uint8_t ui8_startup_enable;
   uint8_t ui8_boost_enabled_and_applied = 0;
   uint8_t ui8_tmp_max_speed;
-  uini8_t ui8_human_cadence = 0;
+  uint8_t ui8_human_cadence = 0;
   uint8_t ui8_human_min_cadence = 0;
-  uini8_t ui8_human_torque = 0;
-  uini8_t ui8_human_min_torque = 0;
+  uint8_t ui8_human_torque = 0;
+  uint8_t ui8_human_min_torque = 0;
 
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
 
