@@ -61,17 +61,12 @@ void pi_controller (struct_pi_controller_state *pi_controller)
   i16_p_term = (i16_error * pi_controller->ui8_kp_dividend) >> pi_controller->ui8_kp_divisor;
 
   pi_controller->i16_i_term += (i16_error * pi_controller->ui8_ki_dividend) >> pi_controller->ui8_ki_divisor;
-  // if (pi_controller->i16_i_term > 255) { pi_controller->i16_i_term = 255; }
   if (pi_controller->i16_i_term > 1023) { pi_controller->i16_i_term = 1023; }
   if (pi_controller->i16_i_term < 0) { pi_controller->i16_i_term = 0; }
 
   i16_temp = i16_p_term + pi_controller->i16_i_term;
 
   // limit to [0 ; 255] as duty_cycle that will be controlled can't have other values than that ones
-  // if (i16_temp > 255) { i16_temp = 255; }
-  // if (i16_temp < 0) { i16_temp = 0; }
-  // pi_controller->ui8_controller_output_value = (uint8_t) i16_temp;
-
   pi_controller->ui8_controller_output_value = (uint8_t) (map ((uint32_t) i16_temp,
                                                               (uint32_t) 0,
                                                               (uint32_t) 1023,

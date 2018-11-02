@@ -36,11 +36,6 @@
 #define WHEEL_SPEED_PI_CONTROLLER_KI_DIVIDEND	40
 #define WHEEL_SPEED_PI_CONTROLLER_KI_DIVISOR	6
 
-#define WALK_ASSIST_PI_CONTROLLER_KP_DIVIDEND	20
-#define WALK_ASSIST_PI_CONTROLLER_KP_DIVISOR	4
-#define WALK_ASSIST_PI_CONTROLLER_KI_DIVIDEND	5
-#define WALK_ASSIST_PI_CONTROLLER_KI_DIVISOR	6
-
 // Possible values: 0, 1, 2, 3, 4, 5, 6
 // 0 equal to no filtering and no delay, higher values will increase filtering but will also add bigger delay
 #define THROTTLE_FILTER_COEFFICIENT     1

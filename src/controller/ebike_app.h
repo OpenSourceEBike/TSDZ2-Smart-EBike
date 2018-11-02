@@ -18,6 +18,11 @@
 #define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
 
+#define WALK_ASSIST_PI_CONTROLLER_KP_DIVIDEND	20
+#define WALK_ASSIST_PI_CONTROLLER_KP_DIVISOR	4
+#define WALK_ASSIST_PI_CONTROLLER_KI_DIVIDEND	3
+#define WALK_ASSIST_PI_CONTROLLER_KI_DIVISOR	6
+
 typedef struct _configuration_variables
 {
   uint8_t ui8_power_regular_state_div25;

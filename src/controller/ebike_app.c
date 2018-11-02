@@ -66,7 +66,7 @@ uint16_t ui16_startup_boost_fade_variable_step_amount_x256;
 // wheel speed
 volatile uint32_t ui32_wheel_speed_sensor_pwm_cycles_ticks = (uint32_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
 uint8_t ui8_wheel_speed_max = 0;
-uint16_t ui16_wheel_speed_x10;
+uint16_t ui16_wheel_speed_x10 = 0;
 volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
 
 volatile struct_configuration_variables configuration_variables;
@@ -639,12 +639,12 @@ static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_curr
     uint8_t ui8_tmp_speed_x10 = ui16_speed_x10 <= 255 ? (uint8_t) ui16_speed_x10 : 255;
 
     walk_assist_wheel_speed_pi_controller_state.ui8_current_value = ui8_tmp_speed_x10;
-    walk_assist_wheel_speed_pi_controller_state.ui8_target_value = 4 * 10;
+    walk_assist_wheel_speed_pi_controller_state.ui8_target_value = 4 * 10; // TODO: configurable through display
     pi_controller (&walk_assist_wheel_speed_pi_controller_state);
     
     *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
     
-    *ui8_target_current = 1; // minimum current
+    *ui8_target_current = 5; // 5A, TODO: configurable through display?
     *ui8_startup_enable = 1; // enable motor startup
 
     //PI examples

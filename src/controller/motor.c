@@ -836,22 +836,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
    // limit min wheel speed
    if (ui32_wheel_speed_sensor_counter > ((uint32_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS))
    {
-     ui32_wheel_speed_sensor_pwm_cycles_ticks = (uint32_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS;
-     ui32_wheel_speed_sensor_counter = 0;
-     ui8_wheel_speed_sensor_change_counter = 0;
+      ui32_wheel_speed_sensor_pwm_cycles_ticks = (uint32_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS;
+      ui32_wheel_speed_sensor_counter = 0;
+      ui8_wheel_speed_sensor_change_counter = 0;
    }
-   // let´s look if signal state changed
-   else
+   else // let´s look if signal state changed
    {
-     // detect wheel speed sensor signal changes
-     if (WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN)
-     {
-       ui8_wheel_speed_sensor_state = 1;
-     }
-     else
-     {
-       ui8_wheel_speed_sensor_state = 0;
-     }
+      // detect wheel speed sensor signal changes
+      ui8_wheel_speed_sensor_state = WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN ? 1 : 0;
 
      if (ui8_wheel_speed_sensor_state != ui8_wheel_speed_sensor_state_old) // wheel speed sensor signal did change
      {

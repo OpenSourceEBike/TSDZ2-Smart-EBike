@@ -23,7 +23,7 @@
 #include "uart.h"
 
 #define LCD_MENU_CONFIG_SUBMENU_MAX_NUMBER  10
-#define WALK_ASSIST_OFF_DEBOUNCE_CYCLES     30
+#define WALK_ASSIST_OFF_DEBOUNCE_CYCLES     25
 
 uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 
