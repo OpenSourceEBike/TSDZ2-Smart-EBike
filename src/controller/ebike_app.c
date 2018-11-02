@@ -644,7 +644,7 @@ static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_curr
     
     *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
     
-    *ui8_target_current = 5; // 5A, TODO: configurable through display?
+    *ui8_target_current = 5; // ~3A, TODO: configurable through display?
     *ui8_startup_enable = 1; // enable motor startup
 
     //PI examples
