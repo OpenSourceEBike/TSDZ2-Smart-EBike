@@ -17,6 +17,7 @@
 #define EBIKE_APP_STATE_MOTOR_STARTUP   2
 #define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
+#define MIN_BATTERY_CURRENT             0.5
 
 typedef struct _configuration_variables
 {

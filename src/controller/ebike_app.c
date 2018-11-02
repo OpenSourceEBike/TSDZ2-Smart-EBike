@@ -256,6 +256,15 @@ static void ebike_control_motor (void)
     }
   }
 
+  /*
+   * Add a minimal motor workload by setting a min current value
+   */
+  if (wheel_speed > 0)
+  {
+	  ui8_adc_battery_target_current = ui8_adc_battery_target_current > MIN_BATTERY_CURRENT ?
+			  ui8_adc_battery_target_current : MIN_BATTERY_CURRENT;
+  }
+
   /* Limit current if motor temperature too high and this feature is enabled by the user */
   if (configuration_variables.ui8_temperature_limit_feature_enabled)
   {
