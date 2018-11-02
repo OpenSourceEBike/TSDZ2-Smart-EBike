@@ -17,7 +17,7 @@
 #define EBIKE_APP_STATE_MOTOR_STARTUP   2
 #define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
-#define MIN_BATTERY_CURRENT             1 //1 unit = 0.625 amp
+#define MIN_ADC_BATTERY_CURRENT         1 //1 unit = 0.625 amp
 
 #define MIN_ADC_TORQUE_UNITS            8
 #define MIN_CADENCE_RPM                25
