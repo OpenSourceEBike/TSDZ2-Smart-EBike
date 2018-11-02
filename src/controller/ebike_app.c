@@ -261,8 +261,7 @@ static void ebike_control_motor (void)
    */
   if (wheel_speed > 0)
   {
-	  ui8_adc_battery_target_current = ui8_adc_battery_target_current > MIN_BATTERY_CURRENT ?
-			  ui8_adc_battery_target_current : MIN_BATTERY_CURRENT;
+	  ui8_adc_battery_target_current += MIN_BATTERY_CURRENT;
   }
 
   /* Limit current if motor temperature too high and this feature is enabled by the user */
