@@ -80,6 +80,9 @@ static uint32_t ui32_torque_sensor_force_x1000;
 static uint32_t ui32_torque_accumulated = 0;
 static uint16_t ui32_torque_accumulated_filtered_x10;
 
+static uint16_t ui16_pedal_cadence_accumulated = 0;
+static uint8_t ui8_pedal_cadence_filtered;
+
 static uint8_t ui8_motor_controller_init = 1;
 
 static uint8_t ui8_lights_state = 0;
@@ -93,6 +96,12 @@ static uint8_t ui8_lcd_menu_flash_state;
 static uint8_t ui8_lcd_menu_flash_state_temperature;
 static uint8_t ui8_lcd_menu_config_submenu_number = 0;
 static uint8_t ui8_lcd_menu_config_submenu_active = 0;
+
+static uint8_t ui8_lcd_menu_counter_100ms = 0;
+static uint8_t ui8_lcd_menu_counter_100ms_state = 0;
+
+static uint8_t ui8_lcd_menu_counter_500ms = 0;
+static uint8_t ui8_lcd_menu_counter_500ms_state = 0;
 
 static struct_motor_controller_data motor_controller_data;
 static struct_configuration_variables configuration_variables;
@@ -129,6 +138,7 @@ uint8_t first_time_management (void);
 void temperature (void);
 void battery_soc (void);
 void low_pass_filter_pedal_torque (void);
+static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
 void lcd_set_backlight_intensity (uint8_t ui8_intensity);
 void walk_assist_state (void);
@@ -239,6 +249,8 @@ void clock_lcd (void)
 
   low_pass_filter_battery_voltage_current_power ();
   low_pass_filter_pedal_torque ();
+  // filter using only each 500ms values
+  if (ui8_lcd_menu_counter_500ms_state) { low_pass_filter_pedal_cadence (); }
   calc_wh ();
   calc_odometer ();
   automatic_power_off_management ();
@@ -1706,7 +1718,7 @@ void odometer (void)
 
     // pedal cadence value
     case 5:
-      lcd_print (motor_controller_data.ui8_pedal_cadence, ODOMETER_FIELD, 1);
+      lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 1);
     break;
 
     // battery SOC in watts/hour
@@ -2188,6 +2200,23 @@ void low_pass_filter_pedal_torque (void)
   }
 }
 
+static void low_pass_filter_pedal_cadence (void)
+{
+  // low pass filter
+  ui16_pedal_cadence_accumulated -= (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
+  ui16_pedal_cadence_accumulated += (uint16_t) motor_controller_data.ui8_pedal_cadence;
+
+  // consider the filtered value only for medium and high values of the unfiltered value
+  if (motor_controller_data.ui8_pedal_cadence > 20)
+  {
+    ui8_pedal_cadence_filtered = (uint8_t) (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
+  }
+  else
+  {
+    ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
+  }
+}
+
 void calc_wh (void)
 {
   static uint8_t ui8_100ms_timmer_counter;
@@ -2323,6 +2352,22 @@ void update_menu_flashing_state (void)
       ui8_lcd_menu_flash_state = 0;
     else
       ui8_lcd_menu_flash_state = 1;
+  }
+  // ***************************************************************************************************
+
+  // ***************************************************************************************************
+  ui8_lcd_menu_counter_100ms_state = 0;
+  if (ui8_lcd_menu_counter_100ms++ > 10)
+  {
+    ui8_lcd_menu_counter_100ms = 0;
+    ui8_lcd_menu_counter_100ms_state = 1;
+  }
+
+  ui8_lcd_menu_counter_500ms_state = 0;
+  if (ui8_lcd_menu_counter_500ms++ > 50)
+  {
+    ui8_lcd_menu_counter_500ms = 0;
+    ui8_lcd_menu_counter_500ms_state = 1;
   }
   // ***************************************************************************************************
 
