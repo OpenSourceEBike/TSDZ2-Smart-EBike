@@ -259,7 +259,7 @@ static void ebike_control_motor (void)
   /*
    * Add a minimal motor workload by setting a min current value
    */
-  if (wheel_speed > 0)
+  if (ui16_wheel_speed_x10 > 0)
   {
 	  ui8_adc_battery_target_current += MIN_BATTERY_CURRENT;
   }
