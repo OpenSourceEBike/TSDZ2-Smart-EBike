@@ -23,7 +23,7 @@
 #include "uart.h"
 
 #define LCD_MENU_CONFIG_SUBMENU_MAX_NUMBER  10
-#define WALK_ASSIST_OFF_DEBOUNCE_TIME       50
+#define WALK_ASSIST_OFF_DEBOUNCE_CYCLES     20
 
 uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 
@@ -1641,7 +1641,7 @@ void walk_assist_state (void)
       motor_controller_data.ui8_walk_assist_level = 1;
       lcd_enable_walk_symbol (1);
     }
-    else if (ui8_walk_assist_off_debounce_timer >= WALK_ASSIST_OFF_DEBOUNCE_TIME)
+    else if (ui8_walk_assist_off_debounce_timer >= WALK_ASSIST_OFF_DEBOUNCE_CYCLES)
     {
       ui8_walk_assist_off_debounce_timer = 0;
 

@@ -95,6 +95,8 @@ uint16_t ui16_adc_motor_temperatured_accumulated = 0;
 
 uint8_t ui8_adc_battery_target_current;
 
+struct_pi_controller_state walk_assist_wheel_speed_pi_controller_state;
+
 static void ebike_control_motor (void);
 static void ebike_app_set_battery_max_current (uint8_t ui8_value);
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
@@ -113,7 +115,7 @@ static uint16_t calc_filtered_battery_voltage (void);
 static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
-static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_current, uint8_t *ui8_startup_enable);
+static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_current, uint8_t *ui8_startup_enable, uint8_t *ui8_tmp_duty_cycle_target);
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
@@ -128,6 +130,12 @@ void ebike_app_init (void)
   // init variables with the stored value on EEPROM
   eeprom_init_variables ();
   ebike_app_set_battery_max_current (ADC_BATTERY_CURRENT_MAX);
+
+  walk_assist_wheel_speed_pi_controller_state.ui8_kp_dividend = WALK_ASSIST_PI_CONTROLLER_KP_DIVIDEND;
+  walk_assist_wheel_speed_pi_controller_state.ui8_kp_divisor = WALK_ASSIST_PI_CONTROLLER_KP_DIVISOR;
+  walk_assist_wheel_speed_pi_controller_state.ui8_ki_dividend = WALK_ASSIST_PI_CONTROLLER_KI_DIVIDEND;
+  walk_assist_wheel_speed_pi_controller_state.ui8_ki_divisor = WALK_ASSIST_PI_CONTROLLER_KI_DIVISOR;
+  walk_assist_wheel_speed_pi_controller_state.i16_i_term = 0;
 }
 
 void ebike_app_controller (void)
@@ -151,6 +159,7 @@ static void ebike_control_motor (void)
   uint8_t ui8_startup_enable;
   uint8_t ui8_boost_enabled_and_applied = 0;
   uint8_t ui8_tmp_max_speed;
+  uint8_t ui8_tmp_duty_cycle_target = 255;
 
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
 
@@ -270,7 +279,7 @@ static void ebike_control_motor (void)
   }
 
   /* Walk assist */
-  apply_walk_assist (ui16_wheel_speed_x10, &ui8_adc_battery_target_current, &ui8_startup_enable);
+  apply_walk_assist (ui16_wheel_speed_x10, &ui8_adc_battery_target_current, &ui8_startup_enable, &ui8_tmp_duty_cycle_target);
 
   // finally set the target battery current to the current controller
   ebike_app_set_target_adc_battery_max_current (ui8_adc_battery_target_current);
@@ -280,7 +289,7 @@ static void ebike_control_motor (void)
   // if ui8_startup_enable == 0, put duty_cycle at 0
   if (ui8_adc_battery_target_current && ui8_startup_enable && (!brake_is_set()))
   {
-    motor_set_pwm_duty_cycle_target (255);
+    motor_set_pwm_duty_cycle_target (ui8_tmp_duty_cycle_target);
   }
   else
   {
@@ -624,18 +633,32 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
   }
 #endif
 
-static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_current, uint8_t *ui8_startup_enable)
+static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_current, uint8_t *ui8_startup_enable, uint8_t *ui8_tmp_duty_cycle_target)
 {
   if (configuration_variables.ui8_walk_assist)
   {
-    *ui8_target_current = (uint8_t) (map ((uint32_t) ui16_speed_x10,
-                                          (uint32_t) 3 * 10,
-                                          (uint32_t) 6 * 10,
-                                          (uint32_t) *ui8_target_current,
-                                          (uint32_t) 0));
+    uint8_t ui8_tmp_speed_x10 = ui16_speed_x10 <= 255 ? (uint8_t) ui16_speed_x10 : 255;
 
-    *ui8_startup_enable = 1;
-  }  
+    walk_assist_wheel_speed_pi_controller_state.ui8_current_value = ui8_tmp_speed_x10;
+    walk_assist_wheel_speed_pi_controller_state.ui8_target_value = 5 * 10;
+    pi_controller (&walk_assist_wheel_speed_pi_controller_state);
+    
+    *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
+    
+    *ui8_target_current = 1; // minimum current
+    *ui8_startup_enable = 1; // enable motor startup
+
+    //PI examples
+
+    //error = 60 - 0 = 60
+    //p = (60 * 20) / 16 = 75
+    //i += (60 * 5) / 64 = ~4
+    //temp = 79 (first time)
+  }
+  else
+  {
+    pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
+  }
 }
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)
