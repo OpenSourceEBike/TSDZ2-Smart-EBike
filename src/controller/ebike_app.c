@@ -64,9 +64,8 @@ uint16_t ui16_startup_boost_fade_variable_x256;
 uint16_t ui16_startup_boost_fade_variable_step_amount_x256;
 
 // wheel speed
-volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
+volatile uint32_t ui32_wheel_speed_sensor_pwm_cycles_ticks = (uint32_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
 uint8_t ui8_wheel_speed_max = 0;
-float f_wheel_speed_x10;
 uint16_t ui16_wheel_speed_x10;
 volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
 
@@ -125,25 +124,23 @@ static void boost_run_statemachine (void);
 static uint8_t apply_boost (uint8_t ui8_pas_cadence, uint32_t ui32_max_current_boost_state_x4, uint8_t *ui8_target_current);
 static void apply_boost_fade_out (uint8_t *ui8_target_current);
 
+static void init_walk_assist_pi_controller (void);
+
 void ebike_app_init (void)
 {
   // init variables with the stored value on EEPROM
   eeprom_init_variables ();
   ebike_app_set_battery_max_current (ADC_BATTERY_CURRENT_MAX);
 
-  walk_assist_wheel_speed_pi_controller_state.ui8_kp_dividend = WALK_ASSIST_PI_CONTROLLER_KP_DIVIDEND;
-  walk_assist_wheel_speed_pi_controller_state.ui8_kp_divisor = WALK_ASSIST_PI_CONTROLLER_KP_DIVISOR;
-  walk_assist_wheel_speed_pi_controller_state.ui8_ki_dividend = WALK_ASSIST_PI_CONTROLLER_KI_DIVIDEND;
-  walk_assist_wheel_speed_pi_controller_state.ui8_ki_divisor = WALK_ASSIST_PI_CONTROLLER_KI_DIVISOR;
-  walk_assist_wheel_speed_pi_controller_state.i16_i_term = 0;
+  init_walk_assist_pi_controller (); 
 }
 
 void ebike_app_controller (void)
 {
   throttle_read ();
-  torque_sensor_read ();
-  read_pas_cadence ();
   calc_wheel_speed ();
+  torque_sensor_read ();
+  read_pas_cadence ();  
   calc_motor_temperature ();
   ebike_control_motor ();
   communications_controller ();
@@ -561,10 +558,12 @@ static void ebike_app_set_battery_max_current (uint8_t ui8_value)
 
 static void calc_wheel_speed (void)
 {
+  float f_wheel_speed_x10;
+
   // calc wheel speed in km/h
-  if (ui16_wheel_speed_sensor_pwm_cycles_ticks < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS)
+  if (ui32_wheel_speed_sensor_pwm_cycles_ticks < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS)
   {
-    f_wheel_speed_x10 = ((float) PWM_CYCLES_SECOND) / ((float) ui16_wheel_speed_sensor_pwm_cycles_ticks); // rps
+    f_wheel_speed_x10 = ((float) PWM_CYCLES_SECOND) / ((float) ui32_wheel_speed_sensor_pwm_cycles_ticks); // rps
     f_wheel_speed_x10 *= configuration_variables.ui16_wheel_perimeter; // millimeters per second
     f_wheel_speed_x10 *= 0.036; // ((3600 / (1000 * 1000)) * 10) kms per hour * 10
     ui16_wheel_speed_x10 = (uint16_t) f_wheel_speed_x10;
@@ -640,7 +639,7 @@ static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_curr
     uint8_t ui8_tmp_speed_x10 = ui16_speed_x10 <= 255 ? (uint8_t) ui16_speed_x10 : 255;
 
     walk_assist_wheel_speed_pi_controller_state.ui8_current_value = ui8_tmp_speed_x10;
-    walk_assist_wheel_speed_pi_controller_state.ui8_target_value = 5 * 10;
+    walk_assist_wheel_speed_pi_controller_state.ui8_target_value = 4 * 10;
     pi_controller (&walk_assist_wheel_speed_pi_controller_state);
     
     *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
@@ -899,6 +898,15 @@ static void throttle_read (void)
       (uint8_t) ADC_THROTTLE_MAX_VALUE,
       (uint8_t) 0,
       (uint8_t) 255));
+}
+
+static void init_walk_assist_pi_controller (void)
+{
+  walk_assist_wheel_speed_pi_controller_state.ui8_kp_dividend = WALK_ASSIST_PI_CONTROLLER_KP_DIVIDEND;
+  walk_assist_wheel_speed_pi_controller_state.ui8_kp_divisor = WALK_ASSIST_PI_CONTROLLER_KP_DIVISOR;
+  walk_assist_wheel_speed_pi_controller_state.ui8_ki_dividend = WALK_ASSIST_PI_CONTROLLER_KI_DIVIDEND;
+  walk_assist_wheel_speed_pi_controller_state.ui8_ki_divisor = WALK_ASSIST_PI_CONTROLLER_KI_DIVISOR;
+  walk_assist_wheel_speed_pi_controller_state.i16_i_term = 0;
 }
 
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so

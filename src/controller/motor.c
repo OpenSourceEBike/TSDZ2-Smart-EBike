@@ -415,7 +415,7 @@ uint16_t ui16_torque_sensor_throttle_value;
 // wheel speed
 uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
-uint16_t ui16_wheel_speed_sensor_counter = 0;
+uint32_t ui32_wheel_speed_sensor_counter = 0;
 uint8_t ui8_wheel_speed_sensor_change_counter = 0;
 
 uint8_t experimental_high_cadence_mode = 0;
@@ -831,13 +831,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
    /****************************************************************************/
    // calc wheel speed sensor timming between each positive pulses, in PWM cycles ticks
-   ui16_wheel_speed_sensor_counter++;
+   ui32_wheel_speed_sensor_counter++;
 
    // limit min wheel speed
-   if (ui16_wheel_speed_sensor_counter > ((uint16_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS))
+   if (ui32_wheel_speed_sensor_counter > ((uint32_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS))
    {
-     ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS;
-     ui16_wheel_speed_sensor_counter = 0;
+     ui32_wheel_speed_sensor_pwm_cycles_ticks = (uint32_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS;
+     ui32_wheel_speed_sensor_counter = 0;
      ui8_wheel_speed_sensor_change_counter = 0;
    }
    // let´s look if signal state changed
@@ -865,8 +865,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
          if (ui8_wheel_speed_sensor_change_counter >= 2)
          {
-           ui16_wheel_speed_sensor_pwm_cycles_ticks = ui16_wheel_speed_sensor_counter;
-           ui16_wheel_speed_sensor_counter = 0;
+           ui32_wheel_speed_sensor_pwm_cycles_ticks = ui32_wheel_speed_sensor_counter;
+           ui32_wheel_speed_sensor_counter = 0;
            ui32_wheel_speed_sensor_tick_counter++;
            ui8_wheel_speed_sensor_change_counter = 1; // keep this counter as 1, meaning we just counted one previous change
          }

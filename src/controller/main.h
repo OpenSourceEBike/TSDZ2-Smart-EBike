@@ -69,7 +69,7 @@
 // *************************************************************************** //
 // Wheel speed sensor
 #define WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS  135 // something like 200m/h with a 6'' wheel
-#define WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS  32767 // could be a bigger number but will make slow detecting wheel stopped
+#define WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS  65535 // (originally 32767) could be a bigger number but will make slow detecting wheel stopped
 // *************************************************************************** //
 
 // *************************************************************************** //

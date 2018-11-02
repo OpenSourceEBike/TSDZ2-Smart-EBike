@@ -64,7 +64,7 @@ extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_pas_direction;
 extern uint8_t ui8_pas_cadence_rpm;
 
-extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
+extern volatile uint32_t ui32_wheel_speed_sensor_pwm_cycles_ticks;
 extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;
 
 extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
