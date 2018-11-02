@@ -22,7 +22,8 @@
 #include "pins.h"
 #include "uart.h"
 
-#define LCD_MENU_CONFIG_SUBMENU_MAX_NUMBER 10
+#define LCD_MENU_CONFIG_SUBMENU_MAX_NUMBER  10
+#define WALK_ASSIST_OFF_DEBOUNCE_TIME       50
 
 uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 
@@ -118,6 +119,8 @@ static uint8_t offroad_mode_assist_symbol_state = 0;
 static uint8_t offroad_mode_assist_symbol_state_blink_counter = 0;
 
 static uint16_t ui16_battery_voltage_soc_x10;
+
+static uint8_t ui8_walk_assist_off_debounce_timer = 0;
 
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
@@ -1629,16 +1632,26 @@ void walk_assist_state (void)
 {
   if (get_button_down_long_click_event ())
   {
-    // user need to keep pressing the button to have walk assist
+    // user need to keep pressing the button to have walk assist,
+    // but leaving the button for a short period of time is allowed to compensate for e.g. rough terrain
     if (get_button_down_state ())
     {
+      ui8_walk_assist_off_debounce_timer = 0;
+
       motor_controller_data.ui8_walk_assist_level = 1;
       lcd_enable_walk_symbol (1);
     }
-    else
+    else if (ui8_walk_assist_off_debounce_timer >= WALK_ASSIST_OFF_DEBOUNCE_TIME)
     {
+      ui8_walk_assist_off_debounce_timer = 0;
+
       motor_controller_data.ui8_walk_assist_level = 0;
       clear_button_down_long_click_event ();
+    }
+    else
+    {
+      ui8_walk_assist_off_debounce_timer++;
+      lcd_enable_walk_symbol (1);
     }
   }
 }
