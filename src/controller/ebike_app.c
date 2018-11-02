@@ -113,6 +113,7 @@ static uint16_t calc_filtered_battery_voltage (void);
 static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
+static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_current, uint8_t *ui8_startup_enable);
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
@@ -267,6 +268,9 @@ static void ebike_control_motor (void)
     // otherwise temperature symbol on display will be blinking
     configuration_variables.ui8_temperature_current_limiting_value = 255;
   }
+
+  /* Walk assist */
+  apply_walk_assist (ui16_wheel_speed_x10, &ui8_adc_battery_target_current, &ui8_startup_enable);
 
   // finally set the target battery current to the current controller
   ebike_app_set_target_adc_battery_max_current (ui8_adc_battery_target_current);
@@ -619,6 +623,20 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
     if (*ui8_target_current) { *ui8_motor_enable = 1; }
   }
 #endif
+
+static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_current, uint8_t *ui8_startup_enable)
+{
+  if (configuration_variables.ui8_walk_assist)
+  {
+    *ui8_target_current = (uint8_t) (map ((uint32_t) ui16_speed_x10,
+                                          (uint32_t) 3 * 10,
+                                          (uint32_t) 6 * 10,
+                                          (uint32_t) *ui8_target_current,
+                                          (uint32_t) 0));
+
+    *ui8_startup_enable = 1;
+  }  
+}
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)
 {
