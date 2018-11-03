@@ -418,7 +418,9 @@ uint8_t ui8_wheel_speed_sensor_state_old = 1;
 uint32_t ui32_wheel_speed_sensor_counter = 0;
 uint8_t ui8_wheel_speed_sensor_change_counter = 0;
 
-uint8_t experimental_high_cadence_mode = 0;
+uint8_t ui8_experimental_high_cadence_mode = 0;
+
+uint16_t ui16_max_motor_over_speed_erps = MOTOR_OVER_SPEED_ERPS;
 
 void read_battery_voltage (void);
 void read_battery_current (void);
@@ -645,19 +647,15 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_duty_cycle--;
     }
   }
-  else if ((ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS) && // motor speed over max ERPS, reduce duty_cycle
+  else if ((ui16_motor_speed_erps > ui16_max_motor_over_speed_erps) && // motor speed over max ERPS, reduce duty_cycle
       (ui8_motor_over_speed_erps_flag == 0))
   {
-    // test for high cadence mode (experimental)
-    if (!experimental_high_cadence_mode || (ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL))
-    {
-      ui8_motor_over_speed_erps_flag = 1;
+    ui8_motor_over_speed_erps_flag = 1;
 
-      if (ui8_duty_cycle > 0)
-      {
-        ui8_duty_cycle--;
-      }
-    }    
+    if (ui8_duty_cycle > 0)
+    {
+      ui8_duty_cycle--;
+    }
   }
   else // nothing to limit, so, adjust duty_cycle to duty_cycle_target, including ramping
   {
@@ -921,6 +919,8 @@ void hall_sensor_init (void)
 
 void motor_init (void)
 {
+  motor_restore_max_motor_over_speed_erps (); // set absolute maximum values MOTOR_OVER_SPEED_ERPS or MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL
+
   motor_set_pwm_duty_cycle_ramp_up_inverse_step (PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP); // each step = 64us
   motor_set_pwm_duty_cycle_ramp_down_inverse_step (PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP); // each step = 64us
   motor_set_phase_current_max (ADC_MOTOR_PHASE_CURRENT_MAX);
@@ -954,6 +954,18 @@ void motor_set_phase_current_max (uint8_t ui8_value)
 uint16_t ui16_motor_get_motor_speed_erps (void)
 {
   return ui16_motor_speed_erps;
+}
+
+void motor_set_motor_over_speed_erps (uint16_t value)
+{
+  uint16_t ui16_tmp_max_motor_over_speed_erps = ui8_experimental_high_cadence_mode ? MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL : MOTOR_OVER_SPEED_ERPS;
+  
+  ui16_max_motor_over_speed_erps = value > ui16_tmp_max_motor_over_speed_erps ? ui16_tmp_max_motor_over_speed_erps : value;
+}
+
+void motor_restore_max_motor_over_speed_erps (void)
+{
+  ui16_max_motor_over_speed_erps = ui8_experimental_high_cadence_mode ? MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL : MOTOR_OVER_SPEED_ERPS;
 }
 
 void read_battery_voltage (void)
@@ -1029,27 +1041,34 @@ void calc_foc_angle (void)
   // ---------------------------------------------------------------------------------------------------------------------
   // ui32_l_x1048576 = 142 <--- THIS VALUE WAS verified experimentaly on 2018.07 to be near the best value for a 48V motor,
   // test done with a fixed mechanical load, duty_cycle = 200 and 100 and measured battery current was 16 and 6 (10 and 4 amps)
+  uint8_t ui8_previous_experimental_high_cadence_mode = ui8_experimental_high_cadence_mode;
+
   switch (p_configuration_variables->ui8_motor_type)
   {
     case 0:
       ui32_l_x1048576 = 142; // 48V motor
-      experimental_high_cadence_mode = 0;
+      ui8_experimental_high_cadence_mode = 0;
     break;
 
     case 1:
       ui32_l_x1048576 = 80; // 36V motor
-      experimental_high_cadence_mode = 0;
+      ui8_experimental_high_cadence_mode = 0;
     break;
     
     case 2: // experimental high cadence mode
       ui32_l_x1048576 = 115; // confirmed working with the 36V motor (only) by jbalat so far
-      experimental_high_cadence_mode = 1;
+      ui8_experimental_high_cadence_mode = 1;
     break;
 
     default:
       ui32_l_x1048576 = 142; // 48V motor
-      experimental_high_cadence_mode = 0;
+      ui8_experimental_high_cadence_mode = 0;
     break;
+  }
+
+  if (ui8_previous_experimental_high_cadence_mode != ui8_experimental_high_cadence_mode)
+  {
+    motor_restore_max_motor_over_speed_erps ();
   }
 
   // calc IwL

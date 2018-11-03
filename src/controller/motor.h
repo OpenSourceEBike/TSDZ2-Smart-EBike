@@ -44,6 +44,8 @@ void motor_set_current_max (uint8_t value); // steps of 0.25A each step
 void motor_set_pwm_duty_cycle_ramp_up_inverse_step (uint16_t value); // each step = 64us
 void motor_set_pwm_duty_cycle_ramp_down_inverse_step (uint16_t value); // each step = 64us
 uint16_t ui16_motor_get_motor_speed_erps (void);
+void motor_set_motor_over_speed_erps (uint16_t value);
+void motor_restore_max_motor_over_speed_erps (void);
 void motor_controller_set_state (uint8_t state);
 void motor_controller_reset_state (uint8_t state);
 uint8_t motor_controller_state_is_set (uint8_t state);

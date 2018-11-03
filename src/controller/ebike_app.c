@@ -25,16 +25,19 @@
 #include "utils.h"
 #include "lights.h"
 
-#define STATE_NO_PEDALLING                0
-#define STATE_STARTUP_PEDALLING           1
-#define STATE_PEDALLING                   2
+#define STATE_NO_PEDALLING                    0
+#define STATE_STARTUP_PEDALLING               1
+#define STATE_PEDALLING                       2
 
-#define BOOST_STATE_BOOST_DISABLED        0
-#define BOOST_STATE_START_BOOST           1
-#define BOOST_STATE_BOOST                 2
-#define BOOST_STATE_END_BOOST             3
-#define BOOST_STATE_FADE                  4
-#define BOOST_STATE_BOOST_WAIT_TO_RESTART 5
+#define BOOST_STATE_BOOST_DISABLED            0
+#define BOOST_STATE_START_BOOST               1
+#define BOOST_STATE_BOOST                     2
+#define BOOST_STATE_END_BOOST                 3
+#define BOOST_STATE_FADE                      4
+#define BOOST_STATE_BOOST_WAIT_TO_RESTART     5
+
+#define WALK_ASSIST_TARGET_SPEED_KMH_X10      50 // 4 km/h, TODO: make configurable through display
+#define WALK_ASSIST_TARGET_CURRENT_ADC_UNITS  8 // 5A as 1 unit = 0.625A, TODO: make configurable through display?
 
 uint8_t ui8_adc_battery_max_current = ADC_BATTERY_CURRENT_MAX;
 uint8_t ui8_target_battery_max_power_x10 = ADC_BATTERY_CURRENT_MAX;
@@ -95,6 +98,8 @@ uint16_t ui16_adc_motor_temperatured_accumulated = 0;
 uint8_t ui8_adc_battery_target_current;
 
 struct_pi_controller_state walk_assist_wheel_speed_pi_controller_state;
+
+static uint16_t ui16_walk_assist_target_motor_erps = 0; // must be static
 
 static void ebike_control_motor (void);
 static void ebike_app_set_battery_max_current (uint8_t ui8_value);
@@ -563,7 +568,7 @@ static void calc_wheel_speed (void)
   // calc wheel speed in km/h
   if (ui32_wheel_speed_sensor_pwm_cycles_ticks < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS)
   {
-    f_wheel_speed_x10 = ((float) PWM_CYCLES_SECOND) / ((float) ui32_wheel_speed_sensor_pwm_cycles_ticks); // rps
+    f_wheel_speed_x10 = ((float) PWM_CYCLES_SECOND) / ui32_wheel_speed_sensor_pwm_cycles_ticks; // rps
     f_wheel_speed_x10 *= configuration_variables.ui16_wheel_perimeter; // millimeters per second
     f_wheel_speed_x10 *= 0.036; // ((3600 / (1000 * 1000)) * 10) kms per hour * 10
     ui16_wheel_speed_x10 = (uint16_t) f_wheel_speed_x10;
@@ -636,27 +641,51 @@ static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_curr
 {
   if (configuration_variables.ui8_walk_assist)
   {
-    uint8_t ui8_tmp_speed_x10 = ui16_speed_x10 <= 255 ? (uint8_t) ui16_speed_x10 : 255;
+    // if (ui16_speed_x10 >= (WALK_ASSIST_TARGET_SPEED_KMH_X10 + 10)) // recalculate desired motor ERPS when speed is 1 km/h too high
+    // {
+    //   pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
 
-    walk_assist_wheel_speed_pi_controller_state.ui8_current_value = ui8_tmp_speed_x10;
-    walk_assist_wheel_speed_pi_controller_state.ui8_target_value = 4 * 10; // TODO: configurable through display
-    pi_controller (&walk_assist_wheel_speed_pi_controller_state);
+    //   ui16_walk_assist_target_motor_erps = 0; // restore max motor over speed ERPS      
+    // }
+
+    if (ui16_walk_assist_target_motor_erps == 0)
+    {
+      if (ui16_speed_x10 >= (WALK_ASSIST_TARGET_SPEED_KMH_X10 - 1) && ui16_speed_x10 <= (WALK_ASSIST_TARGET_SPEED_KMH_X10 + 1)) //speed within +/- 0.1 km/h
+      {
+        pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
+        
+        *ui8_tmp_duty_cycle_target = 255;
+        ui16_walk_assist_target_motor_erps = ui16_motor_get_motor_speed_erps ();
+      }
+      else
+      {
+        uint8_t ui8_tmp_speed_x10 = ui16_speed_x10 <= 255 ? (uint8_t) ui16_speed_x10 : 255;
+
+        walk_assist_wheel_speed_pi_controller_state.ui8_current_value = ui8_tmp_speed_x10;
+        walk_assist_wheel_speed_pi_controller_state.ui8_target_value = WALK_ASSIST_TARGET_SPEED_KMH_X10;
+        pi_controller (&walk_assist_wheel_speed_pi_controller_state);
+          
+        *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
+
+        //PI examples
+
+        //error = 60 - 0 = 60
+        //p = (60 * 20) / 16 = 75
+        //i += (60 * 3) / 64 = ~2.8
+        //temp = ~78 (first time)
+      }
+    }
+
+    if (ui16_walk_assist_target_motor_erps > 0) { motor_set_motor_over_speed_erps (ui16_walk_assist_target_motor_erps); }
+    else { motor_restore_max_motor_over_speed_erps (); }
     
-    *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
-    
-    *ui8_target_current = 5; // ~3A, TODO: configurable through display?
+    *ui8_target_current = WALK_ASSIST_TARGET_CURRENT_ADC_UNITS;
     *ui8_startup_enable = 1; // enable motor startup
-
-    //PI examples
-
-    //error = 60 - 0 = 60
-    //p = (60 * 20) / 16 = 75
-    //i += (60 * 5) / 64 = ~4
-    //temp = 79 (first time)
   }
   else
   {
     pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
+    motor_restore_max_motor_over_speed_erps ();
   }
 }
 
