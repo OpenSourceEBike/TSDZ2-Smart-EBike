@@ -209,12 +209,12 @@ static void ebike_control_motor (void)
   if (!ui8_boost_enabled_and_applied)
   {
     /*
-     * In case of wheel speed > 0
+     * In case of measured cadence > 0
      * 	Human cadence has a minimum value of MIN_CADENCE_RPM.
      * 	Human torque has minimum MIN_TORQUE_UNITS(32 maximum).
-     * If stopped use old behavior.
+     * If stopped or pedal stop use old behavior.
      */
-    if (ui16_wheel_speed_x10 > 0 && ui8_tmp_pas_cadence_rpm > 0)
+    if (ui8_tmp_pas_cadence_rpm > 0)
     {
     	/*
     	 * Cadence

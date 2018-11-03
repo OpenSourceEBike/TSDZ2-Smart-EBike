@@ -19,8 +19,8 @@
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
 #define MIN_ADC_BATTERY_CURRENT         1 //1 unit = 0.625 amp
 
-#define MIN_ADC_TORQUE_UNITS            4
-#define MIN_CADENCE_RPM                15
+#define MIN_ADC_TORQUE_UNITS            5
+#define MIN_CADENCE_RPM                10
 
 typedef struct _configuration_variables
 {
