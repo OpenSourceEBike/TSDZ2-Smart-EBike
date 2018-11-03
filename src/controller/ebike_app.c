@@ -211,10 +211,10 @@ static void ebike_control_motor (void)
     /*
      * In case of wheel speed > 0
      * 	Human cadence has a minimum value of MIN_CADENCE_RPM.
-     * 	Human torque has minimum MIN_TORQUE_UNITS(32 * ADC_TORQUE_UNITS = 256 TORQUE_UNITS so 1/8).
+     * 	Human torque has minimum MIN_TORQUE_UNITS(32 maximum).
      * If stopped use old behavior.
      */
-    if (ui16_wheel_speed_x10 > 0)
+    if (ui16_wheel_speed_x10 > 0 && ui8_tmp_pas_cadence_rpm > 0)
     {
     	/*
     	 * Cadence
