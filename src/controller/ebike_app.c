@@ -36,7 +36,7 @@
 #define BOOST_STATE_FADE                      4
 #define BOOST_STATE_BOOST_WAIT_TO_RESTART     5
 
-#define WALK_ASSIST_TARGET_SPEED_KMH_X10      50 // 4 km/h, TODO: make configurable through display
+#define WALK_ASSIST_TARGET_SPEED_KMH_X10      40 // 4 km/h, TODO: make configurable through display
 #define WALK_ASSIST_TARGET_CURRENT_ADC_UNITS  8 // 5A as 1 unit = 0.625A, TODO: make configurable through display?
 
 uint8_t ui8_adc_battery_max_current = ADC_BATTERY_CURRENT_MAX;
