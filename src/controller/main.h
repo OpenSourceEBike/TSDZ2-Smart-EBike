@@ -83,6 +83,7 @@
 #define DEFAULT_VALUE_OFFROAD_CONFIG                    0
 #define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT               25 // 25km/h
 #define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25         10 // 10 * 25 = 250W
+#define DEFAULT_VALUE_WALK_ASSIST_ERPS                  25
 // *************************************************************************** //
 
 // *************************************************************************** //

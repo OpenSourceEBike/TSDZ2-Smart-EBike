@@ -27,7 +27,8 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_CONFIG_1,
     DEFAULT_VALUE_OFFROAD_CONFIG,
     DEFAULT_VALUE_OFFROAD_SPEED_LIMIT,
-    DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25
+    DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25,
+    DEFAULT_VALUE_WALK_ASSIST_ERPS
   };
 
 static void eeprom_read_values_to_variables (void);
@@ -112,6 +113,8 @@ static void eeprom_read_values_to_variables (void)
 
   p_configuration_variables->ui8_offroad_speed_limit = FLASH_ReadByte (ADDRESS_OFFROAD_SPEED_LIMIT);
   p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_DIV25);
+
+  p_configuration_variables->ui8_walk_assist_erps = FLASH_ReadByte (ADDRESS_WALK_ASSIST_ERPS);
 }
 
 void eeprom_write_variables (void)
@@ -146,6 +149,7 @@ static void variables_to_array (uint8_t *ui8_array)
                         ((p_configuration_variables->ui8_offroad_power_limit_enabled & 1) << 2);
   ui8_array [13] = p_configuration_variables->ui8_offroad_speed_limit;
   ui8_array [14] = p_configuration_variables->ui8_offroad_power_limit_div25;
+  ui8_array [15] = p_configuration_variables->ui8_walk_assist_erps;
 }
 
 static void eeprom_write_array (uint8_t *array)
@@ -188,4 +192,21 @@ void eeprom_write_if_values_changed (void)
 //
 //    ui8_index++;
 //  }
+}
+
+void eeprom_write_value_if_changed (uint32_t address, uint8_t value)
+{
+  uint8_t ui8_temp = FLASH_ReadByte (address);
+  
+  if (value != ui8_temp)
+  {
+    FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
+    
+    FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
+    while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
+
+    FLASH_ProgramByte (address, value);
+
+    FLASH_Lock (FLASH_MEMTYPE_DATA);
+  }
 }

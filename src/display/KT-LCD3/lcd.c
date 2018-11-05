@@ -1578,7 +1578,7 @@ void power (void)
 
 void assist_level_state (void)
 {
-  if (get_button_up_click_event ())
+  if (get_button_up_click_event () && !get_button_down_state ())
   {
     clear_button_up_click_event ();
 
@@ -1638,14 +1638,17 @@ void walk_assist_state (void)
     {
       ui8_walk_assist_off_debounce_timer = 0;
 
-      motor_controller_data.ui8_walk_assist_level = 1;
+      motor_controller_data.ui8_walk_assist_state = 1;
       lcd_enable_walk_symbol (1);
     }
     else if (ui8_walk_assist_off_debounce_timer >= WALK_ASSIST_OFF_DEBOUNCE_CYCLES)
     {
       ui8_walk_assist_off_debounce_timer = 0;
 
-      motor_controller_data.ui8_walk_assist_level = 0;
+      motor_controller_data.ui8_walk_assist_state = 0;
+      motor_controller_data.ui8_walk_assist_erps_up = 0;
+      motor_controller_data.ui8_walk_assist_erps_down = 0;
+
       clear_button_down_long_click_event ();
     }
     else
@@ -1653,6 +1656,14 @@ void walk_assist_state (void)
       ui8_walk_assist_off_debounce_timer++;
       lcd_enable_walk_symbol (1);
     }
+
+    if (motor_controller_data.ui8_walk_assist_state && get_button_up_state ()) { motor_controller_data.ui8_walk_assist_erps_up = 1; }
+    else { motor_controller_data.ui8_walk_assist_erps_up = 0; }
+
+    if (motor_controller_data.ui8_walk_assist_state && get_button_onoff_state ()) { motor_controller_data.ui8_walk_assist_erps_down = 1; }
+    else { motor_controller_data.ui8_walk_assist_erps_down = 0; }
+
+    lcd_print (motor_controller_data.ui16_motor_speed_erps, ODOMETER_FIELD, 1);
   }
 }
 
@@ -1701,7 +1712,7 @@ void odometer (void)
   uint32_t uint32_temp;
 
   // odometer values
-  if (get_button_onoff_click_event ())
+  if (get_button_onoff_click_event () && !get_button_down_state ())
   {
     clear_button_onoff_click_event ();
     odometer_increase_field_state ();

@@ -32,6 +32,9 @@ typedef struct _configuration_variables
   uint16_t ui16_wheel_perimeter;
   uint8_t ui8_lights;
   uint8_t ui8_walk_assist;
+  uint8_t ui8_walk_assist_erps;
+  uint8_t ui8_walk_assist_erps_up;
+  uint8_t ui8_walk_assist_erps_down;
   uint8_t ui8_offroad_mode;
   uint8_t ui8_wheel_max_speed;
   uint8_t ui8_pas_max_cadence;

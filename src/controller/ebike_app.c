@@ -37,7 +37,7 @@
 #define BOOST_STATE_BOOST_WAIT_TO_RESTART     5
 
 #define WALK_ASSIST_TARGET_SPEED_KMH_X10      40 // 4 km/h, TODO: make configurable through display
-#define WALK_ASSIST_TARGET_CURRENT_ADC_UNITS  8 // 5A as 1 unit = 0.625A, TODO: make configurable through display?
+#define WALK_ASSIST_TARGET_CURRENT_ADC_UNITS  5 // ~3A as 1 unit = 0.625A, TODO: make configurable through display?
 
 uint8_t ui8_adc_battery_max_current = ADC_BATTERY_CURRENT_MAX;
 uint8_t ui8_target_battery_max_power_x10 = ADC_BATTERY_CURRENT_MAX;
@@ -99,7 +99,8 @@ uint8_t ui8_adc_battery_target_current;
 
 struct_pi_controller_state walk_assist_wheel_speed_pi_controller_state;
 
-static uint16_t ui16_walk_assist_target_motor_erps = 0; // must be static
+static uint16_t ui16_walk_assist_target_motor_erps = 25; // must be static
+static uint8_t ui8_walk_assist_state_prev = 0;
 
 static void ebike_control_motor (void);
 static void ebike_app_set_battery_max_current (uint8_t ui8_value);
@@ -334,8 +335,10 @@ static void communications_controller (void)
       lights_set_state (configuration_variables.ui8_lights);
       // walk assist
       configuration_variables.ui8_walk_assist = (ui8_rx_buffer [4] & (1 << 1)) ? 1: 0;
+      configuration_variables.ui8_walk_assist_erps_up = (ui8_rx_buffer [4] & (1 << 2)) ? 1: 0;
+      configuration_variables.ui8_walk_assist_erps_down = (ui8_rx_buffer [4] & (1 << 3)) ? 1: 0;
       // offroad mode
-      configuration_variables.ui8_offroad_mode = (ui8_rx_buffer [4]) & (1 << 2) ? 1: 0;
+      configuration_variables.ui8_offroad_mode = (ui8_rx_buffer [4]) & (1 << 4) ? 1: 0;
 
       // battery max current
       configuration_variables.ui8_battery_max_current = ui8_rx_buffer [5];
@@ -641,52 +644,31 @@ static void apply_walk_assist (uint16_t ui16_speed_x10, uint8_t *ui8_target_curr
 {
   if (configuration_variables.ui8_walk_assist)
   {
-    // if (ui16_speed_x10 >= (WALK_ASSIST_TARGET_SPEED_KMH_X10 + 10)) // recalculate desired motor ERPS when speed is 1 km/h too high
-    // {
-    //   pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
-
-    //   ui16_walk_assist_target_motor_erps = 0; // restore max motor over speed ERPS      
-    // }
-
-    if (ui16_walk_assist_target_motor_erps == 0)
+    if (configuration_variables.ui8_walk_assist_erps_up)
     {
-      if (ui16_speed_x10 >= (WALK_ASSIST_TARGET_SPEED_KMH_X10 - 1) && ui16_speed_x10 <= (WALK_ASSIST_TARGET_SPEED_KMH_X10 + 1)) //speed within +/- 0.1 km/h
-      {
-        pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
-        
-        *ui8_tmp_duty_cycle_target = 255;
-        ui16_walk_assist_target_motor_erps = ui16_motor_get_motor_speed_erps ();
-      }
-      else
-      {
-        uint8_t ui8_tmp_speed_x10 = ui16_speed_x10 <= 255 ? (uint8_t) ui16_speed_x10 : 255;
-
-        walk_assist_wheel_speed_pi_controller_state.ui8_current_value = ui8_tmp_speed_x10;
-        walk_assist_wheel_speed_pi_controller_state.ui8_target_value = WALK_ASSIST_TARGET_SPEED_KMH_X10;
-        pi_controller (&walk_assist_wheel_speed_pi_controller_state);
-          
-        *ui8_tmp_duty_cycle_target = walk_assist_wheel_speed_pi_controller_state.ui8_controller_output_value;
-
-        //PI examples
-
-        //error = 60 - 0 = 60
-        //p = (60 * 20) / 16 = 75
-        //i += (60 * 3) / 64 = ~2.8
-        //temp = ~78 (first time)
-      }
+      ui16_walk_assist_target_motor_erps += 2;
+    }
+    else if (configuration_variables.ui8_walk_assist_erps_down && ui16_walk_assist_target_motor_erps >= 25)
+    {
+      ui16_walk_assist_target_motor_erps -= 2;
     }
 
-    if (ui16_walk_assist_target_motor_erps > 0) { motor_set_motor_over_speed_erps (ui16_walk_assist_target_motor_erps); }
-    else { motor_restore_max_motor_over_speed_erps (); }
+    motor_set_motor_over_speed_erps (ui16_walk_assist_target_motor_erps);
     
     *ui8_target_current = WALK_ASSIST_TARGET_CURRENT_ADC_UNITS;
     *ui8_startup_enable = 1; // enable motor startup
   }
   else
   {
-    pi_controller_reset (&walk_assist_wheel_speed_pi_controller_state);
     motor_restore_max_motor_over_speed_erps ();
+
+    if (ui8_walk_assist_state_prev) // try to write ERPS value if value has changed and walk assist was activated previously
+    {
+      // eeprom_write_value_if_changed (ADDRESS_WALK_ASSIST_ERPS, (uint8_t) ui16_walk_assist_target_motor_erps);
+    }
   }
+
+  ui8_walk_assist_state_prev = configuration_variables.ui8_walk_assist;
 }
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)

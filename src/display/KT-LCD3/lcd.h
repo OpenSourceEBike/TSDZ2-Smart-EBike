@@ -31,7 +31,9 @@ typedef struct _motor_controller_data
   uint8_t ui8_braking;
   uint8_t ui8_pedal_cadence;
   uint8_t ui8_lights;
-  uint8_t ui8_walk_assist_level;
+  uint8_t ui8_walk_assist_state;
+  uint8_t ui8_walk_assist_erps_up;
+  uint8_t ui8_walk_assist_erps_down;
   uint8_t ui8_offroad_mode;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;

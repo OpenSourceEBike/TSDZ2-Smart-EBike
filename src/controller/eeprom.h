@@ -29,10 +29,12 @@
 #define ADDRESS_OFFROAD_CONFIG                      12 + EEPROM_BASE_ADDRESS
 #define ADDRESS_OFFROAD_SPEED_LIMIT                 13 + EEPROM_BASE_ADDRESS
 #define ADDRESS_OFFROAD_POWER_LIMIT_DIV25           14 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                         15
+#define ADDRESS_WALK_ASSIST_ERPS                    15 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                         16
 
 void eeprom_init (void);
 void eeprom_init_variables (void);
 void eeprom_write_if_values_changed (void);
+void eeprom_write_value_if_changed (uint32_t address, uint8_t value);
 
 #endif /* _EEPROM_H_ */
