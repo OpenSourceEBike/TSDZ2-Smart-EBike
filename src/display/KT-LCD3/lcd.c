@@ -80,6 +80,9 @@ static uint32_t ui32_torque_sensor_force_x1000;
 static uint32_t ui32_torque_accumulated = 0;
 static uint16_t ui32_torque_accumulated_filtered_x10;
 
+static uint16_t ui16_pedal_cadence_accumulated = 0;
+static uint8_t ui8_pedal_cadence_filtered;
+
 static uint8_t ui8_motor_controller_init = 1;
 
 static uint8_t ui8_lights_state = 0;
@@ -94,6 +97,12 @@ static uint8_t ui8_lcd_menu_flash_state_temperature;
 static uint8_t ui8_lcd_menu_config_submenu_number = 0;
 static uint8_t ui8_lcd_menu_config_submenu_active = 0;
 
+static uint8_t ui8_lcd_menu_counter_100ms = 0;
+static uint8_t ui8_lcd_menu_counter_100ms_state = 0;
+
+static uint8_t ui8_lcd_menu_counter_500ms = 0;
+static uint8_t ui8_lcd_menu_counter_500ms_state = 0;
+
 static struct_motor_controller_data motor_controller_data;
 static struct_configuration_variables configuration_variables;
 
@@ -107,6 +116,8 @@ static uint16_t ui16_lcd_power_off_time_counter = 0;
 
 static uint8_t offroad_mode_assist_symbol_state = 0;
 static uint8_t offroad_mode_assist_symbol_state_blink_counter = 0;
+
+static uint16_t ui16_battery_voltage_soc_x10;
 
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
@@ -128,7 +139,9 @@ void power_off_management (void);
 uint8_t first_time_management (void);
 void temperature (void);
 void battery_soc (void);
+void calc_battery_voltage_soc (void);
 void low_pass_filter_pedal_torque (void);
+static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
 void lcd_set_backlight_intensity (uint8_t ui8_intensity);
 void walk_assist_state (void);
@@ -239,7 +252,10 @@ void clock_lcd (void)
 
   low_pass_filter_battery_voltage_current_power ();
   low_pass_filter_pedal_torque ();
+  // filter using only each 500ms values
+  if (ui8_lcd_menu_counter_500ms_state) { low_pass_filter_pedal_cadence (); }
   calc_wh ();
+  calc_battery_voltage_soc ();
   calc_odometer ();
   automatic_power_off_management ();
 
@@ -452,7 +468,7 @@ void lcd_execute_menu_config_submenu_wheel_config (void)
 
 void lcd_execute_menu_config_submenu_battery (void)
 {
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -538,6 +554,11 @@ void lcd_execute_menu_config_submenu_battery (void)
       {
         lcd_print (configuration_variables.ui16_battery_pack_resistance_x1000, ODOMETER_FIELD, 1);
       }
+    break;
+
+    // battery voltage SOC
+    case 4:
+      lcd_print (ui16_battery_voltage_soc_x10, ODOMETER_FIELD, 0);
     break;
   }
 
@@ -1476,27 +1497,19 @@ void battery_soc (void)
   static uint8_t ui8_timmer_counter;
   static uint8_t ui8_battery_state_of_charge;
   uint8_t ui8_battery_cells_number_x10;
-  uint16_t ui16_battery_voltage_x10;
-  uint16_t ui16_fluctuate_battery_voltage_x10;
 
   // update battery level value only at every 100ms / 10 times per second and this helps to visual filter the fast changing values
   if (ui8_timmer_counter++ >= 10)
   {
     ui8_timmer_counter = 0;
 
-    // calculate flutuate voltage, that depends on the current and battery pack resistance
-    ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
-    // now add fluctuate voltage value
-    ui16_battery_voltage_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
-
     // to keep same scale as voltage of x10
     ui8_battery_cells_number_x10 = configuration_variables.ui8_battery_cells_number * 10;
 
-    if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_80))) { ui8_battery_state_of_charge = 5; } // 4 bars | full
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_60))) { ui8_battery_state_of_charge = 4; } // 3 bars
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_40))) { ui8_battery_state_of_charge = 3; } // 2 bars
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_20))) { ui8_battery_state_of_charge = 2; } // 1 bar
-    else if (ui16_battery_voltage_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_10))) { ui8_battery_state_of_charge = 1; } // empty
+    if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_83))) { ui8_battery_state_of_charge = 4; } // 4 bars | full
+    else if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_50))) { ui8_battery_state_of_charge = 3; } // 3 bars
+    else if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_17))) { ui8_battery_state_of_charge = 2; } // 2 bars
+    else if (ui16_battery_voltage_soc_x10 > ((uint16_t) ((float) ui8_battery_cells_number_x10 * LI_ION_CELL_VOLTS_0))) { ui8_battery_state_of_charge = 1; } // 1 bar
     else { ui8_battery_state_of_charge = 0; } // flashing
   }
 
@@ -1522,24 +1535,34 @@ void battery_soc (void)
     break;
 
     case 1:
-      ui8_lcd_frame_buffer[23] |= 16;
-    break;
-
-    case 2:
       ui8_lcd_frame_buffer[23] |= 144;
     break;
 
-    case 3:
+    case 2:
       ui8_lcd_frame_buffer[23] |= 145;
     break;
 
-    case 4:
+    case 3:
       ui8_lcd_frame_buffer[23] |= 209;
     break;
 
-    case 5:
+    case 4:
       ui8_lcd_frame_buffer[23] |= 241;
     break;
+  }
+}
+
+void calc_battery_voltage_soc (void)
+{
+  uint16_t ui16_fluctuate_battery_voltage_x10;
+
+  // update battery level value only at every 100ms / 10 times per second and this helps to visual filter the fast changing values
+  if (ui8_lcd_menu_counter_100ms_state)
+  {
+    // calculate flutuate voltage, that depends on the current and battery pack resistance
+    ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
+    // now add fluctuate voltage value
+    ui16_battery_voltage_soc_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
   }
 }
 
@@ -1716,7 +1739,7 @@ void odometer (void)
 
       // pedal cadence value
       case 5:
-        lcd_print (motor_controller_data.ui8_pedal_cadence, ODOMETER_FIELD, 1);
+        lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 1);
       break;
 
       // battery SOC in watts/hour
@@ -2199,6 +2222,23 @@ void low_pass_filter_pedal_torque (void)
   }
 }
 
+static void low_pass_filter_pedal_cadence (void)
+{
+  // low pass filter
+  ui16_pedal_cadence_accumulated -= (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
+  ui16_pedal_cadence_accumulated += (uint16_t) motor_controller_data.ui8_pedal_cadence;
+
+  // consider the filtered value only for medium and high values of the unfiltered value
+  if (motor_controller_data.ui8_pedal_cadence > 20)
+  {
+    ui8_pedal_cadence_filtered = (uint8_t) (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
+  }
+  else
+  {
+    ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
+  }
+}
+
 void calc_wh (void)
 {
   static uint8_t ui8_100ms_timmer_counter;
@@ -2334,6 +2374,22 @@ void update_menu_flashing_state (void)
       ui8_lcd_menu_flash_state = 0;
     else
       ui8_lcd_menu_flash_state = 1;
+  }
+  // ***************************************************************************************************
+
+  // ***************************************************************************************************
+  ui8_lcd_menu_counter_100ms_state = 0;
+  if (ui8_lcd_menu_counter_100ms++ > 10)
+  {
+    ui8_lcd_menu_counter_100ms = 0;
+    ui8_lcd_menu_counter_100ms_state = 1;
+  }
+
+  ui8_lcd_menu_counter_500ms_state = 0;
+  if (ui8_lcd_menu_counter_500ms++ > 50)
+  {
+    ui8_lcd_menu_counter_500ms = 0;
+    ui8_lcd_menu_counter_500ms_state = 1;
   }
   // ***************************************************************************************************
 

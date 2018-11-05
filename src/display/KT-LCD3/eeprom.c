@@ -79,7 +79,7 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_ODOMETER_X10
   };
 
-static void eeprom_write_array (uint8_t *array, uint8_t ui8_len);
+static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
 static void eeprom_read_values_to_variables (void);
 static void variables_to_array (uint8_t *ui8_array);
 
@@ -92,7 +92,7 @@ void eeprom_init (void)
   ui8_data = FLASH_ReadByte (ADDRESS_KEY);
   if (ui8_data != KEY) // verify if our key exist
   {
-    eeprom_write_array (array_default_values, ((uint8_t) EEPROM_BYTES_STORED));
+    eeprom_write_array (array_default_values, ((uint32_t) EEPROM_BYTES_STORED));
   }
 }
 
@@ -316,31 +316,69 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [62] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
 }
 
-static void eeprom_write_array (uint8_t *array, uint8_t ui8_len)
+static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
 {
   uint8_t ui8_i;
+  uint8_t ui8_data;
+  uint8_t *p_array_data;
+  uint8_t array_data_read_back [EEPROM_BYTES_STORED];
+  uint8_t ui8_data_written_correctly = 0;
 
   FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
   
   FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
 
-  for (ui8_i = 0; ui8_i < ui8_len; ui8_i++)
+  // on next loop, we write the array to EEPROM and then read again and compared the values,
+  // if they are different, we keep writing until they are equal
+  do
   {
-    FLASH_ProgramByte (((uint32_t) EEPROM_BASE_ADDRESS) + ((uint32_t) ui8_i), *array++);
+    // write the full array
+    p_array_data = p_array;
+    for (ui8_i = 0; ui8_i < ui8_len; ui8_i++)
+    {
+      FLASH_ProgramByte (((uint32_t) EEPROM_BASE_ADDRESS) + ((uint32_t) ui8_i), *p_array_data++);
+    }
+
+    // read back the full array
+    variables_to_array (array_data_read_back);
+
+    // compare each byte of read array so see if the values were correctly written
+    ui8_data_written_correctly = 1;
+    p_array_data = p_array;
+    for (ui8_i = 0; ui8_i < ui8_len; ui8_i++)
+    {
+      ui8_data = *p_array_data++;
+      if (ui8_data != array_data_read_back[ui8_i])
+      {
+        ui8_data_written_correctly = 0;
+        break;
+      }
+    }
   }
+  while (ui8_data_written_correctly == 0); // loop until data is written correctly
 
   FLASH_Lock (FLASH_MEMTYPE_DATA);
 }
 
 void eeprom_erase_key_value (void)
 {
+  uint8_t ui8_data;
   FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
 
-  FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
+
+  FLASH_Unlock(FLASH_MEMTYPE_DATA); // Unlock Data memory
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
 
-  FLASH_EraseByte (ADDRESS_KEY);
+  do
+  {
+    // set to 0 the KEY
+    FLASH_ProgramByte(ADDRESS_KEY, 0);
+
+    // read back the KEY value
+    ui8_data = FLASH_ReadByte(ADDRESS_KEY);
+  }
+  while (ui8_data != 0); // loop until key value is stored as 0
 
   FLASH_Lock (FLASH_MEMTYPE_DATA);
 }
