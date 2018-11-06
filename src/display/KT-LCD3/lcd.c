@@ -184,7 +184,7 @@ void lcd_clear (void);
 void lcd_set_frame_buffer (void);
 void lcd_print (uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options);
 
-// happens every 10ms
+// happens every 1ms
 void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
 {
   static uint8_t ui8_100ms_timmer_counter;
