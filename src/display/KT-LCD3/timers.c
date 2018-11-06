@@ -10,21 +10,20 @@
 #include "stm8s_tim1.h"
 #include "stm8s_tim3.h"
 
-void delay_8us (uint16_t us8)
-{
-  uint16_t ui16_counter;
-
-  ui16_counter = TIM3_GetCounter () + us8;
-  while (TIM3_GetCounter () < ui16_counter) ; // wait here until time passes
-}
-
 void timer3_init (void)
 {
   uint16_t ui16_i;
 
   // TIM3 Peripheral Configuration
   TIM3_DeInit();
-  TIM3_TimeBaseInit(TIM3_PRESCALER_16384, 0xffff); // each incremment at every ~1ms
+
+  // 16MHz clock
+  // prescaler = 4
+  // target: 1ms (0.001)
+  // 0.001 ÷ (1÷(16000000÷4)) = 4000
+  TIM3_TimeBaseInit(TIM3_PRESCALER_4, 4000); // each interrupt at 1ms
+  TIM3_ClearFlag(TIM3_FLAG_UPDATE); // clear TIM3 update flag
+  TIM3_ITConfig(TIM3_IT_UPDATE, ENABLE); // enable update interrupt
   TIM3_Cmd(ENABLE); // TIM3 counter enable
 
   // IMPORTANT: this software delay is needed so timer3 work after this

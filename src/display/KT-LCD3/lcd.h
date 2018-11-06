@@ -131,5 +131,6 @@ void clock_lcd (void);
 struct_configuration_variables* get_configuration_variables (void);
 struct_motor_controller_data* lcd_get_motor_controller_data (void);
 void automatic_power_off_counter_reset (void);
+uint16_t get_timer3_counter(void);
 
 #endif /* _LCD_H_ */
