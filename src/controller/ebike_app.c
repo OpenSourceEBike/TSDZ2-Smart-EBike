@@ -53,6 +53,8 @@ uint8_t ui8_adc_battery_current_max;
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_pas_direction = 0;
 uint8_t ui8_pas_cadence_rpm = 0;
+uint16_t ui16_pedal_torque_x10;
+uint16_t ui16_pedal_power_x10;
 uint8_t ui8_pedal_human_power = 0;
 uint8_t ui8_startup_boost_enable = 0;
 uint8_t ui8_startup_boost_fade_enable = 0;
@@ -76,7 +78,7 @@ volatile struct_configuration_variables configuration_variables;
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[11];
 volatile uint8_t ui8_rx_counter = 0;
-volatile uint8_t ui8_tx_buffer[22];
+volatile uint8_t ui8_tx_buffer[26];
 volatile uint8_t ui8_tx_counter = 0;
 volatile uint8_t ui8_i;
 volatile uint8_t ui8_checksum;
@@ -105,7 +107,7 @@ static void uart_send_package (void);
 static void throttle_read (void);
 static void read_pas_cadence (void);
 static void torque_sensor_read (void);
-
+static void calc_pedal_force_and_torque (void);
 static void calc_wheel_speed (void);
 static void calc_motor_temperature (void);
 static uint16_t calc_filtered_battery_voltage (void);
@@ -131,13 +133,14 @@ void ebike_app_init (void)
 
 void ebike_app_controller (void)
 {
-  throttle_read ();
-  torque_sensor_read ();
-  read_pas_cadence ();
-  calc_wheel_speed ();
-  calc_motor_temperature ();
-  ebike_control_motor ();
-  communications_controller ();
+  throttle_read();
+  torque_sensor_read();
+  read_pas_cadence();
+  calc_pedal_force_and_torque();
+  calc_wheel_speed();
+  calc_motor_temperature();
+  ebike_control_motor();
+  communications_controller();
 }
 
 static void ebike_control_motor (void)
@@ -510,17 +513,25 @@ static void uart_send_package (void)
     break;
   }
 
+  // ui16_pedal_torque_x10
+  ui8_tx_buffer[20] = (uint8_t) (ui16_pedal_torque_x10 & 0xff);
+  ui8_tx_buffer[21] = (uint8_t) (ui16_pedal_torque_x10 >> 8);
+
+  // ui16_pedal_power_x10
+  ui8_tx_buffer[22] = (uint8_t) (ui16_pedal_power_x10 & 0xff);
+  ui8_tx_buffer[23] = (uint8_t) (ui16_pedal_power_x10 >> 8);
+
   // prepare crc of the package
   ui16_crc_tx = 0xffff;
-  for (ui8_i = 0; ui8_i <= 19; ui8_i++)
+  for (ui8_i = 0; ui8_i <= 23; ui8_i++)
   {
     crc16 (ui8_tx_buffer[ui8_i], &ui16_crc_tx);
   }
-  ui8_tx_buffer[20] = (uint8_t) (ui16_crc_tx & 0xff);
-  ui8_tx_buffer[21] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
+  ui8_tx_buffer[24] = (uint8_t) (ui16_crc_tx & 0xff);
+  ui8_tx_buffer[25] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
 
   // send the full package to UART
-  for (ui8_i = 0; ui8_i <= 21; ui8_i++)
+  for (ui8_i = 0; ui8_i <= 25; ui8_i++)
   {
     putchar (ui8_tx_buffer[ui8_i]);
   }
@@ -544,6 +555,19 @@ static void ebike_app_set_battery_max_current (uint8_t ui8_value)
 
   if (ui8_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX)
     ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX;
+}
+
+static void calc_pedal_force_and_torque(void)
+{
+  uint16_t ui16_temp;
+
+  ui16_temp = (uint16_t) ui8_torque_sensor * (uint16_t) PEDAL_TORQUE_X100;
+  ui16_pedal_torque_x10 = ui16_temp / 10;
+
+  // calc now pedal power
+  // P = force x rotations_seconds x 2 x pi
+  // (100 * 2 * PI) / 60 = 628
+  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 105);
 }
 
 static void calc_wheel_speed (void)
