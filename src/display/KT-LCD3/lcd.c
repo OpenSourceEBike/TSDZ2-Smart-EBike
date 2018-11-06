@@ -120,6 +120,8 @@ static uint8_t offroad_mode_assist_symbol_state_blink_counter = 0;
 
 static uint16_t ui16_battery_voltage_soc_x10;
 
+static volatile uint16_t ui16_timer3_counter = 0;
+
 static uint8_t ui8_walk_assist_off_debounce_timer = 0;
 
 void low_pass_filter_battery_voltage_current_power (void);
@@ -184,6 +186,30 @@ void lcd_update (void);
 void lcd_clear (void);
 void lcd_set_frame_buffer (void);
 void lcd_print (uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options);
+
+// happens every 1ms
+void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
+{
+  static uint8_t ui8_100ms_timmer_counter;
+
+  ui16_timer3_counter++;
+
+  // calc wh every 100ms
+  if (ui8_100ms_timmer_counter++ >= 100)
+  {
+    ui8_100ms_timmer_counter = 0;
+
+    // must be called every 100ms
+    calc_wh();
+  }
+
+  TIM3_ClearITPendingBit(TIM3_IT_UPDATE); // clear Interrupt Pending bit
+}
+
+uint16_t get_timer3_counter(void)
+{
+  return ui16_timer3_counter;
+}
 
 void clock_lcd (void)
 {
@@ -257,7 +283,6 @@ void clock_lcd (void)
   low_pass_filter_pedal_torque ();
   // filter using only each 500ms values
   if (ui8_lcd_menu_counter_500ms_state) { low_pass_filter_pedal_cadence (); }
-  calc_wh ();
   calc_battery_voltage_soc ();
   calc_odometer ();
   automatic_power_off_management ();
@@ -2254,35 +2279,28 @@ static void low_pass_filter_pedal_cadence (void)
 
 void calc_wh (void)
 {
-  static uint8_t ui8_100ms_timmer_counter;
   static uint8_t ui8_1s_timmer_counter;
   uint32_t ui32_temp = 0;
 
-  // calc wh every 100ms
-  if (ui8_100ms_timmer_counter++ >= 10)
+  if (ui16_battery_power_filtered_x50 > 0)
   {
-    ui8_100ms_timmer_counter = 0;
+    ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
+    ui32_wh_sum_counter++;
+  }
 
-    if (ui16_battery_power_filtered_x50 > 0)
+  // calc at 1s rate
+  if (ui8_1s_timmer_counter++ >= 10)
+  {
+    ui8_1s_timmer_counter = 0;
+
+    // avoid  zero divisison
+    if (ui32_wh_sum_counter != 0)
     {
-      ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
-      ui32_wh_sum_counter++;
+      ui32_temp = ui32_wh_sum_counter / 36;
+      ui32_temp = (ui32_temp * (ui32_wh_sum_x5 / ui32_wh_sum_counter)) / 500;
     }
 
-    // calc at 1s rate
-    if (ui8_1s_timmer_counter++ >= 10)
-    {
-      ui8_1s_timmer_counter = 0;
-
-      // avoid  zero divisison
-      if (ui32_wh_sum_counter != 0)
-      {
-        ui32_temp = ui32_wh_sum_counter / 36;
-        ui32_temp = (ui32_temp * (ui32_wh_sum_x5 / ui32_wh_sum_counter)) / 500;
-      }
-
-      ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_temp;
-    }
+    ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_temp;
   }
 }
 
