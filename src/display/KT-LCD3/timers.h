@@ -9,8 +9,11 @@
 #ifndef _TIMERS_H_
 #define _TIMERS_H_
 
+#include "stm8s.h"
+#include "stm8s_tim1.h"
+#include "stm8s_tim3.h"
+
 void timer3_init (void);
 void timer1_init (void);
-void delay_8us (uint16_t us8);
 
 #endif /* _TIMERS_H_ */
