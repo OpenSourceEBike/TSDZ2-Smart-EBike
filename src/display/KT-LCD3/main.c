@@ -40,10 +40,11 @@
 //// Functions prototypes
 // UART2 Receive interrupt
 void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
+void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER);
 
 int main (void)
 {
-  uint16_t ui16_tim3_counter;
+  uint16_t ui16_timer3_counter;
   uint16_t ui16_10ms_loop_counter;
 
   //set clock at the max 16MHz
@@ -55,23 +56,22 @@ int main (void)
   adc_init ();
   eeprom_init ();
   lcd_init (); // must be after eeprom_init ();
-  enableInterrupts ();
 
   // block until users releases the buttons
   while (get_button_onoff_state () ||
       get_button_down_state () ||
       get_button_up_state ()) ;
 
-  ui16_tim3_counter = TIM3_GetCounter ();
+  enableInterrupts ();
 
   while (1)
   {
     // because of continue; at the end of each if code block that will stop the while (1) loop there,
     // the first if block code will have the higher priority over any others
-    ui16_tim3_counter = TIM3_GetCounter ();
-    if ((ui16_tim3_counter - ui16_10ms_loop_counter) > 10) // every 10ms
+    ui16_timer3_counter = get_timer3_counter ();
+    if ((ui16_timer3_counter - ui16_10ms_loop_counter) > 10) // every 10ms
     {
-      ui16_10ms_loop_counter = ui16_tim3_counter;
+      ui16_10ms_loop_counter = ui16_timer3_counter;
 
       clock_button ();
       clock_lcd ();
@@ -79,23 +79,6 @@ int main (void)
 
       continue;
     }
-
-#ifdef DEBUG_UART
-    ui16_tim3_counter = TIM2_GetCounter ();
-    if ((ui16_tim3_counter - ui16_debug_uart_counter) > 20) // every 20ms
-    {
-      ui16_debug_uart_counter = ui16_tim3_counter;
-
-      // sugestion: no more than 6 variables printed (takes about 3ms to printf 6 variables)
-      printf ("%d,%d,%d,%d,%d\n",
-        ui8_duty_cycle_target,
-        ui8_duty_cycle,
-        ui16_motor_get_motor_speed_erps(),
-        UI8_ADC_BATTERY_CURRENT,
-        ui8_angle_correction);
-      continue;
-    }
-#endif
   }
 
   return 0;
