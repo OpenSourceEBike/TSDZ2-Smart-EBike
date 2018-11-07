@@ -63,12 +63,12 @@ typedef struct _configuration_variables
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
   uint8_t ui8_pas_max_cadence;
   uint8_t ui8_cruise_control;
-  uint8_t ui8_assist_level_power [9];
+  uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_startup_motor_power_boost [9];
+  uint8_t ui8_startup_motor_power_boost_factor [9];
   uint16_t ui16_adc_motor_temperature_10b;
   uint8_t ui8_temperature_limit_feature_enabled;
   uint8_t ui8_motor_temperature_min_value_to_limit;

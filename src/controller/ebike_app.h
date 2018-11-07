@@ -20,7 +20,7 @@
 
 typedef struct _configuration_variables
 {
-  uint8_t ui8_power_regular_state_div25;
+  uint8_t ui8_assist_level_factor_x10;
   uint8_t ui8_battery_max_current;
   uint8_t ui8_motor_power_x10;
   uint16_t ui16_battery_low_voltage_cut_off_x10;
@@ -36,7 +36,7 @@ typedef struct _configuration_variables
   uint8_t ui8_cruise_control;
   uint8_t configuration_variables;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
-  uint8_t ui8_startup_motor_power_boost_div25;
+  uint8_t ui8_startup_motor_power_boost_assist_level;
   uint8_t ui8_startup_motor_power_boost_state;
   uint8_t ui8_startup_motor_power_boost_limit_to_max_power;
   uint8_t ui8_startup_motor_power_boost_time;

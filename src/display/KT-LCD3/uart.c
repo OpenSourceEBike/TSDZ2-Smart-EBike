@@ -194,7 +194,7 @@ void clock_uart_data (void)
       // set assist level value
       if (p_configuration_variables->ui8_assist_level)
       {
-        ui8_tx_buffer[3] = p_configuration_variables->ui8_assist_level_power [((p_configuration_variables->ui8_assist_level) - 1)];
+        ui8_tx_buffer[3] = p_configuration_variables->ui8_assist_level_factor [((p_configuration_variables->ui8_assist_level) - 1)];
       }
       else
       {
@@ -248,7 +248,7 @@ void clock_uart_data (void)
 
         case 4:
           // startup motor power boost
-          ui8_tx_buffer[7] = p_configuration_variables->ui8_startup_motor_power_boost [((p_configuration_variables->ui8_assist_level) - 1)];
+          ui8_tx_buffer[7] = p_configuration_variables->ui8_startup_motor_power_boost_factor [((p_configuration_variables->ui8_assist_level) - 1)];
           // startup motor power boost time
           ui8_tx_buffer[8] = p_configuration_variables->ui8_startup_motor_power_boost_time;
         break;
