@@ -6,6 +6,8 @@
  * Released under the GPL License, Version 3
  */
 
+#include "buttons.h"
+
 #include "stm8s.h"
 #include "stm8s_gpio.h"
 #include "gpio.h"
@@ -18,6 +20,9 @@ uint8_t ui8_down_button_state = 0;
 uint8_t ui8_down_button_state_counter = 0;
 uint8_t ui8_up_button_state = 0;
 uint8_t ui8_up_button_state_counter = 0;
+
+buttons_events_type_t buttons_events = 0;
+buttons_events_type_t old_buttons_events = 0;
 
 uint8_t get_button_up_state (void)
 {
@@ -128,25 +133,39 @@ void clock_button (void)
           !get_button_onoff_long_click_event () &&
           get_button_onoff_state ())
         {
+          ui8_onoff_button_state_counter = 0;
           ui8_onoff_button_state = 1;
         }
     break;
 
     case 1:
-      // wait for button release; event click
-      if (!get_button_onoff_state ())
-      {
-        ui8_onoff_button_state = 0;
-        ui8_onoff_button_state_counter = 0;
-        ui8_buttons_events |= (1 << 0);
-      }
+      ui8_onoff_button_state_counter++;
 
       // event long click
-      if (ui8_onoff_button_state_counter++ > 200) // 2 seconds
+      if (ui8_onoff_button_state_counter > 200) // 2 seconds
       {
+        buttons_events |= ONOFF_LONG_CLICK;
         ui8_onoff_button_state = 2;
-        ui8_onoff_button_state_counter = 0;
-        ui8_buttons_events |= (1 << 1);
+        break;
+      }
+
+      // if button release
+      if (!get_button_onoff_state ())
+      {
+        // let's validade if will be a quick click + long click
+        if (ui8_onoff_button_state_counter <= 20) // 0.8 second
+        {
+          ui8_onoff_button_state_counter = 0;
+          ui8_onoff_button_state = 3;
+          break;
+        }
+        // event click
+        else
+        {
+          buttons_events |= ONOFF_CLICK;
+          ui8_onoff_button_state = 0;
+          break;
+        }
       }
     break;
 
@@ -155,6 +174,67 @@ void clock_button (void)
       if (!get_button_onoff_state ())
       {
         ui8_onoff_button_state = 0;
+        break;
+      }
+    break;
+
+    case 3:
+      ui8_onoff_button_state_counter++;
+
+      // wait for long click
+      if (get_button_onoff_state ())
+      {
+        ui8_onoff_button_state_counter = 0;
+        ui8_onoff_button_state = 4;
+        break;
+      }
+
+      // event click
+      if (ui8_onoff_button_state_counter > 20)
+      {
+        buttons_events |= ONOFF_CLICK;
+        ui8_onoff_button_state = 0;
+        break;
+      }
+    break;
+
+    case 4:
+      ui8_onoff_button_state_counter++;
+
+      // at least 0.8 seconds did happen...
+      if (ui8_onoff_button_state_counter > 20)
+      {
+        ui8_onoff_button_state_counter = 0;
+        ui8_onoff_button_state = 5;
+        break;
+      }
+
+      // button release
+      if (!get_button_onoff_state ())
+      {
+        buttons_events |= ONOFF_CLICK_CLICK;
+        ui8_onoff_button_state = 0;
+        break;
+      }
+    break;
+
+    case 5:
+      ui8_onoff_button_state_counter++;
+
+      // event click, but this time it is: click + long click
+      if (ui8_onoff_button_state_counter > 40)
+      {
+        buttons_events |= ONOFF_CLICK_AND_LONG_CLICK;
+        ui8_onoff_button_state = 2;
+        break;
+      }
+
+      // button release
+      if (!get_button_onoff_state ())
+      {
+        buttons_events |= ONOFF_CLICK_CLICK;
+        ui8_onoff_button_state = 0;
+        break;
       }
     break;
 
@@ -267,5 +347,11 @@ void clock_button (void)
     default:
       ui8_up_button_state = 0;
     break;
+  }
+
+  if (buttons_events != 0)
+  {
+    old_buttons_events = buttons_events;
+    buttons_events = 0;
   }
 }

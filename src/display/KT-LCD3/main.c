@@ -12,10 +12,10 @@
 #include "gpio.h"
 #include "timers.h"
 #include "adc.h"
+#include "buttons.h"
 #include "lcd.h"
 #include "uart.h"
 #include "eeprom.h"
-#include "button.h"
 #include "ht162.h"
 #include "config.h"
 
