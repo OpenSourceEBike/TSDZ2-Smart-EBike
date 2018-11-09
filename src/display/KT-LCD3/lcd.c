@@ -1716,9 +1716,54 @@ void odometer (void)
         {
           // trip distance
           case 0:
-            lcd_print ((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 0);
-            // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
-            lcd_enable_km_symbol (1);
+            // as soon there is one down_click_long_click_event
+            if (buttons_get_down_click_long_click_event())
+            {
+              ui8_odometer_reset_distance_counter_state = 1;
+            }
+
+            if (ui8_odometer_reset_distance_counter_state)
+            {
+              if (buttons_get_down_state ())
+              {
+                ui8_odometer_reset_distance_counter_state = 1;
+
+                // clear the down button possible event
+                buttons_clear_down_click_event();
+                buttons_clear_down_long_click_event();
+
+                // count time, after limit, reset
+                ui16_odometer_reset_distance_counter++;
+                if (ui16_odometer_reset_distance_counter >= 300)
+                {
+                  ui16_odometer_reset_distance_counter = 0;
+
+                  // set the offset to current value, that is the way to set to zero our always incrementing value (up to motor controller power reset)
+                  motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
+                }
+
+                if (ui8_lcd_menu_flash_state)
+                {
+                  lcd_print ((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 0);
+                  // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
+                  lcd_enable_km_symbol (1);
+                }
+              }
+              // user is not pressing anymore the down button
+              else
+              {
+                ui8_odometer_reset_distance_counter_state = 0;
+              }
+            }
+            else
+            {
+              ui16_odometer_reset_distance_counter = 0;
+
+              lcd_print ((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 0);
+              // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
+              lcd_enable_km_symbol (1);
+            }
+
           break;
 
           // ODO Total Trip Distance
@@ -2441,7 +2486,8 @@ void calc_odometer (void)
   {
     ui8_1s_timmer_counter = 0;
 
-    uint32_temp = motor_controller_data.ui32_wheel_speed_sensor_tick_counter * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
+    uint32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset)
+        * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
     // avoid division by 0
     if (uint32_temp > 100000) { uint32_temp /= 100000;}  // milimmeters to 0.1kms
     else { uint32_temp = 0; }
