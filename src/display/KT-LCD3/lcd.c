@@ -1759,44 +1759,44 @@ void odometer (void)
         lcd_print (ui32_wh_x10, ODOMETER_FIELD, 0);
       break;
 
-    // battery SOC in watts/hour
-	case 5:
-      if (configuration_variables.ui8_show_numeric_battery_soc & 1)
-      {
-        lcd_print (ui16_battery_soc_watts_hour, ODOMETER_FIELD, 1);
-      }
-      else
-      {
-        odometer_increase_field_state ();
-      }
-    break;
+      // battery SOC in watts/hour
+      case 5:
+        if (configuration_variables.ui8_show_numeric_battery_soc & 1)
+        {
+          lcd_print (ui16_battery_soc_watts_hour, ODOMETER_FIELD, 1);
+        }
+        else
+        {
+          odometer_increase_field_state ();
+        }
+      break;
 
-    // pedal cadence value
-    case 6:
-      lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 1);
-    break;
+      // pedal cadence value
+      case 6:
+        lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 1);
+      break;
 
-    // pedal torque
-    case 7:
-      lcd_print (ui16_pedal_torque_filtered, ODOMETER_FIELD, 1);
-    break;
+      // pedal torque
+      case 7:
+        lcd_print (ui16_pedal_torque_filtered, ODOMETER_FIELD, 1);
+      break;
 
-    // pedal power
-    case 8:
-      lcd_print (ui16_pedal_power_filtered, ODOMETER_FIELD, 1);
-    break;
+      // pedal power
+      case 8:
+        lcd_print (ui16_pedal_power_filtered, ODOMETER_FIELD, 1);
+      break;
 
-    // motor temperature
-    case 9:
-      if (configuration_variables.ui8_temperature_limit_feature_enabled)
-      {
-        lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 1);
-      }
-      else
-      {
-        odometer_increase_field_state ();
-      }
-    break;
+      // motor temperature
+      case 9:
+        if (configuration_variables.ui8_temperature_limit_feature_enabled)
+        {
+          lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 1);
+        }
+        else
+        {
+          odometer_increase_field_state ();
+        }
+      break;
 
       default:
         configuration_variables.ui8_odometer_field_state = 0;
