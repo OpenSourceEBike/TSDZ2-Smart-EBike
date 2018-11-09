@@ -51,7 +51,7 @@ HEADERS = gpio.h main.h adc.h timers.h lcd.h uart.h eeprom.h ht162.h button.h pi
 # The list of .rel files can be derived from the list of their source files
 RELS = $(EXTRASRCS:.c=.rel)
 
-INCLUDES = -I$(IDIR) -I.
+INCLUDES = -I$(IDIR) -I. -I../../
 CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
 ELF_FLAGS = --out-fmt-ihx --debug
 LIBS     = 
