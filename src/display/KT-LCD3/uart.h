@@ -12,7 +12,7 @@
 #include "main.h"
 
 void uart2_init (void);
-void clock_uart_data (void);
+void uart_data_clock (void);
 uint8_t uart_received_first_package (void);
 
 #if __SDCC_REVISION < 9624

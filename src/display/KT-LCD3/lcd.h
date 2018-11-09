@@ -130,7 +130,7 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 // : from timer label ui8_lcd_frame_buffer[23] |= 8
 
 void lcd_init (void);
-void clock_lcd (void);
+void lcd_clock (void);
 struct_configuration_variables* get_configuration_variables (void);
 struct_motor_controller_data* lcd_get_motor_controller_data (void);
 void automatic_power_off_counter_reset (void);
