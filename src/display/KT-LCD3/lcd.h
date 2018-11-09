@@ -54,6 +54,8 @@ typedef struct _configuration_variables
   uint32_t ui32_wh_x10_100_percent;
   uint8_t ui8_show_numeric_battery_soc;
   uint8_t ui8_odometer_field_state;
+  uint8_t ui8_odometer_sub_field_state;
+  uint8_t ui8_odometer_show_field_number;
   uint8_t ui8_target_max_battery_power;
   uint8_t ui8_battery_cells_number;
   uint8_t ui8_battery_max_current;

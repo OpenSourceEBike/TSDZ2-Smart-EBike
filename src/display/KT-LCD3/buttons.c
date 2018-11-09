@@ -157,8 +157,7 @@ void buttons_clear_all_events (void)
 
 void buttons_clock (void)
 {
-  buttons_clear_up_click_long_click_event();
-  buttons_clear_down_click_long_click_event();
+  // needed if the event is not cleared anywhere else
   buttons_clear_onoff_click_long_click_event();
 
   switch (ui8_onoff_button_state)
