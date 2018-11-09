@@ -765,24 +765,24 @@ void lcd_execute_menu_config_submenu_assist_level (void)
       lcd_print (configuration_variables.ui8_number_of_assist_levels, ODOMETER_FIELD, 1);
     }
   }
-  // value of each assist level
+  // value of each assist level factor
   else
   {
     if (get_button_up_click_event ())
     {
       clear_button_up_click_event ();
-      configuration_variables.ui8_assist_level_power [(ui8_lcd_menu_config_submenu_state - 1)]++;
+      configuration_variables.ui8_assist_level_factor [(ui8_lcd_menu_config_submenu_state - 1)]++;
     }
 
     if (get_button_down_click_event ())
     {
       clear_button_down_click_event ();
-      configuration_variables.ui8_assist_level_power [(ui8_lcd_menu_config_submenu_state - 1)]--;
+      configuration_variables.ui8_assist_level_factor [(ui8_lcd_menu_config_submenu_state - 1)]--;
     }
 
     if (ui8_lcd_menu_flash_state)
     {
-      lcd_print (configuration_variables.ui8_assist_level_power [ui8_lcd_menu_config_submenu_state - 1] * 25, ODOMETER_FIELD, 1);
+      lcd_print (configuration_variables.ui8_assist_level_factor [ui8_lcd_menu_config_submenu_state - 1], ODOMETER_FIELD, 0);
     }
   }
 
@@ -893,25 +893,24 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
       lcd_print (configuration_variables.ui8_startup_motor_power_boost_fade_time, ODOMETER_FIELD, 0);
     }
   }
-  // value of each assist level power boost
+  // value of each assist level factor for power boost
   else
   {
     if (get_button_up_click_event ())
     {
       clear_button_up_click_event ();
-      // the BATTERY_POWER_FIELD can't show higher value
-      configuration_variables.ui8_startup_motor_power_boost [(ui8_lcd_menu_config_submenu_state - 5)]++;
+      configuration_variables.ui8_startup_motor_power_boost_factor [(ui8_lcd_menu_config_submenu_state - 5)]++;
     }
 
     if (get_button_down_click_event ())
     {
       clear_button_down_click_event ();
-      configuration_variables.ui8_startup_motor_power_boost [(ui8_lcd_menu_config_submenu_state - 5)]--;
+      configuration_variables.ui8_startup_motor_power_boost_factor [(ui8_lcd_menu_config_submenu_state - 5)]--;
     }
 
     if (ui8_lcd_menu_flash_state)
     {
-      lcd_print (configuration_variables.ui8_startup_motor_power_boost [ui8_lcd_menu_config_submenu_state - 5] * 25, ODOMETER_FIELD, 1);
+      lcd_print (configuration_variables.ui8_startup_motor_power_boost_factor [ui8_lcd_menu_config_submenu_state - 5], ODOMETER_FIELD, 1);
     }
   }
 
