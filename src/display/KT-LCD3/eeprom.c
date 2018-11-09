@@ -193,7 +193,7 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte (ADDRESS_NUMBER_OF_ASSIST_LEVELS);
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    p_configuration_variables->ui8_assist_level_power [ui8_index] = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL_FACTOR_1 + ui8_index);
+    p_configuration_variables->ui8_assist_level_factor [ui8_index] = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL_FACTOR_1 + ui8_index);
   }
 
   p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED);
@@ -201,7 +201,7 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_startup_motor_power_boost_time = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_TIME);
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    p_configuration_variables->ui8_startup_motor_power_boost [ui8_index] = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1 + ui8_index);
+    p_configuration_variables->ui8_startup_motor_power_boost_factor [ui8_index] = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1 + ui8_index);
   }
 
   p_configuration_variables->ui8_startup_motor_power_boost_fade_time = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_FADE_TIME);
@@ -280,7 +280,7 @@ static void variables_to_array (uint8_t *ui8_array)
 
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    ui8_array [23 + ui8_index] = p_configuration_variables->ui8_assist_level_power [ui8_index];
+    ui8_array [23 + ui8_index] = p_configuration_variables->ui8_assist_level_factor [ui8_index];
   }
   ui8_array [32] = p_configuration_variables->ui8_number_of_assist_levels;
 
@@ -288,7 +288,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [34] = p_configuration_variables->ui8_startup_motor_power_boost_state;
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    ui8_array [35 + ui8_index] = p_configuration_variables->ui8_startup_motor_power_boost [ui8_index];
+    ui8_array [35 + ui8_index] = p_configuration_variables->ui8_startup_motor_power_boost_factor [ui8_index];
   }
   ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_time;
   ui8_array [45] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
@@ -324,7 +324,7 @@ static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
   uint8_t array_data_read_back [EEPROM_BYTES_STORED];
   uint8_t ui8_data_written_correctly = 0;
 
-  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
+  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
   
   FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
@@ -364,8 +364,8 @@ static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
 void eeprom_erase_key_value (void)
 {
   uint8_t ui8_data;
+  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
 
-  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
 
   FLASH_Unlock(FLASH_MEMTYPE_DATA); // Unlock Data memory
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set

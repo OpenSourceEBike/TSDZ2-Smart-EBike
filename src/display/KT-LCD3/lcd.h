@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include "stm8s_gpio.h"
+#include "common/common.h"
 
 //ui8_rx_buffer[2] == 8 if torque sensor
 //ui8_rx_buffer[2] == 4 if motor running
@@ -25,7 +26,7 @@ typedef struct _motor_controller_data
   uint8_t ui8_pedal_torque_sensor;
   uint8_t ui8_pedal_human_power;
   uint8_t ui8_duty_cycle;
-  uint8_t ui8_error_code;
+  uint8_t ui8_error_states;
   uint16_t ui16_wheel_speed_x10;
   uint8_t ui8_motor_controller_state_2;
   uint8_t ui8_braking;
@@ -38,6 +39,8 @@ typedef struct _motor_controller_data
   uint8_t ui8_temperature_current_limiting_value;
   uint8_t ui8_motor_temperature;
   uint32_t ui32_wheel_speed_sensor_tick_counter;
+  uint16_t ui16_pedal_torque_x10;
+  uint16_t ui16_pedal_power_x10;
 } struct_motor_controller_data;
 
 typedef struct _configuration_variables
@@ -61,12 +64,12 @@ typedef struct _configuration_variables
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
   uint8_t ui8_pas_max_cadence;
   uint8_t ui8_cruise_control;
-  uint8_t ui8_assist_level_power [9];
+  uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_startup_motor_power_boost [9];
+  uint8_t ui8_startup_motor_power_boost_factor [9];
   uint16_t ui16_adc_motor_temperature_10b;
   uint8_t ui8_temperature_limit_feature_enabled;
   uint8_t ui8_motor_temperature_min_value_to_limit;

@@ -30,5 +30,6 @@ uint8_t ui8_min (uint8_t value_a, uint8_t value_b);
 void pi_controller (struct_pi_controller_state *pi_controller_state);
 void pi_controller_reset (struct_pi_controller_state *pi_controller);
 void crc16(uint8_t ui8_data, uint16_t* ui16_crc);
+void ui8_limit_max (uint8_t *ui8_p_value, uint8_t ui8_max_value);
 
 #endif /* _UTILS_H */

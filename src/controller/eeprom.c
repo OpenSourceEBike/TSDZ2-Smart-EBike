@@ -78,7 +78,7 @@ static void eeprom_read_values_to_variables (void)
   struct_configuration_variables *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
 
-  p_configuration_variables->ui8_power_regular_state_div25 = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL_FACTOR_X10);
+  p_configuration_variables->ui8_assist_level_factor_x10 = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL_FACTOR_X10);
 
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_lights = ui8_temp & 1 ? 1 : 0;
@@ -127,7 +127,7 @@ static void variables_to_array (uint8_t *ui8_array)
   p_configuration_variables = get_configuration_variables ();
 
   ui8_array [0] = KEY;
-  ui8_array [1] = p_configuration_variables->ui8_power_regular_state_div25;
+  ui8_array [1] = p_configuration_variables->ui8_assist_level_factor_x10;
   ui8_array [2] = (p_configuration_variables->ui8_lights & 1) |
                       ((p_configuration_variables->ui8_walk_assist & 1) << 1) |
                           ((p_configuration_variables->ui8_offroad_mode & 1) << 2);
