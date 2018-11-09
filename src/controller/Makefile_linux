@@ -63,7 +63,7 @@ ebike_app.h utils.h pins.h config.h eeprom.h lights.h
 # The list of .rel files can be derived from the list of their source files
 RELS = $(EXTRASRCS:.c=.rel)
 
-INCLUDES = -I$(IDIR) -I. 
+INCLUDES = -I$(IDIR) -I. -I../
 CFLAGS   = -m$(PLATFORM) -Ddouble=float -DTHROTTLE=${THROTTLE} --std-c99 --nolospre
 ELF_FLAGS = --out-fmt-elf --debug
 LIBS     = 

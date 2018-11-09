@@ -97,6 +97,10 @@ uint16_t ui16_adc_motor_temperatured_accumulated = 0;
 
 uint8_t ui8_adc_battery_target_current;
 
+// safe tests
+uint8_t safe_tests_state_machine = 0;
+uint8_t safe_tests_state_machine_counter = 0;
+
 static void ebike_control_motor (void);
 static void ebike_app_set_battery_max_current (uint8_t ui8_value);
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
@@ -123,6 +127,8 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current);
 static void boost_run_statemachine (void);
 static uint8_t apply_boost (uint8_t ui8_pas_cadence, uint32_t ui32_max_current_boost_state_x4, uint8_t *ui8_target_current);
 static void apply_boost_fade_out (uint8_t *ui8_target_current);
+
+static void safe_tests (void);
 
 void ebike_app_init (void)
 {
@@ -274,12 +280,20 @@ static void ebike_control_motor (void)
   // finally set the target battery current to the current controller
   ebike_app_set_target_adc_battery_max_current (ui8_adc_battery_target_current);
 
+  // execute some safe tests
+  safe_tests ();
+
   // set the target duty_cycle to max, as the battery current controller will manage it
   // if battery_target_current == 0, put duty_cycle at 0
   // if ui8_startup_enable == 0, put duty_cycle at 0
-  if (ui8_adc_battery_target_current && ui8_startup_enable && (!brake_is_set()))
+  // if there are no errors detected on safe_tests()
+  if (ui8_adc_battery_target_current &&
+      ui8_startup_enable &&
+      (!brake_is_set()) &&
+      configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
   {
     motor_set_pwm_duty_cycle_target (255);
+//motor_set_pwm_duty_cycle_target (0);
   }
   else
   {
@@ -484,7 +498,7 @@ static void uart_send_package (void)
   {
     case 0:
       // error states
-      ui8_tx_buffer[19] = 0;
+      ui8_tx_buffer[19] = configuration_variables.ui8_error_states;
     break;
 
     case 1:
@@ -875,6 +889,7 @@ static void torque_sensor_read (void)
 
 static void throttle_read (void)
 {
+#if THROTTLE
   // map value from 0 up to 255
   ui8_throttle = (uint8_t) (map (
       UI8_ADC_THROTTLE,
@@ -882,6 +897,9 @@ static void throttle_read (void)
       (uint8_t) ADC_THROTTLE_MAX_VALUE,
       (uint8_t) 0,
       (uint8_t) 255));
+#else
+  ui8_throttle = 0;
+#endif
 }
 
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
@@ -934,4 +952,90 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
 struct_configuration_variables* get_configuration_variables (void)
 {
   return &configuration_variables;
+}
+
+static void safe_tests (void)
+{
+  // the state machine should restart if:
+  if (brake_is_set() || // we hit brakes
+      configuration_variables.ui8_power_regular_state_div25 == 0) // we choose assist power assist level = 0
+  {
+    configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enable
+    safe_tests_state_machine = 0;
+  }
+
+  switch (safe_tests_state_machine)
+  {
+    // start when we have torque sensor or throttle
+    case 0:
+    if (ui8_torque_sensor_raw || ui8_throttle)
+    {
+      safe_tests_state_machine_counter = 0;
+      safe_tests_state_machine = 1;
+      break;
+    }
+    break;
+
+    // wait during 3 seconds for bicyle wheel speed > 4km/h, if not we have an error
+    case 1:
+    safe_tests_state_machine_counter++;
+
+    // timeout of 3 seconds, not less to be higher than value on torque_sensor_read ()
+    // 3 seconds should be safe enough value, mosfets should not burn in 3 seconds if ebike wheel is blocked
+    if (safe_tests_state_machine_counter > 30)
+    {
+      configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+      safe_tests_state_machine_counter = 0;
+      safe_tests_state_machine = 2;
+      break;
+    }
+
+    // bicycle wheel is rotating so we are safe
+    if (ui16_wheel_speed_x10 > 40) // seems that 4km/h may be the min value we can measure for the bicycle wheel speed
+    {
+      safe_tests_state_machine_counter = 0;
+      safe_tests_state_machine = 3;
+      break;
+    }
+
+    // release of throttle or torque sensor, restart
+    if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
+    {
+      safe_tests_state_machine = 0;
+    }
+    break;
+
+    // wait 3 consecutive seconds for torque sensor and throttle = 0, then we can restart
+    case 2:
+    if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
+    {
+      safe_tests_state_machine_counter++;
+
+      if (safe_tests_state_machine_counter > 30)
+      {
+        configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+        safe_tests_state_machine = 0;
+        break;
+      }
+    }
+    // keep reseting the counter so we keep on this state
+    else
+    {
+      safe_tests_state_machine_counter = 0;
+    }
+    break;
+
+    // wait for bicycle wheel to be stopped so we can start again our state machine
+    case 3:
+    if (ui16_wheel_speed_x10 == 0)
+    {
+      safe_tests_state_machine = 0;
+      break;
+    }
+    break;
+
+    default:
+    safe_tests_state_machine = 0;
+    break;
+  }
 }
