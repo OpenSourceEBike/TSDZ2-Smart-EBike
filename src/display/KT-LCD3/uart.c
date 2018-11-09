@@ -152,7 +152,7 @@ void clock_uart_data (void)
       {
         case 0:
           // error states
-          p_motor_controller_data->ui8_error_code = ui8_rx_buffer[19];
+          p_motor_controller_data->ui8_error_states = ui8_rx_buffer[19];
         break;
 
         case 1:
