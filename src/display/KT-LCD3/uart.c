@@ -16,7 +16,7 @@
 #include "utils.h"
 
 volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[22];
+volatile uint8_t ui8_rx_buffer[26];
 volatile uint8_t ui8_rx_counter = 0;
 volatile uint8_t ui8_tx_buffer[11];
 volatile uint8_t ui8_tx_counter = 0;
@@ -76,7 +76,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
       ui8_rx_counter++;
 
       // see if is the last byte of the package
-      if (ui8_rx_counter > 23)
+      if (ui8_rx_counter > 27)
       {
         ui8_rx_counter = 0;
         ui8_state_machine = 0;
@@ -102,12 +102,12 @@ void clock_uart_data (void)
     // validation of the package data
     // last byte is the checksum
     ui16_crc_rx = 0xffff;
-    for (ui8_i = 0; ui8_i <= 19; ui8_i++)
+    for (ui8_i = 0; ui8_i <= 23; ui8_i++)
     {
       crc16 (ui8_rx_buffer[ui8_i], &ui16_crc_rx);
     }
 
-    if (((((uint16_t) ui8_rx_buffer [21]) << 8) + ((uint16_t) ui8_rx_buffer [20])) == ui16_crc_rx)
+    if (((((uint16_t) ui8_rx_buffer [25]) << 8) + ((uint16_t) ui8_rx_buffer [24])) == ui16_crc_rx)
     {
       p_motor_controller_data = lcd_get_motor_controller_data ();
       p_configuration_variables = get_configuration_variables ();
@@ -176,6 +176,11 @@ void clock_uart_data (void)
           p_motor_controller_data->ui32_wheel_speed_sensor_tick_counter = ui32_wss_tick_temp;
         break;
       }
+
+      // ui16_pedal_torque_x10
+      p_motor_controller_data->ui16_pedal_torque_x10 = (((uint16_t) ui8_rx_buffer [21]) << 8) + ((uint16_t) ui8_rx_buffer [20]);
+      // ui16_pedal_power_x10
+      p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [23]) << 8) + ((uint16_t) ui8_rx_buffer [22]);
 
       // signal that we processed the full package
       ui8_received_package_flag = 0;

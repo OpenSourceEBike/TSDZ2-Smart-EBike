@@ -27,7 +27,8 @@
 // 0 equal to no filtering and no delay, higher values will increase filtering but will also add bigger delay
 #define BATTERY_VOLTAGE_FILTER_COEFFICIENT 6
 #define BATTERY_CURRENT_FILTER_COEFFICIENT 5
-#define TORQUE_FILTER_COEFFICIENT          5
-#define PEDAL_CADENCE_FILTER_COEFFICIENT   2
+#define PEDAL_TORQUE_FILTER_COEFFICIENT    2
+#define PEDAL_POWER_FILTER_COEFFICIENT     2
+#define PEDAL_CADENCE_FILTER_COEFFICIENT   4
 
 #endif /* CONFIG_H_ */

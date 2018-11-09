@@ -76,9 +76,10 @@ static uint32_t ui32_wh_sum_counter = 0;
 static uint32_t ui32_wh_x10 = 0;
 static uint8_t ui8_config_wh_x10_offset;
 
-static uint32_t ui32_torque_sensor_force_x1000;
-static uint32_t ui32_torque_accumulated = 0;
-static uint16_t ui32_torque_accumulated_filtered_x10;
+static uint32_t ui32_pedal_torque_accumulated = 0;
+static uint16_t ui16_pedal_torque_filtered;
+static uint32_t ui32_pedal_power_accumulated = 0;
+static uint16_t ui16_pedal_power_filtered;
 
 static uint16_t ui16_pedal_cadence_accumulated = 0;
 static uint8_t ui8_pedal_cadence_filtered;
@@ -142,7 +143,7 @@ uint8_t first_time_management (void);
 void temperature (void);
 void battery_soc (void);
 void calc_battery_voltage_soc (void);
-void low_pass_filter_pedal_torque (void);
+void low_pass_filter_pedal_torque_and_power (void);
 static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
 void lcd_set_backlight_intensity (uint8_t ui8_intensity);
@@ -277,9 +278,18 @@ void clock_lcd (void)
   }
 
   low_pass_filter_battery_voltage_current_power ();
-  low_pass_filter_pedal_torque ();
   // filter using only each 500ms values
-  if (ui8_lcd_menu_counter_500ms_state) { low_pass_filter_pedal_cadence (); }
+  if (ui8_lcd_menu_counter_500ms_state)
+  {
+    low_pass_filter_pedal_cadence ();
+  }
+
+  // filter using only each 100ms values
+  if (ui8_lcd_menu_counter_100ms_state)
+  {
+    low_pass_filter_pedal_torque_and_power ();
+  }
+
   calc_battery_voltage_soc ();
   calc_odometer ();
   automatic_power_off_management ();
@@ -1373,18 +1383,6 @@ void lcd_execute_menu_config_submenu_technical (void)
     case 8:
       lcd_print (motor_controller_data.ui8_foc_angle, ODOMETER_FIELD, 1);
     break;
-
-//    // pedal torque in Nm
-//    case 3:
-//      lcd_print (ui32_torque_sensor_force_x1000 / 1000, ODOMETER_FIELD, 1);
-//      lcd_enable_vol_symbol (0);
-//    break;
-//
-//    // pedal power in watts
-//    case 4:
-//      lcd_print (ui32_torque_accumulated_filtered_x10 / 10, ODOMETER_FIELD, 1);
-//      lcd_enable_vol_symbol (0);
-//    break;
   }
 
   lcd_print (ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 1);
@@ -1705,7 +1703,7 @@ void brake (void)
 
 void odometer_increase_field_state (void)
 {
-  configuration_variables.ui8_odometer_field_state = (configuration_variables.ui8_odometer_field_state + 1) % 8;
+  configuration_variables.ui8_odometer_field_state = (configuration_variables.ui8_odometer_field_state + 1) % 10;
 }
 
 void odometer (void)
@@ -1734,7 +1732,7 @@ void odometer (void)
       // DST Single Trip Distance OR
       case 0:
         lcd_print ((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 0);
-  //      lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
+        // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work wehn we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
         lcd_enable_km_symbol (1);
       break;
 
@@ -1762,13 +1760,8 @@ void odometer (void)
         lcd_print (ui32_wh_x10, ODOMETER_FIELD, 0);
       break;
 
-      // pedal cadence value
-      case 5:
-        lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 1);
-      break;
-
       // battery SOC in watts/hour
-      case 6:
+      case 5:
         if (configuration_variables.ui8_show_numeric_battery_soc & 1)
         {
           lcd_print (ui16_battery_soc_watts_hour, ODOMETER_FIELD, 1);
@@ -1779,8 +1772,23 @@ void odometer (void)
         }
       break;
 
-      // motor temperature
+      // pedal cadence value
+      case 6:
+        lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 1);
+      break;
+
+      // pedal torque
       case 7:
+        lcd_print (ui16_pedal_torque_filtered, ODOMETER_FIELD, 1);
+      break;
+
+      // pedal power
+      case 8:
+        lcd_print (ui16_pedal_power_filtered, ODOMETER_FIELD, 1);
+      break;
+
+      // motor temperature
+      case 9:
         if (configuration_variables.ui8_temperature_limit_feature_enabled)
         {
           lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 1);
@@ -1792,7 +1800,7 @@ void odometer (void)
       break;
 
       default:
-      configuration_variables.ui8_odometer_field_state = 0;
+        configuration_variables.ui8_odometer_field_state = 0;
       break;
     }
   }
@@ -2195,19 +2203,19 @@ void low_pass_filter_battery_voltage_current_power (void)
   ui16_battery_power_filtered_x50 = ui16_battery_current_filtered_x5 * ui16_battery_voltage_filtered_x10;
   ui16_battery_power_filtered = ui16_battery_power_filtered_x50 / 50;
 
-  // loose resolution under 10W
+  // loose resolution under 200W
   if (ui16_battery_power_filtered < 200)
   {
     ui16_battery_power_filtered /= 10;
     ui16_battery_power_filtered *= 10;
   }
-  // loose resolution under 20W
+  // loose resolution under 400W
   else if (ui16_battery_power_filtered < 400)
   {
     ui16_battery_power_filtered /= 20;
     ui16_battery_power_filtered *= 20;
   }
-  // loose resolution under 25W
+  // loose resolution all other values
   else
   {
     ui16_battery_power_filtered /= 25;
@@ -2215,35 +2223,51 @@ void low_pass_filter_battery_voltage_current_power (void)
   }
 }
 
-void low_pass_filter_pedal_torque (void)
+void low_pass_filter_pedal_torque_and_power (void)
 {
-  uint32_t ui32_torque_x10;
-  uint32_t ui32_torque_filtered_x10;
-
-  ui32_torque_sensor_force_x1000 = motor_controller_data.ui8_pedal_torque_sensor - motor_controller_data.ui8_adc_pedal_torque_sensor;
-  if (ui32_torque_sensor_force_x1000 > 200) { ui32_torque_sensor_force_x1000 = 0; }
-  ui32_torque_sensor_force_x1000 *= TORQUE_SENSOR_FORCE_SCALE_X1000;
-
-  // calc now torque
-  // P = force x rotations_seconds x 2 x pi
-  ui32_torque_x10 = (ui32_torque_sensor_force_x1000 * motor_controller_data.ui8_pedal_cadence) / 955;
+  // low pass filter
+  ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
+  ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
+  ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
 
   // low pass filter
-  ui32_torque_accumulated -= ui32_torque_accumulated >> TORQUE_FILTER_COEFFICIENT;
-  ui32_torque_accumulated += ui32_torque_x10;
-  ui32_torque_filtered_x10 = ((uint32_t) (ui32_torque_accumulated >> TORQUE_FILTER_COEFFICIENT));
+  ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
+  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
+  ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
-  // loose resolution under 10W
-  if (ui32_torque_filtered_x10 < 1000)
+  if (ui16_pedal_torque_filtered > 200)
   {
-    ui32_torque_accumulated_filtered_x10 = ui32_torque_filtered_x10 / 50;
-    ui32_torque_accumulated_filtered_x10 *= 50;
+    ui16_pedal_torque_filtered /= 20;
+    ui16_pedal_torque_filtered *= 20;
   }
-  // loose resolution under 20W
+  else if (ui16_pedal_torque_filtered > 100)
+  {
+    ui16_pedal_torque_filtered /= 10;
+    ui16_pedal_torque_filtered *= 10;
+  }
   else
   {
-    ui32_torque_accumulated_filtered_x10 = ui32_torque_filtered_x10 / 100;
-    ui32_torque_accumulated_filtered_x10 *= 100;
+    // do nothing to roginal values
+  }
+
+  if (ui16_pedal_power_filtered > 500)
+  {
+    ui16_pedal_power_filtered /= 25;
+    ui16_pedal_power_filtered *= 25;
+  }
+  else if (ui16_pedal_power_filtered > 200)
+  {
+    ui16_pedal_power_filtered /= 20;
+    ui16_pedal_power_filtered *= 20;
+  }
+  else if (ui16_pedal_power_filtered > 10)
+  {
+    ui16_pedal_power_filtered /= 10;
+    ui16_pedal_power_filtered *= 10;
+  }
+  else
+  {
+    ui16_pedal_power_filtered = 0; // no point to show less than 10W
   }
 }
 
