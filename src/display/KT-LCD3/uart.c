@@ -231,8 +231,6 @@ void uart_data_clock (void)
         case 2:
           // wheel max speed
           ui8_tx_buffer[7] = p_configuration_variables->ui8_wheel_max_speed;
-          // PAS_MAX_CADENCE_RPM
-          ui8_tx_buffer[8] = p_configuration_variables->ui8_pas_max_cadence;
         break;
 
         case 3:

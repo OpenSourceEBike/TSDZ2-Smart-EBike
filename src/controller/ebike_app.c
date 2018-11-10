@@ -362,8 +362,6 @@ static void communications_controller (void)
         case 2:
           // wheel max speed
           configuration_variables.ui8_wheel_max_speed = ui8_rx_buffer [7];
-          // PAS max cadence RPM
-          configuration_variables.ui8_pas_max_cadence = ui8_rx_buffer [8];
         break;
 
         case 3:
@@ -807,11 +805,6 @@ static void read_pas_cadence (void)
   else
   {
     ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064));
-
-    if (ui8_pas_cadence_rpm > configuration_variables.ui8_pas_max_cadence)
-    {
-      ui8_pas_cadence_rpm = configuration_variables.ui8_pas_max_cadence;
-    }
   }
 }
 

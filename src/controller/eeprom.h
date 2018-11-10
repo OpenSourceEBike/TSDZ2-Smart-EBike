@@ -11,7 +11,7 @@
 
 #include "main.h"
 
-#define KEY                                         0xcc
+#define KEY                                         0xcd
 
 #define EEPROM_BASE_ADDRESS                         0x4000
 #define ADDRESS_KEY                                 EEPROM_BASE_ADDRESS
@@ -24,12 +24,11 @@
 #define ADDRESS_WHEEL_PERIMETER_0                   7 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_PERIMETER_1                   8 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_MAX_SPEED                     9 + EEPROM_BASE_ADDRESS
-#define ADDRESS_PAS_MAX_CADENCE                     10 + EEPROM_BASE_ADDRESS
-#define ADDRESS_CONFIG_1                            11 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_CONFIG                      12 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_SPEED_LIMIT                 13 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_POWER_LIMIT_DIV25           14 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                         15
+#define ADDRESS_CONFIG_1                            10 + EEPROM_BASE_ADDRESS
+#define ADDRESS_OFFROAD_CONFIG                      11 + EEPROM_BASE_ADDRESS
+#define ADDRESS_OFFROAD_SPEED_LIMIT                 12 + EEPROM_BASE_ADDRESS
+#define ADDRESS_OFFROAD_POWER_LIMIT_DIV25           13 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                         14
 
 void eeprom_init (void);
 void eeprom_init_variables (void);
