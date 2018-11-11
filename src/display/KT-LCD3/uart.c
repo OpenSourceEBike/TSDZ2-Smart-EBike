@@ -91,7 +91,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
   }
 }
 
-void clock_uart_data (void)
+void uart_data_clock (void)
 {
   static uint32_t ui32_wss_tick_temp;
   struct_motor_controller_data *p_motor_controller_data;
@@ -231,8 +231,6 @@ void clock_uart_data (void)
         case 2:
           // wheel max speed
           ui8_tx_buffer[7] = p_configuration_variables->ui8_wheel_max_speed;
-          // PAS_MAX_CADENCE_RPM
-          ui8_tx_buffer[8] = p_configuration_variables->ui8_pas_max_cadence;
         break;
 
         case 3:

@@ -39,6 +39,7 @@ typedef struct _motor_controller_data
   uint8_t ui8_temperature_current_limiting_value;
   uint8_t ui8_motor_temperature;
   uint32_t ui32_wheel_speed_sensor_tick_counter;
+  uint32_t ui32_wheel_speed_sensor_tick_counter_offset;
   uint16_t ui16_pedal_torque_x10;
   uint16_t ui16_pedal_power_x10;
 } struct_motor_controller_data;
@@ -54,6 +55,8 @@ typedef struct _configuration_variables
   uint32_t ui32_wh_x10_100_percent;
   uint8_t ui8_show_numeric_battery_soc;
   uint8_t ui8_odometer_field_state;
+  uint8_t ui8_odometer_sub_field_state;
+  uint8_t ui8_odometer_show_field_number;
   uint8_t ui8_target_max_battery_power;
   uint8_t ui8_battery_cells_number;
   uint8_t ui8_battery_max_current;
@@ -62,7 +65,6 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
-  uint8_t ui8_pas_max_cadence;
   uint8_t ui8_cruise_control;
   uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
@@ -130,7 +132,7 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 // : from timer label ui8_lcd_frame_buffer[23] |= 8
 
 void lcd_init (void);
-void clock_lcd (void);
+void lcd_clock (void);
 struct_configuration_variables* get_configuration_variables (void);
 struct_motor_controller_data* lcd_get_motor_controller_data (void);
 void automatic_power_off_counter_reset (void);

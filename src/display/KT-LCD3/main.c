@@ -12,10 +12,10 @@
 #include "gpio.h"
 #include "timers.h"
 #include "adc.h"
+#include "buttons.h"
 #include "lcd.h"
 #include "uart.h"
 #include "eeprom.h"
-#include "button.h"
 #include "ht162.h"
 #include "config.h"
 
@@ -58,9 +58,9 @@ int main (void)
   lcd_init (); // must be after eeprom_init ();
 
   // block until users releases the buttons
-  while (get_button_onoff_state () ||
-      get_button_down_state () ||
-      get_button_up_state ()) ;
+  while (buttons_get_onoff_state () ||
+      buttons_get_down_state () ||
+      buttons_get_up_state ()) ;
 
   enableInterrupts ();
 
@@ -73,9 +73,9 @@ int main (void)
     {
       ui16_10ms_loop_counter = ui16_timer3_counter;
 
-      clock_button ();
-      clock_lcd ();
-      clock_uart_data ();
+      buttons_clock ();
+      lcd_clock ();
+      uart_data_clock ();
 
       continue;
     }
