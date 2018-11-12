@@ -944,86 +944,96 @@ struct_configuration_variables* get_configuration_variables (void)
 
 static void safe_tests (void)
 {
-  // the state machine should restart if:
-  if (brake_is_set() || // we hit brakes
-      configuration_variables.ui8_assist_level_factor_x10 == 0) // we choose assist power assist level = 0
+  // enabe only next state machine if user has startup without pedal rotation
+  if (configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation)
   {
-    configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enable
-    safe_tests_state_machine = 0;
-  }
-
-  switch (safe_tests_state_machine)
-  {
-    // start when we have torque sensor or throttle
-    case 0:
-    if (ui8_torque_sensor_raw || ui8_throttle)
+    // the state machine should restart if:
+    if (brake_is_set() || // we hit brakes
+        configuration_variables.ui8_assist_level_factor_x10 == 0) // we choose assist power assist level = 0
     {
-      safe_tests_state_machine_counter = 0;
-      safe_tests_state_machine = 1;
-      break;
-    }
-    break;
-
-    // wait during 3 seconds for bicyle wheel speed > 4km/h, if not we have an error
-    case 1:
-    safe_tests_state_machine_counter++;
-
-    // timeout of 3 seconds, not less to be higher than value on torque_sensor_read ()
-    // 3 seconds should be safe enough value, mosfets should not burn in 3 seconds if ebike wheel is blocked
-    if (safe_tests_state_machine_counter > 30)
-    {
-      configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
-      safe_tests_state_machine_counter = 0;
-      safe_tests_state_machine = 2;
-      break;
-    }
-
-    // bicycle wheel is rotating so we are safe
-    if (ui16_wheel_speed_x10 > 40) // seems that 4km/h may be the min value we can measure for the bicycle wheel speed
-    {
-      safe_tests_state_machine_counter = 0;
-      safe_tests_state_machine = 3;
-      break;
-    }
-
-    // release of throttle or torque sensor, restart
-    if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
-    {
+      configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enable
       safe_tests_state_machine = 0;
     }
-    break;
 
-    // wait 3 consecutive seconds for torque sensor and throttle = 0, then we can restart
-    case 2:
-    if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
+    switch (safe_tests_state_machine)
     {
+      // start when we have torque sensor or throttle
+      case 0:
+      if (ui8_torque_sensor_raw || ui8_throttle)
+      {
+        safe_tests_state_machine_counter = 0;
+        safe_tests_state_machine = 1;
+        break;
+      }
+      break;
+
+      // wait during 3 seconds for bicyle wheel speed > 4km/h, if not we have an error
+      case 1:
       safe_tests_state_machine_counter++;
 
+      // timeout of 3 seconds, not less to be higher than value on torque_sensor_read ()
+      // 3 seconds should be safe enough value, mosfets should not burn in 3 seconds if ebike wheel is blocked
       if (safe_tests_state_machine_counter > 30)
       {
-        configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+        configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+        safe_tests_state_machine_counter = 0;
+        safe_tests_state_machine = 2;
+        break;
+      }
+
+      // bicycle wheel is rotating so we are safe
+      if (ui16_wheel_speed_x10 > 40) // seems that 4km/h may be the min value we can measure for the bicycle wheel speed
+      {
+        safe_tests_state_machine_counter = 0;
+        safe_tests_state_machine = 3;
+        break;
+      }
+
+      // release of throttle or torque sensor, restart
+      if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
+      {
+        safe_tests_state_machine = 0;
+      }
+      break;
+
+      // wait 3 consecutive seconds for torque sensor and throttle = 0, then we can restart
+      case 2:
+      if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0))
+      {
+        safe_tests_state_machine_counter++;
+
+        if (safe_tests_state_machine_counter > 30)
+        {
+          configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+          safe_tests_state_machine = 0;
+          break;
+        }
+      }
+      // keep reseting the counter so we keep on this state
+      else
+      {
+        safe_tests_state_machine_counter = 0;
+      }
+      break;
+
+      // wait for bicycle wheel to be stopped so we can start again our state machine
+      case 3:
+      if (ui16_wheel_speed_x10 == 0)
+      {
         safe_tests_state_machine = 0;
         break;
       }
-    }
-    // keep reseting the counter so we keep on this state
-    else
-    {
-      safe_tests_state_machine_counter = 0;
-    }
-    break;
+      break;
 
-    // wait for bicycle wheel to be stopped so we can start again our state machine
-    case 3:
-    if (ui16_wheel_speed_x10 == 0)
-    {
+      default:
       safe_tests_state_machine = 0;
       break;
     }
-    break;
-
-    default:
+  }
+  else
+  {
+    // keep reseting state machine
+    configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enable
     safe_tests_state_machine = 0;
-    break;
   }
 }
