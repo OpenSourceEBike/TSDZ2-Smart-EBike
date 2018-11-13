@@ -291,7 +291,6 @@ static void ebike_control_motor (void)
       configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
   {
     motor_set_pwm_duty_cycle_target (255);
-//motor_set_pwm_duty_cycle_target (0);
   }
   else
   {

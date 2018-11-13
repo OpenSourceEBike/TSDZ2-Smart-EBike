@@ -383,6 +383,9 @@ uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
 uint16_t ui16_value;
 
+uint16_t ui16_counter_adc_battery_current_ramp_up = 0;
+uint8_t ui8_controller_adc_battery_max_current = 0;
+
 uint8_t ui8_first_time_run_flag = 1;
 
 volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff; // safe value so controller will not discharge the battery if not receiving a lower value from the LCD
@@ -622,7 +625,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   if (ui8_current_controller_counter > 12)
   {
     ui8_current_controller_counter = 0;
-    if ((ui8_adc_battery_current > ui8_adc_target_battery_max_current) || // battery max current, reduce duty_cycle
+    if ((ui8_adc_battery_current > ui8_controller_adc_battery_max_current) || // battery max current, reduce duty_cycle
         (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current)) // motor max phase current, reduce duty_cycle
     {
       ui8_current_controller_flag = 1;
@@ -744,6 +747,23 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // phase A
   TIM1->CCR1H = (uint8_t) (ui8_phase_a_voltage >> 7);
   TIM1->CCR1L = (uint8_t) (ui8_phase_a_voltage << 1);
+  /****************************************************************************/
+
+  /****************************************************************************/
+  // Implement ramp up ADC battery current
+  if (ui8_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
+  {
+    if (ui16_counter_adc_battery_current_ramp_up++ >= ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP)
+    {
+      ui16_counter_adc_battery_current_ramp_up = 0;
+      ui8_controller_adc_battery_max_current++;
+    }
+  }
+  else if (ui8_adc_target_battery_max_current < ui8_controller_adc_battery_max_current)
+  {
+    // we are not doing a ramp down here, just reducing to the target value
+    ui8_controller_adc_battery_max_current = ui8_adc_target_battery_max_current;
+  }
   /****************************************************************************/
 
   /****************************************************************************/
