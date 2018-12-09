@@ -37,6 +37,7 @@
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48v battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
 #define DEFAULT_VALUE_CONFIG_0                                      0 // ui8_motor_type = 0; ui8_motor_assistance_startup_config = 0
+
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_1                         5 // 0.5
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_2                         10
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_3                         15
@@ -46,6 +47,7 @@
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_7                         40
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_8                         45
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_9                         50
+
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED     0
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_STATE               1
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1      4
@@ -59,6 +61,7 @@
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_9      28
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_TIME                20 // 2.0 seconds
 #define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FADE_TIME           35 // 3.5 seconds
+
 #define DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT             75 // 75 degrees celsius
 #define DEFAULT_VALUE_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT             85
 #define DEFAULT_VALUE_BATTERY_VOLTAGE_RESET_WH_COUNTER_X10_0        30 // 48v battery, 54.2 volts fully charged = 54.2: (30 + (2 << 8))
@@ -73,7 +76,17 @@
 #define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT                           25
 #define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED                   0
 #define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25                     10 //10 * 25 = 250W
-#define DEFAULT_VALUE_ODOMETER_X10                                  0
+#define DEFAULT_VALUE_ODOMETER_X10                                  0 // Default value for odometer
+#define DEFAULT_VALUE_TRIP_X10                                      0 // Default value for trip distance
+
+// these are the default values for the sub field menus for every odometer field state
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0                    0
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1                    0
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2                    0
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_3                    0
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4                    0
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5                    0
+#define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6                    0
 
 // *************************************************************************** //
 

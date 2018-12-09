@@ -75,7 +75,17 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25,
     DEFAULT_VALUE_ODOMETER_X10,
     DEFAULT_VALUE_ODOMETER_X10,
-    DEFAULT_VALUE_ODOMETER_X10
+    DEFAULT_VALUE_ODOMETER_X10,
+    DEFAULT_VALUE_TRIP_X10,
+    DEFAULT_VALUE_TRIP_X10,
+    DEFAULT_VALUE_TRIP_X10,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_3,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5,
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6
   };
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
@@ -171,7 +181,16 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui32_wh_x10_100_percent = ui32_temp;
 
   p_configuration_variables->ui8_show_numeric_battery_soc = FLASH_ReadByte (ADDRESS_SHOW_NUMERIC_BATTERY_SOC);
+
   p_configuration_variables->ui8_odometer_field_state = FLASH_ReadByte (ADDRESS_ODOMETER_FIELD_STATE);
+  p_configuration_variables->ui8_odometer_sub_field_state_0 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_0);
+  p_configuration_variables->ui8_odometer_sub_field_state_1 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_1);
+  p_configuration_variables->ui8_odometer_sub_field_state_2 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_2);
+  p_configuration_variables->ui8_odometer_sub_field_state_3 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_3);
+  p_configuration_variables->ui8_odometer_sub_field_state_4 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_4); 
+  p_configuration_variables->ui8_odometer_sub_field_state_5 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_5); 
+  p_configuration_variables->ui8_odometer_sub_field_state_6 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_6);
+  
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
   p_configuration_variables->ui8_target_max_battery_power = FLASH_ReadByte (ADDRESS_TARGET_MAX_BATTERY_POWER);
   p_configuration_variables->ui8_battery_cells_number = FLASH_ReadByte (ADDRESS_BATTERY_CELLS_NUMBER);
@@ -226,12 +245,22 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_offroad_power_limit_enabled = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_ENABLED);
   p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_DIV25);
 
+  // odometer variable
   ui32_temp = FLASH_ReadByte (ADDRESS_ODOMETER_X10_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_ODOMETER_X10_1);
   ui32_temp += (((uint32_t) ui8_temp << 8) & 0xff00);
   ui8_temp = FLASH_ReadByte (ADDRESS_ODOMETER_X10_2);
   ui32_temp += (((uint32_t) ui8_temp << 16) & 0xff0000);
   p_configuration_variables->ui32_odometer_x10 = ui32_temp;
+  
+  
+  // trip distance variable
+  ui32_temp = FLASH_ReadByte (ADDRESS_TRIP_X10_0);
+  ui8_temp = FLASH_ReadByte (ADDRESS_TRIP_X10_1);
+  ui32_temp += (((uint32_t) ui8_temp << 8) & 0xff00);
+  ui8_temp = FLASH_ReadByte (ADDRESS_TRIP_X10_2);
+  ui32_temp += (((uint32_t) ui8_temp << 16) & 0xff0000);
+  p_configuration_variables->ui32_trip_x10 = ui32_temp;
 }
 
 void eeprom_write_variables (void)
@@ -247,7 +276,8 @@ static void variables_to_array (uint8_t *ui8_array)
 
   struct_configuration_variables *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
-
+  
+  // write various parameters
   ui8_array [0] = KEY;
   ui8_array [1] = p_configuration_variables->ui8_assist_level;
   ui8_array [2] = p_configuration_variables->ui16_wheel_perimeter & 255;
@@ -279,7 +309,8 @@ static void variables_to_array (uint8_t *ui8_array)
     ui8_array [22 + ui8_index] = p_configuration_variables->ui8_assist_level_factor [ui8_index];
   }
   ui8_array [31] = p_configuration_variables->ui8_number_of_assist_levels;
-
+  
+  // write motor parameters
   ui8_array [32] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
   ui8_array [33] = p_configuration_variables->ui8_startup_motor_power_boost_state;
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
@@ -290,26 +321,45 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
   ui8_array [45] = p_configuration_variables->ui8_motor_temperature_min_value_to_limit;
   ui8_array [46] = p_configuration_variables->ui8_motor_temperature_max_value_to_limit;
-
+  
+  // write battery parameters
   ui8_array [47] = p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 & 255;
   ui8_array [48] = (p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 >> 8) & 255;
-
+  
+  // write display parameters
   ui8_array [49] = p_configuration_variables->ui8_lcd_power_off_time_minutes;
   ui8_array [50] = p_configuration_variables->ui8_lcd_backlight_on_brightness;
   ui8_array [51] = p_configuration_variables->ui8_lcd_backlight_off_brightness;
 
+  // write battery parameters
   ui8_array [52] = p_configuration_variables->ui16_battery_pack_resistance_x1000 & 255;
   ui8_array [53] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
 
+  // write offroad parameters
   ui8_array [54] = p_configuration_variables->ui8_offroad_feature_enabled;
   ui8_array [55] = p_configuration_variables->ui8_offroad_enabled_on_startup;
   ui8_array [56] = p_configuration_variables->ui8_offroad_speed_limit;
   ui8_array [57] = p_configuration_variables->ui8_offroad_power_limit_enabled;
   ui8_array [58] = p_configuration_variables->ui8_offroad_power_limit_div25;
-
+  
+  // write odometer variable
   ui8_array [59] = p_configuration_variables->ui32_odometer_x10 & 255;
   ui8_array [60] = (p_configuration_variables->ui32_odometer_x10 >> 8) & 255;
   ui8_array [61] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
+  
+  // write trip distance variable
+  ui8_array [62] = p_configuration_variables->ui32_trip_x10 & 255;
+  ui8_array [63] = (p_configuration_variables->ui32_trip_x10 >> 8) & 255;
+  ui8_array [64] = (p_configuration_variables->ui32_trip_x10 >> 16) & 255;
+
+  // write sub menu states so user can resume since last power on
+  ui8_array [65] = p_configuration_variables->ui8_odometer_sub_field_state_0;
+  ui8_array [66] = p_configuration_variables->ui8_odometer_sub_field_state_1;
+  ui8_array [67] = p_configuration_variables->ui8_odometer_sub_field_state_2;
+  ui8_array [68] = p_configuration_variables->ui8_odometer_sub_field_state_3;
+  ui8_array [69] = p_configuration_variables->ui8_odometer_sub_field_state_4;
+  ui8_array [70] = p_configuration_variables->ui8_odometer_sub_field_state_5;
+  ui8_array [71] = p_configuration_variables->ui8_odometer_sub_field_state_6;
 }
 
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
