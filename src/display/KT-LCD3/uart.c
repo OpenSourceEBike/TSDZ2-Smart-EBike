@@ -212,7 +212,7 @@ void uart_data_clock (void)
       ui8_tx_buffer[5] = p_configuration_variables->ui8_battery_max_current;
 
       // battery power
-      ui8_tx_buffer[6] = p_configuration_variables->ui8_target_max_battery_power;
+      ui8_tx_buffer[6] = p_configuration_variables->ui8_target_max_battery_power_div25;
 
       switch (ui8_master_comm_package_id)
       {
