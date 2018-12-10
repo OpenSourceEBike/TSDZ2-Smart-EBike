@@ -331,7 +331,6 @@ void lcd_clock (void)
 void lcd_execute_main_screen (void)
 {
   temperature ();
-  assist_level_state ();
   odometer ();
   wheel_speed ();
   walk_assist_state ();
@@ -340,6 +339,7 @@ void lcd_execute_main_screen (void)
   battery_soc ();
   lights_state ();
   brake ();
+  assist_level_state (); // need to be the last one because clears buttons events
 }
 
 void lcd_execute_menu_config (void)
