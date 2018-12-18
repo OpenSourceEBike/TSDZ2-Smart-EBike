@@ -76,7 +76,17 @@
 #define ADDRESS_ODOMETER_X10_0                                              59 + EEPROM_BASE_ADDRESS
 #define ADDRESS_ODOMETER_X10_1                                              60 + EEPROM_BASE_ADDRESS
 #define ADDRESS_ODOMETER_X10_2                                              61 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 62
+#define ADDRESS_TRIP_X10_0                                                  62 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TRIP_X10_1                                                  63 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TRIP_X10_2                                                  64 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_0                                   65 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_1                                   66 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_2                                   67 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_3                                   68 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_4                                   69 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_5                                   70 + EEPROM_BASE_ADDRESS
+#define ADRESS_ODOMETER_SUB_FIELD_STATE_6                                   71 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 72
 
 void eeprom_init (void);
 void eeprom_init_variables (void);

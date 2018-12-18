@@ -53,9 +53,16 @@ typedef struct _configuration_variables
   uint8_t ui8_units_type;
   uint32_t ui32_wh_x10_offset;
   uint32_t ui32_wh_x10_100_percent;
-  uint8_t ui8_battery_soc_enable;
+  uint8_t ui8_show_numeric_battery_soc;
   uint8_t ui8_odometer_field_state;
   uint8_t ui8_odometer_sub_field_state;
+  uint8_t ui8_odometer_sub_field_state_0;
+  uint8_t ui8_odometer_sub_field_state_1;
+  uint8_t ui8_odometer_sub_field_state_2;
+  uint8_t ui8_odometer_sub_field_state_3;
+  uint8_t ui8_odometer_sub_field_state_4;
+  uint8_t ui8_odometer_sub_field_state_5;
+  uint8_t ui8_odometer_sub_field_state_6;
   uint8_t ui8_odometer_show_field_number;
   uint8_t ui8_target_max_battery_power_div25;
   uint8_t ui8_battery_cells_number;
@@ -87,6 +94,7 @@ typedef struct _configuration_variables
   uint8_t ui8_offroad_power_limit_div25;
   uint16_t ui16_odometer_distance_x10;
   uint32_t ui32_odometer_x10;
+  uint32_t ui32_trip_x10;
 } struct_configuration_variables;
 
 // LCD RAM has 32*8 bits
