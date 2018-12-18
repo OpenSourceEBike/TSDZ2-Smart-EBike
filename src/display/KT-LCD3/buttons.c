@@ -20,7 +20,7 @@ uint8_t ui8_down_button_state_counter = 0;
 uint8_t ui8_up_button_state = 0;
 uint8_t ui8_up_button_state_counter = 0;
 
-buttons_events_type_t buttons_events = 0;
+buttons_events_t buttons_events = 0;
 
 uint8_t buttons_get_up_state (void)
 {
@@ -137,12 +137,12 @@ void buttons_clear_up_down_click_event (void)
   buttons_events &= ~UPDOWN_CLICK;
 }
 
-buttons_events_type_t buttons_get_events (void)
+buttons_events_t buttons_get_events (void)
 {
   return buttons_events;
 }
 
-void buttons_set_events (buttons_events_type_t events)
+void buttons_set_events (buttons_events_t events)
 {
   buttons_events |= events;
 }

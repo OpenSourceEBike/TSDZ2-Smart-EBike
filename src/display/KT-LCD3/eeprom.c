@@ -6,10 +6,12 @@
  * Released under the GPL License, Version 3
  */
 
+#include "eeprom.h"
+
 #include <stdint.h>
+
 #include "stm8s.h"
 #include "stm8s_flash.h"
-#include "eeprom.h"
 #include "main.h"
 #include "lcd.h"
 
@@ -181,7 +183,6 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui32_wh_x10_100_percent = ui32_temp;
 
   p_configuration_variables->ui8_show_numeric_battery_soc = FLASH_ReadByte (ADDRESS_SHOW_NUMERIC_BATTERY_SOC);
-
   p_configuration_variables->ui8_odometer_field_state = FLASH_ReadByte (ADDRESS_ODOMETER_FIELD_STATE);
   p_configuration_variables->ui8_odometer_sub_field_state_0 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_0);
   p_configuration_variables->ui8_odometer_sub_field_state_1 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_1);
@@ -192,7 +193,7 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_odometer_sub_field_state_6 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_6);
   
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
-  p_configuration_variables->ui8_target_max_battery_power = FLASH_ReadByte (ADDRESS_TARGET_MAX_BATTERY_POWER);
+  p_configuration_variables->ui8_target_max_battery_power_div25 = FLASH_ReadByte (ADDRESS_TARGET_MAX_BATTERY_POWER);
   p_configuration_variables->ui8_battery_cells_number = FLASH_ReadByte (ADDRESS_BATTERY_CELLS_NUMBER);
 
   ui16_temp = FLASH_ReadByte (ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0);
@@ -292,10 +293,10 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [11] = (p_configuration_variables->ui32_wh_x10_100_percent >> 8) & 255;
   ui8_array [12] = (p_configuration_variables->ui32_wh_x10_100_percent >> 16) & 255;
   ui8_array [13] = (p_configuration_variables->ui32_wh_x10_100_percent >> 24) & 255;
-  ui8_array [14] = p_configuration_variables->ui8_show_numeric_battery_soc;
+  ui8_array [14] = p_configuration_variables->ui8_battery_soc_enable;
   ui8_array [15] = p_configuration_variables->ui8_odometer_field_state;
   ui8_array [16] = p_configuration_variables->ui8_battery_max_current;
-  ui8_array [17] = p_configuration_variables->ui8_target_max_battery_power;
+  ui8_array [17] = p_configuration_variables->ui8_target_max_battery_power_div25;
   ui8_array [18] = p_configuration_variables->ui8_battery_cells_number;
   ui8_array [19] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
   ui8_array [20] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;

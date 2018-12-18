@@ -15,9 +15,9 @@
 #include "buttons.h"
 #include "lcd.h"
 #include "uart.h"
-#include "eeprom.h"
 #include "ht162.h"
 #include "config.h"
+#include "eeprom.h"
 
 // With SDCC, interrupt service routine function prototypes must be placed in the file that contains main ()
 // in order for an vector for the interrupt to be placed in the the interrupt vector space.  It's acceptable
@@ -45,7 +45,7 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER);
 int main (void)
 {
   uint16_t ui16_timer3_counter;
-  uint16_t ui16_10ms_loop_counter;
+  uint16_t ui16_10ms_loop_counter = 0;
 
   //set clock at the max 16MHz
   CLK_HSIPrescalerConfig (CLK_PRESCALER_HSIDIV1);

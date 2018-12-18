@@ -24,7 +24,7 @@ typedef enum
   DOWN_CLICK_LONG_CLICK = 128,
   DOWN_LONG_CLICK = 256,
   UPDOWN_CLICK = 512
-} buttons_events_type_t;
+} buttons_events_t;
 
 uint8_t buttons_get_up_state (void);
 uint8_t buttons_get_up_click_event (void);
@@ -50,8 +50,8 @@ void buttons_clear_onoff_long_click_event (void);
 uint8_t buttons_get_up_down_click_event (void);
 void buttons_clear_up_down_click_event (void);
 void buttons_clock (void);
-buttons_events_type_t buttons_get_events (void);
+buttons_events_t buttons_get_events (void);
 void buttons_clear_all_events (void);
-void buttons_set_events (buttons_events_type_t events);
+void buttons_set_events (buttons_events_t events);
 
 #endif /* _BUTTON_H_ */
