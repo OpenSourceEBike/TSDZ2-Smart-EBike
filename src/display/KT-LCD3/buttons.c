@@ -42,7 +42,7 @@ void buttons_clear_up_click_event (void)
   buttons_events &= ~UP_CLICK;
 }
 
-uint8_t buttons_get_up_click_long_click_event (void)
+uint8_t buttons_get_up_click_long_click_event(void)
 {
   return (buttons_events & UP_CLICK_LONG_CLICK) ? 1: 0;
 }

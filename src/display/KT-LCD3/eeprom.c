@@ -293,7 +293,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [11] = (p_configuration_variables->ui32_wh_x10_100_percent >> 8) & 255;
   ui8_array [12] = (p_configuration_variables->ui32_wh_x10_100_percent >> 16) & 255;
   ui8_array [13] = (p_configuration_variables->ui32_wh_x10_100_percent >> 24) & 255;
-  ui8_array [14] = p_configuration_variables->ui8_battery_soc_enable;
+  ui8_array [14] = p_configuration_variables->ui8_show_numeric_battery_soc;
   ui8_array [15] = p_configuration_variables->ui8_odometer_field_state;
   ui8_array [16] = p_configuration_variables->ui8_battery_max_current;
   ui8_array [17] = p_configuration_variables->ui8_target_max_battery_power_div25;
