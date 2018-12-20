@@ -550,7 +550,8 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
 void lcd_execute_menu_config_submenu_battery (void)
 {
   var_number_t lcd_var_number;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -617,7 +618,8 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
 {
   uint8_t ui8_temp;
   var_number_t lcd_var_number;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -654,7 +656,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
       else { configuration_variables.ui8_show_numeric_battery_soc &= ~2; }
     break;
 
-    // battery_voltage_reset_wh_counter
+    // menu to set battery_voltage_reset_wh_counter
     case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui16_battery_voltage_reset_wh_counter_x10;
       lcd_var_number.ui8_size = 16;
@@ -678,7 +680,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // menu to set current watts hour value
+    // menu to set current watt hour value
     case 4:
       // on the very first time, use current value of ui32_wh_x10
       if (ui8_config_wh_x10_offset)
@@ -686,6 +688,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
         ui8_config_wh_x10_offset = 0;
         configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
       }
+      
       // keep reseting this values
       ui32_wh_sum_x5 = 0;
       ui32_wh_sum_counter = 0;
@@ -708,8 +711,9 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
 void lcd_execute_menu_config_submenu_assist_level (void)
 {
   var_number_t lcd_var_number;
-
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 1));
+  
+  // advance on submenus on button_onoff_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 1));                   //CHECK IF OVERFLOW
 
   // number of assist levels: 0 to 9
   if (ui8_lcd_menu_config_submenu_state == 0)
@@ -743,7 +747,8 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
 {
   var_number_t lcd_var_number;
   uint8_t ui8_temp;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 5));
 
   // feature enable or disable
@@ -833,7 +838,8 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
 void lcd_execute_menu_config_submenu_motor_temperature (void)
 {
   var_number_t lcd_var_number;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -882,7 +888,8 @@ void lcd_execute_menu_config_submenu_lcd (void)
 {
   var_number_t lcd_var_number;
   uint8_t ui8_temp;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -940,9 +947,10 @@ void lcd_execute_menu_config_submenu_lcd (void)
 
       if (ui8_reset_to_defaults_counter > 9)
       {
+        // erase saved EEPROM values (all values will be set to defaults)
         eeprom_erase_key_value ();
 
-        // Turn off LCD, when the user turns it on again it will rewrite the defaults
+        // Turn off LCD
         lcd_power_off (0);
       }
     break;
@@ -955,7 +963,8 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
 {
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -1029,7 +1038,8 @@ void lcd_execute_menu_config_submenu_various (void)
 {
   var_number_t lcd_var_number;
   uint32_t ui32_odometer_x10;
-
+  
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -1061,6 +1071,7 @@ void lcd_execute_menu_config_submenu_various (void)
     // set odometer
     case 2:
       ui32_odometer_x10 = configuration_variables.ui32_odometer_x10;
+      
       if (configuration_variables.ui8_units_type)
       {
         // imperial
@@ -1097,6 +1108,7 @@ void lcd_execute_menu_config_submenu_various (void)
 
 void lcd_execute_menu_config_submenu_technical (void)
 {
+  // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 9);
 
   switch (ui8_lcd_menu_config_submenu_state)
@@ -1286,11 +1298,11 @@ void battery_soc(void)
   switch (ui8_battery_state_of_charge)
   {
     case 0:
-    // empty, so flash the empty battery symbol
-    if (ui8_lcd_menu_flash_state)
-    {
-      ui8_lcd_frame_buffer[23] |= 16;
-    }
+      // empty, so flash the empty battery symbol
+      if (ui8_lcd_menu_flash_state)
+      {
+        ui8_lcd_frame_buffer[23] |= 16;
+      }
     break;
 
     case 1:
@@ -1366,7 +1378,7 @@ void lights_state (void)
     else
     {
       ui8_lights_state = 0;
-      lcd_lights_symbol = 0;
+      lcd_lights_symbol = 0;                                                                                                    // Make lcd_enable_lights_symbol ()
       motor_controller_data.ui8_lights = 0;
     }
   }
@@ -2414,13 +2426,13 @@ void low_pass_filter_battery_voltage_current_power (void)
   ui16_battery_power_filtered_x50 = ui16_battery_current_filtered_x5 * ui16_battery_voltage_filtered_x10;
   ui16_battery_power_filtered = ui16_battery_power_filtered_x50 / 50;
 
-  // loose resolution under 200W
+  // loose resolution under 200 W
   if (ui16_battery_power_filtered < 200)
   {
     ui16_battery_power_filtered /= 10;
     ui16_battery_power_filtered *= 10;
   }
-  // loose resolution under 400W
+  // loose resolution under 400 W
   else if (ui16_battery_power_filtered < 400)
   {
     ui16_battery_power_filtered /= 20;
@@ -2793,7 +2805,6 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
   }
 
   // if LONG CLICK, keep track of long click so variable is increased automatically 10x every second
-  //
   if(buttons_get_up_long_click_event() ||
       buttons_get_down_long_click_event())
   {
