@@ -533,11 +533,13 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
       if(ui8_units_type)
       {
         configuration_variables.ui8_units_type |= 1;
+        lcd_enable_mil_symbol (1);
         lcd_enable_mph_symbol(1);
       }
       else
       {
         configuration_variables.ui8_units_type &= ~1;
+        lcd_enable_km_symbol (1);
         lcd_enable_kmh_symbol(1);
       }
       
