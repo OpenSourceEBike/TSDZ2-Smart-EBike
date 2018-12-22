@@ -451,7 +451,7 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
   // advance on submenus on button_onoff_click_event
   advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 3);
   
-  // if user has choosen imperial units
+  // if user has chosen imperial units
   if (configuration_variables.ui8_units_type)
   {
     // convert max wheel speed in imperial units to metric units and save to ui8_wheel_max_speed
