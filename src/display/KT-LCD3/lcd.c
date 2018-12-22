@@ -707,7 +707,7 @@ void lcd_execute_menu_config_submenu_assist_level (void)
   var_number_t lcd_var_number;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 1));                   //CHECK IF OVERFLOW
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 1));
 
   // number of assist levels: 0 to 9
   if (ui8_lcd_menu_config_submenu_state == 0)
