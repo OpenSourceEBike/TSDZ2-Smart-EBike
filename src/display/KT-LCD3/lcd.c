@@ -447,33 +447,35 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
 {
   var_number_t lcd_var_number;
   uint8_t ui8_units_type;
-  uint8_t ui8_temp;
 
   // advance on submenus on button_onoff_click_event
   advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 3);
-
+  
+  // if user has choosen imperial units
+  if (configuration_variables.ui8_units_type)
+  {
+    // convert max wheel speed in imperial units to metric units and save to ui8_wheel_max_speed
+    configuration_variables.ui8_wheel_max_speed = (uint8_t) (((float) configuration_variables.ui8_wheel_max_speed_imperial) * 1.6);
+  }
+  
   switch(ui8_lcd_menu_config_submenu_state)
   {
     // menu to choose max wheel speed
     case 0:
-      
+    
       // display max wheel speed in either imperial or metric units
       if (configuration_variables.ui8_units_type)
       {
         // imperial
-        ui8_temp = configuration_variables.ui8_wheel_max_speed;
-        ui8_temp = (uint8_t) (((float) ui8_temp) / 1.6);       
-
-        lcd_var_number.p_var_number = &ui8_temp;
+        lcd_var_number.p_var_number = &configuration_variables.ui8_wheel_max_speed_imperial;
         lcd_var_number.ui8_size = 8;
-        lcd_var_number.ui8_decimal_digit = 1;
-        lcd_var_number.ui32_max_value = 255;
+        lcd_var_number.ui8_decimal_digit = 0;
+        lcd_var_number.ui32_max_value = 62; // needs to be 1.6 times smaller than metric max value
         lcd_var_number.ui32_min_value = 0;
         lcd_var_number.ui32_increment_step = 1;
         lcd_var_number.ui8_odometer_field = WHEEL_SPEED_FIELD;
         lcd_configurations_print_number(&lcd_var_number);
         
-        configuration_variables.ui8_wheel_max_speed = (uint8_t) (((float) ui8_temp) * 1.6);
         lcd_enable_mph_symbol (1);
       }
       else
@@ -482,7 +484,7 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
         lcd_var_number.p_var_number = &configuration_variables.ui8_wheel_max_speed;
         lcd_var_number.ui8_size = 8;
         lcd_var_number.ui8_decimal_digit = 0;
-        lcd_var_number.ui32_max_value = 255;
+        lcd_var_number.ui32_max_value = 99; // this value needs to be smaller than 100 or else value > digits on display
         lcd_var_number.ui32_min_value = 0;
         lcd_var_number.ui32_increment_step = 1;
         lcd_var_number.ui8_odometer_field = WHEEL_SPEED_FIELD;        
@@ -1068,7 +1070,7 @@ void lcd_execute_menu_config_submenu_various (void)
         lcd_var_number.p_var_number = &ui32_odometer_x10;
         lcd_var_number.ui8_size = 32;
         lcd_var_number.ui8_decimal_digit = 1;
-        lcd_var_number.ui32_max_value = 4294967295;
+        lcd_var_number.ui32_max_value = 4294967295; // needs to be 1.6 times smaller than metric max value
         lcd_var_number.ui32_min_value = 0;
         lcd_var_number.ui32_increment_step = 25;
         lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -2797,16 +2799,13 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
   }
 
   // if LONG CLICK, keep track of long click so variable is increased automatically 10x every second
-  if(buttons_get_up_long_click_event() ||
-      buttons_get_down_long_click_event())
+  if(buttons_get_up_long_click_event() || buttons_get_down_long_click_event())
   {
     ui8_long_click_started = 1;
   }
 
   // trigger at ever 100ms if UP/DOWN LONG CLICK
-  if((ui8_long_click_started == 1) &&
-      (buttons_get_up_state() ||
-          buttons_get_down_state()))
+  if((ui8_long_click_started == 1) && (buttons_get_up_state() || buttons_get_down_state()))
   {
     ui8_long_click_counter++;
 
@@ -2823,9 +2822,7 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
   }
 
   // increase
-  if(buttons_get_up_click_event() ||
-      (buttons_get_up_state() &&
-          ui8_long_click_trigger))
+  if(buttons_get_up_click_event() || (buttons_get_up_state() && ui8_long_click_trigger))
   {
     if(p_lcd_var_number->ui8_size == 8)
     {
@@ -2845,9 +2842,7 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
   }
 
   // decrease
-  if(buttons_get_down_click_event() ||
-      (buttons_get_down_state() &&
-          ui8_long_click_trigger))
+  if(buttons_get_down_click_event() || (buttons_get_down_state() && ui8_long_click_trigger))
   {
     if(p_lcd_var_number->ui8_size == 8)
     {

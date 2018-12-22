@@ -50,6 +50,7 @@ typedef struct _configuration_variables
   uint8_t ui8_number_of_assist_levels;
   uint16_t ui16_wheel_perimeter;
   uint8_t ui8_wheel_max_speed;
+  uint8_t ui8_wheel_max_speed_imperial;
   uint8_t ui8_units_type;
   uint32_t ui32_wh_x10_offset;
   uint32_t ui32_wh_x10_100_percent;
