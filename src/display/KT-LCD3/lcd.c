@@ -460,9 +460,39 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
   
   switch(ui8_lcd_menu_config_submenu_state)
   {
-    // menu to choose max wheel speed
+    // menu to choose units type
     case 0:
+      
+      ui8_units_type = configuration_variables.ui8_units_type;
+      lcd_var_number.p_var_number = &ui8_units_type;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      // clear previous number written on ODOMETER_FIELD
+      ui8_lcd_frame_buffer[ui8_lcd_field_offset[ODOMETER_FIELD] - 1] &= NUMBERS_MASK;
+
+      if(ui8_units_type)
+      {
+        configuration_variables.ui8_units_type |= 1;
+        lcd_enable_mil_symbol (1);
+        lcd_enable_mph_symbol(1);
+      }
+      else
+      {
+        configuration_variables.ui8_units_type &= ~1;
+        lcd_enable_km_symbol (1);
+        lcd_enable_kmh_symbol(1);
+      }
+      
+    break;
     
+    // menu to choose max wheel speed
+    case 1:
+      
       // display max wheel speed in either imperial or metric units
       if (configuration_variables.ui8_units_type)
       {
@@ -492,10 +522,12 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
         
         lcd_enable_kmh_symbol (1);
       }
+      
     break;
-
+    
     // menu to choose wheel perimeter in millimeters
-    case 1:
+    case 2:
+    
       lcd_var_number.p_var_number = &configuration_variables.ui16_wheel_perimeter;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -504,35 +536,7 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-    break;
-
-    // menu to choose units type
-    case 2:
-      ui8_units_type = configuration_variables.ui8_units_type;
-      lcd_var_number.p_var_number = &ui8_units_type;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      // clear previous number written on ODOMETER_FIELD
-      ui8_lcd_frame_buffer[ui8_lcd_field_offset[ODOMETER_FIELD] - 1] &= NUMBERS_MASK;
-
-      if(ui8_units_type)
-      {
-        configuration_variables.ui8_units_type |= 1;
-        lcd_enable_mil_symbol (1);
-        lcd_enable_mph_symbol(1);
-      }
-      else
-      {
-        configuration_variables.ui8_units_type &= ~1;
-        lcd_enable_km_symbol (1);
-        lcd_enable_kmh_symbol(1);
-      }
-      
+    
     break;
   }
 }
