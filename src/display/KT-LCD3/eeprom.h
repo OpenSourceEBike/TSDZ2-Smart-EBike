@@ -86,7 +86,8 @@
 #define ADRESS_ODOMETER_SUB_FIELD_STATE_4                                   69 + EEPROM_BASE_ADDRESS
 #define ADRESS_ODOMETER_SUB_FIELD_STATE_5                                   70 + EEPROM_BASE_ADDRESS
 #define ADRESS_ODOMETER_SUB_FIELD_STATE_6                                   71 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 72
+#define ADDRESS_MAX_WHEEL_SPEED_IMPERIAL                                    72 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 73
 
 void eeprom_init (void);
 void eeprom_init_variables (void);

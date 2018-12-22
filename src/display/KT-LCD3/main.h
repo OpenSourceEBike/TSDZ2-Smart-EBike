@@ -26,7 +26,8 @@
 #define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2 // 26'' wheel: 2050mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                             8
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50
-#define DEFAULT_VALUE_UNITS_TYPE                                    0 // 0 = km/h
+#define DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL                      20
+#define DEFAULT_VALUE_UNITS_TYPE                                    0 // 0 = km/h and km
 #define DEFAULT_VALUE_WH_OFFSET                                     0
 #define DEFAULT_VALUE_HW_X10_100_PERCENT                            0
 #define DEAFULT_VALUE_SHOW_NUMERIC_BATTERY_SOC                      0
