@@ -462,7 +462,7 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
   {
     // menu to choose units type
     case 0:
-      
+
       ui8_units_type = configuration_variables.ui8_units_type;
       lcd_var_number.p_var_number = &ui8_units_type;
       lcd_var_number.ui8_size = 8;
@@ -478,14 +478,20 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
       if(ui8_units_type)
       {
         configuration_variables.ui8_units_type |= 1;
-        lcd_enable_mil_symbol (1);
-        lcd_enable_mph_symbol(1);
+        if(ui8_lcd_menu_flash_state)
+        {
+          lcd_enable_mil_symbol(1);
+          lcd_enable_mph_symbol(1);
+        }
       }
       else
       {
         configuration_variables.ui8_units_type &= ~1;
-        lcd_enable_km_symbol (1);
-        lcd_enable_kmh_symbol(1);
+        if(ui8_lcd_menu_flash_state)
+        {
+          lcd_enable_km_symbol(1);
+          lcd_enable_kmh_symbol(1);
+        }
       }
       
     break;
