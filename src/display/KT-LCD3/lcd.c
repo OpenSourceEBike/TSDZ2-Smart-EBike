@@ -2076,9 +2076,7 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
   // first delete the field
   for (ui8_counter = 0; ui8_counter < 5; ui8_counter++)
   {
-    if (ui8_lcd_field == ASSIST_LEVEL_FIELD ||
-            ui8_lcd_field == ODOMETER_FIELD ||
-            ui8_lcd_field == TEMPERATURE_FIELD)
+    if (ui8_lcd_field == ASSIST_LEVEL_FIELD || ui8_lcd_field == ODOMETER_FIELD || ui8_lcd_field == TEMPERATURE_FIELD)
     {
       ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= NUMBERS_MASK;
     }
