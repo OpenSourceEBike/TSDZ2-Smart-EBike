@@ -2067,8 +2067,8 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
   uint8_t ui8_digit;
   uint8_t ui8_counter;
 
-  // let's multiply the number by 10 to not show decimal digit
-  if((ui8_options == 0) && (ui8_lcd_field != ASSIST_LEVEL_FIELD))
+  // multiply the value by 10 to not show decimal digit if ...
+  if( (ui8_options == 0) && (ui8_lcd_field != ASSIST_LEVEL_FIELD) && (ui8_lcd_field != BATTERY_POWER_FIELD) )
   {
     ui32_number *= 10;
   }
