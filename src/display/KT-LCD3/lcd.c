@@ -640,7 +640,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
       { configuration_variables.ui8_show_numeric_battery_soc |= 1; }
       else 
       { configuration_variables.ui8_show_numeric_battery_soc &= ~1; }
-      break;
+    break;
 
     // menu to enable/disable show of numeric watts hour value in incrementing or decementing percentage
     case 1:
