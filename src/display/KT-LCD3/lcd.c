@@ -636,8 +636,10 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
 
-      if(ui8_temp) { configuration_variables.ui8_show_numeric_battery_soc |= 1; }
-      else { configuration_variables.ui8_show_numeric_battery_soc &= ~1; }
+      if(ui8_temp) 
+      { configuration_variables.ui8_show_numeric_battery_soc |= 1; }
+      else 
+      { configuration_variables.ui8_show_numeric_battery_soc &= ~1; }
       break;
 
     // menu to enable/disable show of numeric watts hour value in incrementing or decementing percentage
