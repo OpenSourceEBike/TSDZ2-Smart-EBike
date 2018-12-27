@@ -245,24 +245,21 @@ void lcd_clock (void)
   update_menu_flashing_state ();
 
   // enter menu configurations: UP + DOWN click event
-  if (buttons_get_up_down_click_event () &&
-      ui8_lcd_menu != 1)
+  if (buttons_get_up_down_click_event () && ui8_lcd_menu != 1)
   {
     buttons_clear_up_down_click_event ();
     ui8_lcd_menu = 1;
   }
 
   // enter in menu set power: ONOFF + UP click event
-  if (!configuration_variables.ui8_offroad_feature_enabled &&
-      buttons_get_onoff_state () && buttons_get_up_state ())
+  if (!configuration_variables.ui8_offroad_feature_enabled && buttons_get_onoff_state () && buttons_get_up_state ())
   {
     buttons_clear_all_events ();
     ui8_lcd_menu = 2;
   }
 
   // change temperature field state: ONOFF + DOWN click event
-  if (!configuration_variables.ui8_offroad_feature_enabled &&
-      buttons_get_onoff_state () && buttons_get_down_state ())
+  if (!configuration_variables.ui8_offroad_feature_enabled && buttons_get_onoff_state () && buttons_get_down_state ())
   {
     buttons_clear_all_events ();
 
@@ -343,7 +340,7 @@ void lcd_execute_main_screen (void)
   battery_soc ();
   lights_state ();
   brake ();
-  assist_level_state (); // need to be the last one because clears buttons events
+  assist_level_state (); // needs to be the last because function clears all button events
 }
 
 void lcd_execute_menu_config (void)
@@ -580,7 +577,7 @@ void lcd_execute_menu_config_submenu_battery (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // battery cells number
+    // battery number of cells in series
     case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_battery_cells_number;
       lcd_var_number.ui8_size = 8;
@@ -592,7 +589,7 @@ void lcd_execute_menu_config_submenu_battery (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // battery pack resistance
+    // battery internal resistance
     case 3:
       lcd_var_number.p_var_number = &configuration_variables.ui16_battery_pack_resistance_x1000;
       lcd_var_number.ui8_size = 16;
@@ -616,50 +613,27 @@ void lcd_execute_menu_config_submenu_battery (void)
 
 void lcd_execute_menu_config_submenu_battery_soc (void)
 {
-  uint8_t ui8_temp;
   var_number_t lcd_var_number;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
-    // menu to enable/disable show of numeric watts hour value
+    // menu to enable/disable show of numeric watt-hour value and type of representation
     case 0:
-      ui8_temp = configuration_variables.ui8_show_numeric_battery_soc & 1;
-      lcd_var_number.p_var_number = &ui8_temp;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_show_numeric_battery_soc;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_max_value = 2;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-
-      if(ui8_temp) 
-      { configuration_variables.ui8_show_numeric_battery_soc |= 1; }
-      else 
-      { configuration_variables.ui8_show_numeric_battery_soc &= ~1; }
-    break;
-
-    // menu to enable/disable show of numeric watts hour value in incrementing or decementing percentage
-    case 1:
-      ui8_temp = (configuration_variables.ui8_show_numeric_battery_soc & 2) >> 1;
-      lcd_var_number.p_var_number = &ui8_temp;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-
-      if(ui8_temp) { configuration_variables.ui8_show_numeric_battery_soc |= 2; }
-      else { configuration_variables.ui8_show_numeric_battery_soc &= ~2; }
     break;
 
     // menu to set battery_voltage_reset_wh_counter
-    case 2:
+    case 1:
       lcd_var_number.p_var_number = &configuration_variables.ui16_battery_voltage_reset_wh_counter_x10;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 1;
@@ -671,7 +645,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
     break;
 
     // menu to choose watts hour value to be equal to 100 % of battery SOC
-    case 3:
+    case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui32_wh_x10_100_percent;
       lcd_var_number.ui8_size = 32;
       lcd_var_number.ui8_decimal_digit = 1;
@@ -683,7 +657,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
     break;
 
     // menu to set current watt hour value
-    case 4:
+    case 3:
       // on the very first time, use current value of ui32_wh_x10
       if (ui8_config_wh_x10_offset)
       {
@@ -1865,7 +1839,8 @@ void odometer (void)
 
       // battery SOC
       case 1:
-        if (!(configuration_variables.ui8_show_numeric_battery_soc & 1))
+      
+        if (configuration_variables.ui8_show_numeric_battery_soc == 0)
         {
           odometer_increase_field_state ();
           break;
@@ -2731,8 +2706,8 @@ void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 void calc_battery_soc_watts_hour(void)
 {
   uint32_t ui32_temp;
-
   ui32_temp = ui32_wh_x10 * 100;
+  
   if (configuration_variables.ui32_wh_x10_100_percent > 0)
   {
     ui32_temp /= configuration_variables.ui32_wh_x10_100_percent;
@@ -2742,16 +2717,19 @@ void calc_battery_soc_watts_hour(void)
     ui32_temp = 0;
   }
 
-  // 100% - current SOC or just current SOC
-  if (configuration_variables.ui8_show_numeric_battery_soc & 2)
+  if (configuration_variables.ui8_show_numeric_battery_soc == 1)
   {
+    // save SOC from 100 to 0 percent (remaining capacity in percent)
     if (ui32_temp > 100)
+    {
       ui32_temp = 100;
-
+    }
+    
     ui16_battery_soc_watts_hour = 100 - ui32_temp;
   }
   else
   {
+    // save SOC from 0 to 100 percent (consumed capacity in percent)
     ui16_battery_soc_watts_hour = ui32_temp;
   }
 }
