@@ -1233,12 +1233,12 @@ void temperature (void)
 
       // show battery_soc_watts_hour
       case 1:
-        lcd_print(ui16_battery_soc_watts_hour, TEMPERATURE_FIELD, 0);
+        lcd_print(ui16_battery_soc_watts_hour, TEMPERATURE_FIELD, 1);
       break;
 
       // show motor temperature
       case 2:
-        lcd_print(motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 0);
+        lcd_print(motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
         lcd_enable_temperature_degrees_symbol (1);
       break;
     }
@@ -2024,20 +2024,24 @@ void wheel_speed (void)
   }
 }
 
+
 void lcd_clear (void)
 {
   memset(ui8_lcd_frame_buffer, 0, LCD_FRAME_BUFFER_SIZE);
 }
+
 
 void lcd_set_frame_buffer (void)
 {
   memset(ui8_lcd_frame_buffer, 255, LCD_FRAME_BUFFER_SIZE);
 }
 
+
 void lcd_update (void)
 {
   ht1622_send_frame_buffer (ui8_lcd_frame_buffer);
 }
+
 
 void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
 {
@@ -2049,7 +2053,7 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
   {
     ui32_number *= 10;
   }
-
+  
   // first delete the field
   for (ui8_counter = 0; ui8_counter < 5; ui8_counter++)
   {
@@ -2059,8 +2063,7 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
     }
 
     // because the LCD mask/layout is different on some field, like numbers would be inverted
-    if (ui8_lcd_field == WHEEL_SPEED_FIELD ||
-        ui8_lcd_field == BATTERY_POWER_FIELD)
+    if (ui8_lcd_field == WHEEL_SPEED_FIELD || ui8_lcd_field == BATTERY_POWER_FIELD)
     {
       ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= NUMBERS_MASK;
     }
@@ -2103,13 +2106,10 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
   {
     ui8_digit = ui32_number % 10;
 
-    if (ui8_lcd_field == ASSIST_LEVEL_FIELD ||
-        ui8_lcd_field == ODOMETER_FIELD ||
-        ui8_lcd_field == TEMPERATURE_FIELD)
+    if (ui8_lcd_field == ASSIST_LEVEL_FIELD || ui8_lcd_field == ODOMETER_FIELD || ui8_lcd_field == TEMPERATURE_FIELD)
     {
 
-      if ((ui8_options == 0) &&
-          (ui8_counter == 0))
+      if ((ui8_options == 0) && (ui8_counter == 0))
       {
         ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
       }
@@ -2127,13 +2127,11 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
     }
 
     // because the LCD mask/layout is different on some field, like numbers would be inverted
-    if (ui8_lcd_field == WHEEL_SPEED_FIELD ||
-        ui8_lcd_field == BATTERY_POWER_FIELD)
+    if (ui8_lcd_field == WHEEL_SPEED_FIELD || ui8_lcd_field == BATTERY_POWER_FIELD)
     {
       if (ui8_lcd_field == WHEEL_SPEED_FIELD)
       {
-        if ((ui8_options == 0) &&
-            (ui8_counter == 0))
+        if ((ui8_options == 0) && (ui8_counter == 0))
         {
           ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
         }
@@ -2173,6 +2171,7 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
   }
 }
 
+
 void lcd_enable_w_symbol (uint8_t ui8_state)
 {
   if (ui8_state)
@@ -2181,6 +2180,7 @@ void lcd_enable_w_symbol (uint8_t ui8_state)
     ui8_lcd_frame_buffer[9] &= ~128;
 }
 
+
 void lcd_enable_odometer_point_symbol (uint8_t ui8_state)
 {
   if (ui8_state)
@@ -2188,6 +2188,7 @@ void lcd_enable_odometer_point_symbol (uint8_t ui8_state)
   else
     ui8_lcd_frame_buffer[6] &= ~8;
 }
+
 
 void lcd_enable_brake_symbol (uint8_t ui8_state)
 {
@@ -2719,7 +2720,7 @@ void calc_battery_soc_watts_hour(void)
 
   if (configuration_variables.ui8_show_numeric_battery_soc == 1)
   {
-    // save SOC from 100 to 0 percent (remaining capacity in percent)
+    // SOC from 100 to 0 percent (remaining capacity in percent)
     if (ui32_temp > 100)
     {
       ui32_temp = 100;
@@ -2727,9 +2728,9 @@ void calc_battery_soc_watts_hour(void)
     
     ui16_battery_soc_watts_hour = 100 - ui32_temp;
   }
-  else
+  else if (configuration_variables.ui8_show_numeric_battery_soc == 2)
   {
-    // save SOC from 0 to 100 percent (consumed capacity in percent)
+    // SOC from 0 to 100 percent (consumed capacity in percent)
     ui16_battery_soc_watts_hour = ui32_temp;
   }
 }
