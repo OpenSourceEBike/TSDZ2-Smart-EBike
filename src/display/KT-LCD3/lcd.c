@@ -997,6 +997,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
       lcd_enable_kmh_symbol (1);
     break;
 
@@ -1015,6 +1016,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
     // power limit (W)
     case 4:
       ui16_temp = ((uint16_t) configuration_variables.ui8_offroad_power_limit_div25) * 25;
+      
       lcd_var_number.p_var_number = &ui16_temp;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1024,6 +1026,8 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
       configuration_variables.ui8_offroad_power_limit_div25 = (uint8_t) (ui16_temp / 25);
+      
+      lcd_enable_w_symbol(1);
     break;
   }
   
