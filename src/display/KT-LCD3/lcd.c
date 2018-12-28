@@ -265,17 +265,29 @@ void lcd_clock (void)
 
     if (ui8_state_temp_field == 0)
     {
+      // increment to next menu 
       configuration_variables.ui8_temperature_field_config++;
-
-      if (configuration_variables.ui8_temperature_limit_feature_enabled)
+      
+      // Battery SOC function
+      if (configuration_variables.ui8_temperature_field_config == 1)
       {
-        if (configuration_variables.ui8_temperature_field_config > 2) { configuration_variables.ui8_temperature_field_config = 0; }
+        // if function is disabled, increment to next menu
+        if (configuration_variables.ui8_show_numeric_battery_soc == 0) { configuration_variables.ui8_temperature_field_config++; }
       }
-      else
+      
+      // Motor temperature function
+      if (configuration_variables.ui8_temperature_field_config == 2)
       {
-        if (configuration_variables.ui8_temperature_field_config > 1) { configuration_variables.ui8_temperature_field_config = 0; }
+        // if function is disabled, increment to next menu
+        if (configuration_variables.ui8_temperature_limit_feature_enabled == 0) { configuration_variables.ui8_temperature_field_config++; }
       }
-
+      
+      // Check overflow
+      if (configuration_variables.ui8_temperature_field_config > 2)
+      {
+        configuration_variables.ui8_temperature_field_config = 0;
+      }
+      
       ui8_state_temp_field = 1;
     }
   }
@@ -630,6 +642,9 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
+      // if user changes this variable we should clear the temperature field on display, it looks nicer that way
+      configuration_variables.ui8_temperature_field_config = 0;
     break;
 
     // menu to set battery_voltage_reset_wh_counter
@@ -830,6 +845,9 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
+      // if user changes this variable we should clear the temperature field on display, it looks nicer that way
+      configuration_variables.ui8_temperature_field_config = 0;
     break;
 
     // motor temperature limit min
@@ -1008,6 +1026,8 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       configuration_variables.ui8_offroad_power_limit_div25 = (uint8_t) (ui16_temp / 25);
     break;
   }
+  
+  lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
 
 void lcd_execute_menu_config_submenu_various (void)
