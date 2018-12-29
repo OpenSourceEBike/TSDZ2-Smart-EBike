@@ -135,9 +135,9 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
-static uint16_t ui16_second_counter = 0;
-static uint8_t ui8_second = 0;
-static uint16_t ui16_minute = 0;
+static uint16_t ui16_second_counter_TM = 0;
+static uint8_t ui8_second_TM = 0;
+static uint16_t ui16_minute_TM = 0;
 
 uint8_t ui8_start_odometer_show_field_number = 0;
 uint8_t ui8_odometer_show_field_number_counter_0 = 0;
@@ -237,23 +237,23 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
     calc_wh();
   }
   
-  // increment time
-  if (ui16_second_counter++ >= 1000)
+  // increment time measurement (TM)
+  if (ui16_second_counter_TM++ >= 1000)
   {
     // reset counter
-    ui16_second_counter = 0;
+    ui16_second_counter_TM = 0;
     
     // increment second
-    ui8_second++;
+    ui8_second_TM++;
     
     // check if overflow
-    if (ui8_second >= 60)
+    if (ui8_second_TM >= 60)
     {
       // reset second
-      ui8_second = 0;
+      ui8_second_TM = 0;
       
       // increment minute
-      ui16_minute++;
+      ui16_minute_TM++;
     }
   }
 
@@ -1302,10 +1302,21 @@ void temperature (void)
 
 void time_measurement (void)
 {
+  if (configuration_variables.ui8_time_measurement_field_state)
+  {
   lcd_enable_colon_symbol(1);
+  lcd_enable_ttm_symbol(0);
   lcd_enable_tm_symbol(1);
-  lcd_print(ui8_second, TIME_SECOND_FIELD, 0);
-  lcd_print(ui16_minute, TIME_MINUTE_FIELD, 0);
+  lcd_print(ui8_second_TM, TIME_SECOND_FIELD, 0);
+  lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
+  }
+  else 
+  {
+  lcd_enable_colon_symbol(1);
+  lcd_enable_tm_symbol(0);
+  lcd_enable_ttm_symbol(1);
+  lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
+  }
 }
 
 
@@ -1491,7 +1502,7 @@ void odometer_increase_field_state (void)
 {
   configuration_variables.ui8_odometer_field_state++;
   
-  if (configuration_variables.ui8_odometer_field_state > 5) 
+  if (configuration_variables.ui8_odometer_field_state >= 6) 
   {
     configuration_variables.ui8_odometer_field_state = 0;
     
@@ -1913,7 +1924,15 @@ void odometer (void)
       
         if (configuration_variables.ui8_show_numeric_battery_soc == 0)
         {
+          // Update the sub menu states
+          update_odometer_sub_field_state ();
+          
+          // increment odometer field state
           odometer_increase_field_state ();
+          
+          // load last odometer menu states
+          load_odometer_sub_field_state ();
+          
           break;
         }
 
@@ -2024,22 +2043,32 @@ void odometer (void)
 
       // motor temperature
       case 4:
+      
+        if (!(configuration_variables.ui8_temperature_limit_feature_enabled))
+        {       
+          // Update the sub menu states
+          update_odometer_sub_field_state ();
+    
+          // increment odometer field state
+          odometer_increase_field_state ();
+    
+          // load last odometer menu states
+          load_odometer_sub_field_state ();
+          
+          break;
+        }
+        
         if (buttons_get_up_click_long_click_event ())
         {
           buttons_clear_up_click_long_click_event ();
           odometer_start_show_field_number ();
         }
 
-        if (!(configuration_variables.ui8_temperature_limit_feature_enabled))
-        {       
-          odometer_increase_field_state ();
-          break;
-        }
-
         lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 0);
-      
+
       break; // end of motor temperature
       
+      // time measurement
       case 5:
       
         if (buttons_get_up_click_long_click_event ())
@@ -2060,20 +2089,18 @@ void odometer (void)
 
         switch (configuration_variables.ui8_odometer_sub_field_state)
         {
-          // TM
+          // time measurement since power on (TM)
           case 0:
-          lcd_enable_ttm_symbol(0);
-          lcd_enable_tm_symbol(1);
+          configuration_variables.ui8_time_measurement_field_state = 0;
           break;
 
-          // TTM
+          // time measurement since last reset (TTM)
           case 1:
-          lcd_enable_tm_symbol(0);
-          lcd_enable_ttm_symbol(1);
+          configuration_variables.ui8_time_measurement_field_state = 1;
           break;
         }
         
-      break;
+      break; // end of time measurement
     }
 
     if (ui8_start_odometer_show_field_number)

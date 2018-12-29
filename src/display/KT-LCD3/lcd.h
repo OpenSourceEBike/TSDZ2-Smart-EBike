@@ -56,6 +56,7 @@ typedef struct _configuration_variables
   uint32_t ui32_wh_x10_100_percent;
   uint8_t ui8_show_numeric_battery_soc;
   uint8_t ui8_odometer_field_state;
+  uint8_t ui8_time_measurement_field_state;
   uint8_t ui8_odometer_sub_field_state;
   uint8_t ui8_odometer_sub_field_state_0;
   uint8_t ui8_odometer_sub_field_state_1;

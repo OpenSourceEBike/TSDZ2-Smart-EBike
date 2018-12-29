@@ -28,10 +28,13 @@
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL                      20
 #define DEFAULT_VALUE_UNITS_TYPE                                    0 // 0 = km/h and km
+
 #define DEFAULT_VALUE_WH_OFFSET                                     0
 #define DEFAULT_VALUE_HW_X10_100_PERCENT                            0
 #define DEAFULT_VALUE_SHOW_NUMERIC_BATTERY_SOC                      0
 #define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
+#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  0 // 0 = time measurement since last power on (TM)
+
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                           16 // 16 amps
 #define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      0 // e.g. 20 = 20 * 25 = 500, 0 is disabled
 #define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13 // 13 --> 48V

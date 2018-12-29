@@ -88,7 +88,8 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4,
     DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5,
     DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6,
-    DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL
+    DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL,
+    DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE
   };
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
@@ -186,6 +187,7 @@ static void eeprom_read_values_to_variables (void)
 
   p_configuration_variables->ui8_show_numeric_battery_soc = FLASH_ReadByte (ADDRESS_SHOW_NUMERIC_BATTERY_SOC);
   p_configuration_variables->ui8_odometer_field_state = FLASH_ReadByte (ADDRESS_ODOMETER_FIELD_STATE);
+  p_configuration_variables->ui8_time_measurement_field_state = FLASH_ReadByte (ADDRESS_TIME_MEASUREMENT_FIELD_STATE);
   p_configuration_variables->ui8_odometer_sub_field_state_0 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_0);
   p_configuration_variables->ui8_odometer_sub_field_state_1 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_1);
   p_configuration_variables->ui8_odometer_sub_field_state_2 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_2);
@@ -366,6 +368,9 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write max wheel speed in imperial units
   ui8_array [72] = p_configuration_variables->ui8_wheel_max_speed_imperial;
+  
+  // write time measurement field state
+  ui8_array [73] = p_configuration_variables->ui8_time_measurement_field_state;
 }
 
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
