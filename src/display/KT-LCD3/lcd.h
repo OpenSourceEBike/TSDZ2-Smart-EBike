@@ -57,6 +57,9 @@ typedef struct _configuration_variables
   uint8_t ui8_show_numeric_battery_soc;
   uint8_t ui8_odometer_field_state;
   uint8_t ui8_time_measurement_field_state;
+  uint8_t ui8_total_second_TTM;
+  uint16_t ui16_total_minute_TTM;
+  uint16_t ui16_total_hour_TTM;
   uint8_t ui8_odometer_sub_field_state;
   uint8_t ui8_odometer_sub_field_state_0;
   uint8_t ui8_odometer_sub_field_state_1;

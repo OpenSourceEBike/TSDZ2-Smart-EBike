@@ -88,7 +88,12 @@
 #define ADRESS_ODOMETER_SUB_FIELD_STATE_6                                   71 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MAX_WHEEL_SPEED_IMPERIAL                                    72 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TIME_MEASUREMENT_FIELD_STATE                                73 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 74
+#define ADDRESS_TOTAL_SECOND_TTM                                            74 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TOTAL_MINUTE_TTM_0                                          75 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TOTAL_MINUTE_TTM_1                                          76 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TOTAL_HOUR_TTM_0                                            77 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TOTAL_HOUR_TTM_1                                            78 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 79
 
 void eeprom_init (void);
 void eeprom_init_variables (void);

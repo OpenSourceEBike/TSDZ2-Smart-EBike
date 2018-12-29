@@ -92,6 +92,10 @@
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6                    0
 
+#define DEFAULT_VALUE_TOTAL_SECOND_TTM                              0
+#define DEFAULT_VALUE_TOTAL_MINUTE_TTM                              0
+#define DEFAULT_VALUE_TOTAL_HOUR_TTM                                0
+
 // *************************************************************************** //
 
 // Torque sensor value found experimentaly

@@ -135,9 +135,9 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
-static uint16_t ui16_second_counter_TM = 0;
-static uint8_t ui8_second_TM = 0;
-static uint16_t ui16_minute_TM = 0;
+static uint8_t    ui8_second                = 0;
+static uint8_t    ui8_second_TM             = 0;
+static uint16_t   ui16_minute_TM            = 0;
 
 uint8_t ui8_start_odometer_show_field_number = 0;
 uint8_t ui8_odometer_show_field_number_counter_0 = 0;
@@ -221,14 +221,15 @@ void update_odometer_sub_field_state (void);
 void lcd_configurations_print_number(var_number_t* p_lcd_var_number);
 void time_measurement (void);
 
-// happens every 1ms
+
+// happens every 1 ms
 void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
 {
-  static uint8_t ui8_100ms_timmer_counter;
-
   ui16_timer3_counter++;
-
-  // calc wh every 100ms
+  
+  static uint8_t ui8_100ms_timmer_counter;
+  
+  // calculate watt-hours every 100 ms
   if (ui8_100ms_timmer_counter++ >= 100)
   {
     ui8_100ms_timmer_counter = 0;
@@ -237,28 +238,22 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
     calc_wh();
   }
   
-  // increment time measurement (TM)
-  if (ui16_second_counter_TM++ >= 1000)
+  static uint16_t ui16_second_counter = 0;
+  
+  // increment second for time measurement 
+  if (ui16_second_counter++ >= 1000)
   {
     // reset counter
-    ui16_second_counter_TM = 0;
+    ui16_second_counter = 0;
     
     // increment second
-    ui8_second_TM++;
-    
-    // check if overflow
-    if (ui8_second_TM >= 60)
-    {
-      // reset second
-      ui8_second_TM = 0;
-      
-      // increment minute
-      ui16_minute_TM++;
-    }
+    ui8_second++;
   }
-
-  TIM3_ClearITPendingBit(TIM3_IT_UPDATE); // clear Interrupt Pending bit
+  
+  // clear Interrupt Pending bit
+  TIM3_ClearITPendingBit(TIM3_IT_UPDATE);
 }
+
 
 uint16_t get_timer3_counter(void)
 {
@@ -1302,20 +1297,64 @@ void temperature (void)
 
 void time_measurement (void)
 {
+  // increment time measurement since power on
+  
+    // increment second
+    ui8_second_TM += ui8_second;
+    
+    // check if overflow
+    if (ui8_second_TM >= 60)
+    {
+      // reset second
+      ui8_second_TM = 0;
+      
+      // increment minute
+      ui16_minute_TM++;
+    }
+  
+  // increment total time measurement since last reset (TTM)
+  
+    // increment second
+    configuration_variables.ui8_total_second_TTM += ui8_second;
+    
+    // check if overflow
+    if (configuration_variables.ui8_total_second_TTM >= 60)
+    {
+      // reset second
+      configuration_variables.ui8_total_second_TTM = 0;
+      
+      // increment minute
+      configuration_variables.ui16_total_minute_TTM++;
+      
+      // check if overflow
+      if (configuration_variables.ui16_total_minute_TTM >= 60)
+      {
+        // reset minute
+        configuration_variables.ui16_total_minute_TTM = 0;
+        
+        // increment hour
+        configuration_variables.ui16_total_hour_TTM++;
+      }
+    }
+  
+  // reset passed seconds
+  ui8_second = 0;
+  
   if (configuration_variables.ui8_time_measurement_field_state)
   {
-  lcd_enable_colon_symbol(1);
-  lcd_enable_ttm_symbol(0);
-  lcd_enable_tm_symbol(1);
-  lcd_print(ui8_second_TM, TIME_SECOND_FIELD, 0);
-  lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
+    lcd_enable_colon_symbol(1);
+    lcd_enable_ttm_symbol(0);
+    lcd_enable_tm_symbol(1);
+    lcd_print(ui8_second_TM, TIME_SECOND_FIELD, 0);
+    lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
   }
-  else 
+  else
   {
-  lcd_enable_colon_symbol(1);
-  lcd_enable_tm_symbol(0);
-  lcd_enable_ttm_symbol(1);
-  lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
+    lcd_enable_colon_symbol(1);
+    lcd_enable_tm_symbol(0);
+    lcd_enable_ttm_symbol(1);
+    lcd_print(configuration_variables.ui8_total_second_TTM, TIME_SECOND_FIELD, 0);
+    lcd_print(configuration_variables.ui16_total_minute_TTM, TIME_MINUTE_FIELD, 0);
   }
 }
 
