@@ -241,7 +241,7 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
   static uint16_t ui16_second_counter = 0;
   
   // increment second for time measurement 
-  if (ui16_second_counter++ >= 1000)
+  if (ui16_second_counter++ >= 10)
   {
     // reset counter
     ui16_second_counter = 0;
@@ -1324,13 +1324,13 @@ void time_measurement (void)
       configuration_variables.ui8_total_second_TTM = 0;
       
       // increment minute
-      configuration_variables.ui16_total_minute_TTM++;
+      configuration_variables.ui8_total_minute_TTM++;
       
       // check if overflow
-      if (configuration_variables.ui16_total_minute_TTM >= 60)
+      if (configuration_variables.ui8_total_minute_TTM >= 60)
       {
         // reset minute
-        configuration_variables.ui16_total_minute_TTM = 0;
+        configuration_variables.ui8_total_minute_TTM = 0;
         
         // increment hour
         configuration_variables.ui16_total_hour_TTM++;
@@ -1340,6 +1340,7 @@ void time_measurement (void)
   // reset passed seconds
   ui8_second = 0;
   
+  // display either TM or TTM
   if (configuration_variables.ui8_time_measurement_field_state)
   {
     lcd_enable_colon_symbol(1);
@@ -1353,8 +1354,8 @@ void time_measurement (void)
     lcd_enable_colon_symbol(1);
     lcd_enable_tm_symbol(0);
     lcd_enable_ttm_symbol(1);
-    lcd_print(configuration_variables.ui8_total_second_TTM, TIME_SECOND_FIELD, 0);
-    lcd_print(configuration_variables.ui16_total_minute_TTM, TIME_MINUTE_FIELD, 0);
+    lcd_print(configuration_variables.ui8_total_minute_TTM, TIME_SECOND_FIELD, 0);
+    lcd_print(configuration_variables.ui16_total_hour_TTM, TIME_MINUTE_FIELD, 0);
   }
 }
 
@@ -2130,12 +2131,117 @@ void odometer (void)
         {
           // time measurement since power on (TM)
           case 0:
-          configuration_variables.ui8_time_measurement_field_state = 0;
+            
+            // display time measurement since power on (TM)
+            configuration_variables.ui8_time_measurement_field_state = 1;
+            
+            // if there is one down_click_long_click_event
+            if (buttons_get_down_click_long_click_event())
+            {
+              ui8_odometer_reset_distance_counter_state = 1;
+            }
+
+            if (ui8_odometer_reset_distance_counter_state)
+            {
+              if (buttons_get_down_state ())
+              {
+                ui8_odometer_reset_distance_counter_state = 1;
+
+                // clear the down button possible event
+                buttons_clear_down_click_event();
+                buttons_clear_down_long_click_event();
+
+                // count time, after limit, reset
+                ui16_odometer_reset_distance_counter++;
+                
+                if (ui16_odometer_reset_distance_counter >= 300)
+                {
+                  // reset counter
+                  ui16_odometer_reset_distance_counter = 0;
+                  
+                  // reset time measurement since power on (TM)
+                  ui8_second_TM = 0;
+                  ui16_minute_TM = 0;
+                }
+                
+                if (ui8_lcd_menu_flash_state)
+                {
+                  // display total minutes passed from TM
+                  lcd_print(ui16_minute_TM, ODOMETER_FIELD, 0);
+                }
+              }
+              else // user is not pressing the down button anymore
+              {
+                ui8_odometer_reset_distance_counter_state = 0;
+              }
+            }
+            else
+            {
+              // reset counter
+              ui16_odometer_reset_distance_counter = 0;
+              
+              // display total minutes passed from TM
+              lcd_print(ui16_minute_TM, ODOMETER_FIELD, 0);
+            }
+            
           break;
 
           // time measurement since last reset (TTM)
           case 1:
-          configuration_variables.ui8_time_measurement_field_state = 1;
+            
+            // display total time measurement since last reset (TTM)
+            configuration_variables.ui8_time_measurement_field_state = 0;
+            
+            // if there is one down_click_long_click_event
+            if (buttons_get_down_click_long_click_event())
+            {
+              ui8_odometer_reset_distance_counter_state = 1;
+            }
+
+            if (ui8_odometer_reset_distance_counter_state)
+            {
+              if (buttons_get_down_state ())
+              {
+                ui8_odometer_reset_distance_counter_state = 1;
+
+                // clear the down button possible event
+                buttons_clear_down_click_event();
+                buttons_clear_down_long_click_event();
+
+                // count time, after limit, reset
+                ui16_odometer_reset_distance_counter++;
+                
+                if (ui16_odometer_reset_distance_counter >= 300)
+                {
+                  // reset counter
+                  ui16_odometer_reset_distance_counter = 0;
+                  
+                  // reset total time measurement since last reset (TTM)
+                  configuration_variables.ui8_total_second_TTM = 0;
+                  configuration_variables.ui8_total_minute_TTM = 0;
+                  configuration_variables.ui16_total_hour_TTM = 0;
+                }
+                
+                if (ui8_lcd_menu_flash_state)
+                {
+                  // display total hours passed from TTM
+                  lcd_print(configuration_variables.ui16_total_hour_TTM, ODOMETER_FIELD, 0);
+                }
+              }
+              else // user is not pressing the down button anymore
+              {
+                ui8_odometer_reset_distance_counter_state = 0;
+              }
+            }
+            else
+            {
+              // reset counter
+              ui16_odometer_reset_distance_counter = 0;
+              
+              // display total hours passed from TTM
+              lcd_print(configuration_variables.ui16_total_hour_TTM, ODOMETER_FIELD, 0);
+            }
+            
           break;
         }
         

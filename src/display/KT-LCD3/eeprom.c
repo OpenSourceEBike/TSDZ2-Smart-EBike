@@ -199,15 +199,12 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_odometer_sub_field_state_5 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_5); 
   p_configuration_variables->ui8_odometer_sub_field_state_6 = FLASH_ReadByte (ADRESS_ODOMETER_SUB_FIELD_STATE_6);
   
-  
+  // time measurement variables
   p_configuration_variables->ui8_time_measurement_field_state = FLASH_ReadByte (ADDRESS_TIME_MEASUREMENT_FIELD_STATE);
   
   p_configuration_variables->ui8_total_second_TTM = FLASH_ReadByte (ADDRESS_TOTAL_SECOND_TTM);
-
-  ui16_temp = FLASH_ReadByte (ADDRESS_TOTAL_MINUTE_TTM_0);
-  ui8_temp = FLASH_ReadByte (ADDRESS_TOTAL_MINUTE_TTM_1);
-  ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
-  p_configuration_variables->ui16_total_minute_TTM = ui16_temp;
+  
+  p_configuration_variables->ui8_total_minute_TTM = FLASH_ReadByte (ADDRESS_TOTAL_MINUTE_TTM);
   
   ui16_temp = FLASH_ReadByte (ADDRESS_TOTAL_HOUR_TTM_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_TOTAL_HOUR_TTM_1);
@@ -394,11 +391,10 @@ static void variables_to_array (uint8_t *ui8_array)
   // write time measurement values
   ui8_array [74] = p_configuration_variables->ui8_total_second_TTM;
   
-  ui8_array [75] = p_configuration_variables->ui16_total_minute_TTM & 255;
-  ui8_array [76] = (p_configuration_variables->ui16_total_minute_TTM >> 8) & 255;
+  ui8_array [75] = p_configuration_variables->ui8_total_minute_TTM;
   
-  ui8_array [77] = p_configuration_variables->ui16_total_hour_TTM & 255;
-  ui8_array [78] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
+  ui8_array [76] = p_configuration_variables->ui16_total_hour_TTM & 255;
+  ui8_array [77] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
 }
 
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
