@@ -2760,7 +2760,7 @@ void low_pass_filter_pedal_torque_and_power (void)
 
   // low pass filter for pedal power display
   ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
-  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 20; // should be division by 10 but 20 is set for test, HUMAN_POWER_BUG
+  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 20; // should be division by 10 but 20 is set for test, HUMAN_POWER_BUG FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX
   ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
   if (ui16_pedal_power_filtered > 500)
