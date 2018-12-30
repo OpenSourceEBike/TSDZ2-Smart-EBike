@@ -135,9 +135,9 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
-static uint8_t    ui8_second                = 0;
-static uint8_t    ui8_second_TM             = 0;
-static uint16_t   ui16_minute_TM            = 0;
+static uint8_t    ui8_second        = 0;
+static uint8_t    ui8_second_TM     = 0;
+static uint16_t   ui16_minute_TM    = 0;
 
 uint8_t ui8_start_odometer_show_field_number = 0;
 uint8_t ui8_odometer_show_field_number_counter_0 = 0;
@@ -241,7 +241,7 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
   static uint16_t ui16_second_counter = 0;
   
   // increment second for time measurement 
-  if (ui16_second_counter++ >= 10)
+  if (ui16_second_counter++ >= 1000)
   {
     // reset counter
     ui16_second_counter = 0;
@@ -2707,7 +2707,7 @@ void low_pass_filter_battery_voltage_current_power (void)
   ui32_battery_voltage_accumulated_x10000 += (uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000;
   ui16_battery_voltage_filtered_x10 = ((uint32_t) (ui32_battery_voltage_accumulated_x10000 >> BATTERY_VOLTAGE_FILTER_COEFFICIENT)) / 1000;
 
-  // low pass filter batery current
+  // low pass filter battery current
   ui16_battery_current_accumulated_x5 -= ui16_battery_current_accumulated_x5 >> BATTERY_CURRENT_FILTER_COEFFICIENT;
   ui16_battery_current_accumulated_x5 += (uint16_t) motor_controller_data.ui8_battery_current_x5;
   ui16_battery_current_filtered_x5 = ui16_battery_current_accumulated_x5 >> BATTERY_CURRENT_FILTER_COEFFICIENT;
@@ -2738,15 +2738,10 @@ void low_pass_filter_battery_voltage_current_power (void)
 
 void low_pass_filter_pedal_torque_and_power (void)
 {
-  // low pass filter
+  // low pass filter for pedal torque
   ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
   ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
   ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
-
-  // low pass filter
-  ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
-  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
-  ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
   if (ui16_pedal_torque_filtered > 200)
   {
@@ -2760,8 +2755,13 @@ void low_pass_filter_pedal_torque_and_power (void)
   }
   else
   {
-    // do nothing to roginal values
+    // do nothing to orginal values
   }
+
+  // low pass filter for pedal power
+  ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
+  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
+  ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
   if (ui16_pedal_power_filtered > 500)
   {
@@ -2780,7 +2780,7 @@ void low_pass_filter_pedal_torque_and_power (void)
   }
   else
   {
-    ui16_pedal_power_filtered = 0; // no point to show less than 10W
+    ui16_pedal_power_filtered = 0; // no point to show less than 10 W
   }
 }
 
