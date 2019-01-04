@@ -1074,7 +1074,7 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_type;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 2;
+      lcd_var_number.ui32_max_value = 3;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;

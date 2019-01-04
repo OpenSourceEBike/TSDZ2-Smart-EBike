@@ -622,16 +622,19 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   // control current only at every some PWM cycles, otherwise will be to fast, maybe because of low pass filter on hardware about reading the current
   ui8_current_controller_counter++;
+  
   if (ui8_current_controller_counter > 12)
   {
     ui8_current_controller_counter = 0;
-    if ((ui8_adc_battery_current > ui8_controller_adc_battery_max_current) || // battery max current, reduce duty_cycle
-        (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current)) // motor max phase current, reduce duty_cycle
+    
+    // if battery max current or phase current is too much, reduce duty cycle
+    if ((ui8_adc_battery_current > ui8_controller_adc_battery_max_current) || (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
     {
       ui8_current_controller_flag = 1;
 
       if (ui8_duty_cycle > 0)
-      {
+      { 
+        // decrement duty cycle
         ui8_duty_cycle--;
       }
     }
@@ -645,11 +648,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     if (ui8_duty_cycle > 0)
     {
+      // decrement duty cycle
       ui8_duty_cycle--;
     }
   }
-  else if ((ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS) && // motor speed over max ERPS, reduce duty_cycle
-      (ui8_motor_over_speed_erps_flag == 0))
+  else if ((ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS) && (ui8_motor_over_speed_erps_flag == 0)) // if motor speed over max ERPS, reduce duty_cycle
   {
     // test for high cadence mode (experimental)
     if (!experimental_high_cadence_mode || (ui16_motor_speed_erps > MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL))
@@ -658,6 +661,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
       if (ui8_duty_cycle > 0)
       {
+        // decrement duty cycle
         ui8_duty_cycle--;
       }
     }    
@@ -673,6 +677,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         // don't increase duty_cycle if motor_over_speed_erps
         if (ui8_motor_over_speed_erps_flag == 0)
         {
+          // increment duty cycle
           ui8_duty_cycle++;
         }
       }
@@ -682,10 +687,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_down = 0;
+        
+        // decrement duty cycle
         ui8_duty_cycle--;
       }
     }
   }
+  
   /****************************************************************************/
 
   /****************************************************************************/
@@ -764,9 +772,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // we are not doing a ramp down here, just reducing to the target value
     ui8_controller_adc_battery_max_current = ui8_adc_target_battery_max_current;
   }
+  
   /****************************************************************************/
 
   /****************************************************************************/
+  
    // calc PAS timming between each positive pulses, in PWM cycles ticks
    // calc PAS on and off timming of each pulse, in PWM cycles ticks
    ui16_pas_counter++;
@@ -1060,17 +1070,22 @@ void calc_foc_angle (void)
   switch (p_configuration_variables->ui8_motor_type)
   {
     case 0:
-      ui32_l_x1048576 = 142; // 48V motor
+      ui32_l_x1048576 = 142; // 48 V motor
       experimental_high_cadence_mode = 0;
     break;
 
     case 1:
-      ui32_l_x1048576 = 80; // 36V motor
+      ui32_l_x1048576 = 80; // 36 V motor
       experimental_high_cadence_mode = 0;
     break;
     
-    case 2: // experimental high cadence mode
-      ui32_l_x1048576 = 115; // confirmed working with the 36V motor (only) by jbalat so far
+    case 2: // experimental high cadence mode for 48 volt motor
+      ui32_l_x1048576 = 199;
+      experimental_high_cadence_mode = 1;
+    break;
+    
+    case 3: // experimental high cadence mode for 36 volt motor
+      ui32_l_x1048576 = 115; // confirmed working with the 36 V motor (only) by jbalat so far
       experimental_high_cadence_mode = 1;
     break;
 
