@@ -151,6 +151,8 @@ uint8_t load_odometer_sub_field_state_from_EEPROM = 1;
 static uint8_t ui8_long_click_started = 0;
 static uint8_t ui8_long_click_counter = 0;
 
+static uint16_t ui16_second_counter = 0;
+
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
 void lcd_enable_lights_symbol (uint8_t ui8_state);
@@ -237,8 +239,6 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
     // must be called every 100ms
     calc_wh();
   }
-  
-  static uint16_t ui16_second_counter = 0;
   
   // increment second for time measurement 
   if (ui16_second_counter++ >= 1000)
