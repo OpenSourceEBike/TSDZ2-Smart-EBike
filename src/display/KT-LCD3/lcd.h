@@ -56,6 +56,10 @@ typedef struct _configuration_variables
   uint32_t ui32_wh_x10_100_percent;
   uint8_t ui8_show_numeric_battery_soc;
   uint8_t ui8_odometer_field_state;
+  uint8_t ui8_time_measurement_field_state;
+  uint8_t ui8_total_second_TTM;
+  uint16_t ui8_total_minute_TTM;
+  uint16_t ui16_total_hour_TTM;
   uint8_t ui8_odometer_sub_field_state;
   uint8_t ui8_odometer_sub_field_state_0;
   uint8_t ui8_odometer_sub_field_state_1;
@@ -108,6 +112,8 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define TEMPERATURE_FIELD      2
 #define WHEEL_SPEED_FIELD      3
 #define BATTERY_POWER_FIELD    4
+#define TIME_SECOND_FIELD      5
+#define TIME_MINUTE_FIELD      6
 
 // each digit needs 7 bits to be defined + 1 digit that can be another symbol like a "point"
 #define ASSIST_LEVEL_DIGIT_OFFSET     1 // 8
@@ -115,6 +121,8 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define TEMPERATURE_DIGIT_OFFSET      8
 #define WHEEL_SPEED_OFFSET            14
 #define BATTERY_POWER_DIGIT_OFFSET    10
+#define SECOND_DIGIT_OFFSET           18
+#define MINUTE_DIGIT_OFFSET           20
 
 #define NUMBERS_MASK              8
 #define NUMBER_0_MASK             119

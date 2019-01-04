@@ -556,6 +556,7 @@ static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value)
   ui8_adc_target_battery_max_current = ui8_adc_battery_current_offset + ui8_value;
 }
 
+
 // in amps
 static void ebike_app_set_battery_max_current (uint8_t ui8_value)
 {
@@ -566,18 +567,22 @@ static void ebike_app_set_battery_max_current (uint8_t ui8_value)
     ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX;
 }
 
+
 static void calc_pedal_force_and_torque(void)
 {
   uint16_t ui16_temp;
 
+  // calculate torque on pedals
   ui16_temp = (uint16_t) ui8_torque_sensor * (uint16_t) PEDAL_TORQUE_X100;
   ui16_pedal_torque_x10 = ui16_temp / 10;
 
-  // calc now pedal power
-  // P = force x rotations_seconds x 2 x pi
-  // (100 * 2 * PI) / 60 = 628
+  // calculate power on pedals
+  // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
+  // formula for angular velocity in degrees: power  =  force  *  rotations per minute  *  2  *  pi / 60
+  // (100 * 2 * pi) / 60 = 628
   ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 105);
 }
+
 
 static void calc_wheel_speed (void)
 {
@@ -594,6 +599,7 @@ static void calc_wheel_speed (void)
     ui16_wheel_speed_x10 = 0;
   }
 }
+
 
 static void calc_motor_temperature (void)
 {
@@ -766,6 +772,7 @@ static void boost_run_statemachine (void)
   }
 }
 
+
 static uint8_t apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current)
 {
   uint8_t ui8_boost_enable = ui8_startup_boost_enable && configuration_variables.ui8_assist_level_factor_x10 && ui8_pas_cadence > 0 ? 1 : 0;
@@ -777,6 +784,7 @@ static uint8_t apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boo
 
   return ui8_boost_enable;
 }
+
 
 static void apply_boost_fade_out (uint8_t *ui8_target_current)
 {
@@ -797,15 +805,20 @@ static void apply_boost_fade_out (uint8_t *ui8_target_current)
   }
 }
 
+
 static void read_pas_cadence (void)
 {
   // cadence in RPM =  60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
-  if (ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS)) { ui8_pas_cadence_rpm = 0; }
+  if (ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS)) 
+  { 
+    ui8_pas_cadence_rpm = 0; 
+  }
   else
   {
     ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064));
   }
 }
+
 
 static void torque_sensor_read (void)
 {

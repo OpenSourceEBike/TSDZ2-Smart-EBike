@@ -32,6 +32,8 @@ uint8_t ui8_lcd_field_offset[] = {
     TEMPERATURE_DIGIT_OFFSET,
     WHEEL_SPEED_OFFSET,
     BATTERY_POWER_DIGIT_OFFSET,
+    SECOND_DIGIT_OFFSET,
+    MINUTE_DIGIT_OFFSET,
     0
 };
 
@@ -133,6 +135,10 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
+static uint8_t    ui8_second        = 0;
+static uint8_t    ui8_second_TM     = 0;
+static uint16_t   ui16_minute_TM    = 0;
+
 uint8_t ui8_start_odometer_show_field_number = 0;
 uint8_t ui8_odometer_show_field_number_counter_0 = 0;
 uint8_t ui8_odometer_show_field_number_counter_1 = 1;
@@ -204,6 +210,8 @@ void lcd_enable_wheel_speed_point_symbol (uint8_t ui8_state);
 void lcd_enable_temperature_degrees_symbol (uint8_t ui8_state);
 void lcd_enable_dst_symbol (uint8_t ui8_state);
 void lcd_enable_tm_symbol (uint8_t ui8_state);
+void lcd_enable_ttm_symbol (uint8_t ui8_state);
+void lcd_enable_colon_symbol (uint8_t ui8_state);
 void lcd_update (void);
 void lcd_clear (void);
 void lcd_set_frame_buffer (void);
@@ -211,15 +219,17 @@ void lcd_print (uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options
 void load_odometer_sub_field_state (void);
 void update_odometer_sub_field_state (void);
 void lcd_configurations_print_number(var_number_t* p_lcd_var_number);
+void time_measurement (void);
 
-// happens every 1ms
+
+// happens every 1 ms
 void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
 {
-  static uint8_t ui8_100ms_timmer_counter;
-
   ui16_timer3_counter++;
-
-  // calc wh every 100ms
+  
+  static uint8_t ui8_100ms_timmer_counter;
+  
+  // calculate watt-hours every 100 ms
   if (ui8_100ms_timmer_counter++ >= 100)
   {
     ui8_100ms_timmer_counter = 0;
@@ -227,9 +237,23 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
     // must be called every 100ms
     calc_wh();
   }
-
-  TIM3_ClearITPendingBit(TIM3_IT_UPDATE); // clear Interrupt Pending bit
+  
+  static uint16_t ui16_second_counter = 0;
+  
+  // increment second for time measurement 
+  if (ui16_second_counter++ >= 1000)
+  {
+    // reset counter
+    ui16_second_counter = 0;
+    
+    // increment second
+    ui8_second++;
+  }
+  
+  // clear Interrupt Pending bit
+  TIM3_ClearITPendingBit(TIM3_IT_UPDATE);
 }
+
 
 uint16_t get_timer3_counter(void)
 {
@@ -352,6 +376,7 @@ void lcd_execute_main_screen (void)
   battery_soc ();
   lights_state ();
   brake ();
+  time_measurement ();
   assist_level_state (); // needs to be the last because function clears all button events
 }
 
@@ -1269,6 +1294,72 @@ void temperature (void)
   }
 }
 
+
+void time_measurement (void)
+{
+  // increment time measurement since power on
+  
+    // increment second
+    ui8_second_TM += ui8_second;
+    
+    // check if overflow
+    if (ui8_second_TM >= 60)
+    {
+      // reset second
+      ui8_second_TM = 0;
+      
+      // increment minute
+      ui16_minute_TM++;
+    }
+  
+  // increment total time measurement since last reset (TTM)
+  
+    // increment second
+    configuration_variables.ui8_total_second_TTM += ui8_second;
+    
+    // check if overflow
+    if (configuration_variables.ui8_total_second_TTM >= 60)
+    {
+      // reset second
+      configuration_variables.ui8_total_second_TTM = 0;
+      
+      // increment minute
+      configuration_variables.ui8_total_minute_TTM++;
+      
+      // check if overflow
+      if (configuration_variables.ui8_total_minute_TTM >= 60)
+      {
+        // reset minute
+        configuration_variables.ui8_total_minute_TTM = 0;
+        
+        // increment hour
+        configuration_variables.ui16_total_hour_TTM++;
+      }
+    }
+  
+  // reset passed seconds
+  ui8_second = 0;
+  
+  // display either TM or TTM
+  if (configuration_variables.ui8_time_measurement_field_state)
+  {
+    lcd_enable_colon_symbol(1);
+    lcd_enable_ttm_symbol(0);
+    lcd_enable_tm_symbol(1);
+    lcd_print(ui8_second_TM, TIME_SECOND_FIELD, 0);
+    lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
+  }
+  else
+  {
+    lcd_enable_colon_symbol(1);
+    lcd_enable_tm_symbol(0);
+    lcd_enable_ttm_symbol(1);
+    lcd_print(configuration_variables.ui8_total_minute_TTM, TIME_SECOND_FIELD, 0);
+    lcd_print(configuration_variables.ui16_total_hour_TTM, TIME_MINUTE_FIELD, 0);
+  }
+}
+
+
 void battery_soc(void)
 {
   static uint8_t ui8_timmer_counter;
@@ -1439,17 +1530,19 @@ void offroad_mode (void)
   }
 }
 
+
 void brake (void)
 {
   if (motor_controller_data.ui8_braking) { lcd_enable_brake_symbol (1); }
   else { lcd_enable_brake_symbol (0); }
 }
 
+
 void odometer_increase_field_state (void)
 {
   configuration_variables.ui8_odometer_field_state++;
   
-  if (configuration_variables.ui8_odometer_field_state >= 5) 
+  if (configuration_variables.ui8_odometer_field_state >= 6) 
   {
     configuration_variables.ui8_odometer_field_state = 0;
     
@@ -1458,6 +1551,7 @@ void odometer_increase_field_state (void)
   }
 }
 
+
 void odometer_start_show_field_number (void)
 {
   ui8_start_odometer_show_field_number = 1;
@@ -1465,6 +1559,7 @@ void odometer_start_show_field_number (void)
   ui8_odometer_show_field_number_counter_1 = 0;
   ui8_odometer_show_field_number_state = 1;
 }
+
 
 void load_odometer_sub_field_state (void)
 {
@@ -1499,6 +1594,7 @@ void load_odometer_sub_field_state (void)
     break;
   }
 }
+
 
 void update_odometer_sub_field_state (void)
 {
@@ -1541,6 +1637,7 @@ void update_odometer_sub_field_state (void)
   }
 }
 
+
 void odometer (void)
 {
   uint32_t ui32_temp;
@@ -1567,7 +1664,8 @@ void odometer (void)
     
     // load last odometer menu states
     load_odometer_sub_field_state ();
-  
+    
+    // show field number
     odometer_start_show_field_number ();
   }
 
@@ -1866,7 +1964,15 @@ void odometer (void)
       
         if (configuration_variables.ui8_show_numeric_battery_soc == 0)
         {
+          // Update the sub menu states
+          update_odometer_sub_field_state ();
+          
+          // increment odometer field state
           odometer_increase_field_state ();
+          
+          // load last odometer menu states
+          load_odometer_sub_field_state ();
+          
           break;
         }
 
@@ -1903,6 +2009,7 @@ void odometer (void)
 
       // battery voltage and current
       case 2:
+      
         if (buttons_get_up_click_long_click_event ())
         {
           buttons_clear_up_click_long_click_event ();
@@ -1937,6 +2044,7 @@ void odometer (void)
 
       // pedals
       case 3:
+      
         if (buttons_get_up_click_long_click_event ())
         {
           buttons_clear_up_click_long_click_event ();
@@ -1970,25 +2078,174 @@ void odometer (void)
             lcd_print (ui16_pedal_torque_filtered, ODOMETER_FIELD, 0);
           break;
         }
+        
       break; // end of pedals
 
       // motor temperature
       case 4:
+      
+        if (!(configuration_variables.ui8_temperature_limit_feature_enabled))
+        {       
+          // Update the sub menu states
+          update_odometer_sub_field_state ();
+    
+          // increment odometer field state
+          odometer_increase_field_state ();
+    
+          // load last odometer menu states
+          load_odometer_sub_field_state ();
+          
+          break;
+        }
+        
         if (buttons_get_up_click_long_click_event ())
         {
           buttons_clear_up_click_long_click_event ();
           odometer_start_show_field_number ();
         }
 
-        if (!(configuration_variables.ui8_temperature_limit_feature_enabled))
-        {       
-          odometer_increase_field_state ();
-          break;
+        lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 0);
+
+      break; // end of motor temperature
+      
+      // time measurement
+      case 5:
+      
+        if (buttons_get_up_click_long_click_event ())
+        {
+          buttons_clear_up_click_long_click_event ();
+          
+          // increment menu state with one
+          configuration_variables.ui8_odometer_sub_field_state++;
+          
+          // check overflow, if true -> reset to first menu state
+          if (configuration_variables.ui8_odometer_sub_field_state >= 2)
+          {
+            configuration_variables.ui8_odometer_sub_field_state = 0;
+          }
+
+          odometer_start_show_field_number ();
         }
 
-        lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 0);
-      
-      break; // end of motor temperature
+        switch (configuration_variables.ui8_odometer_sub_field_state)
+        {
+          // time measurement since power on (TM)
+          case 0:
+            
+            // display time measurement since power on (TM)
+            configuration_variables.ui8_time_measurement_field_state = 1;
+            
+            // if there is one down_click_long_click_event
+            if (buttons_get_down_click_long_click_event())
+            {
+              ui8_odometer_reset_distance_counter_state = 1;
+            }
+
+            if (ui8_odometer_reset_distance_counter_state)
+            {
+              if (buttons_get_down_state ())
+              {
+                ui8_odometer_reset_distance_counter_state = 1;
+
+                // clear the down button possible event
+                buttons_clear_down_click_event();
+                buttons_clear_down_long_click_event();
+
+                // count time, after limit, reset
+                ui16_odometer_reset_distance_counter++;
+                
+                if (ui16_odometer_reset_distance_counter >= 300)
+                {
+                  // reset counter
+                  ui16_odometer_reset_distance_counter = 0;
+                  
+                  // reset time measurement since power on (TM)
+                  ui8_second_TM = 0;
+                  ui16_minute_TM = 0;
+                }
+                
+                if (ui8_lcd_menu_flash_state)
+                {
+                  // display total minutes passed from TM
+                  lcd_print(ui16_minute_TM, ODOMETER_FIELD, 0);
+                }
+              }
+              else // user is not pressing the down button anymore
+              {
+                ui8_odometer_reset_distance_counter_state = 0;
+              }
+            }
+            else
+            {
+              // reset counter
+              ui16_odometer_reset_distance_counter = 0;
+              
+              // display total minutes passed from TM
+              lcd_print(ui16_minute_TM, ODOMETER_FIELD, 0);
+            }
+            
+          break;
+
+          // time measurement since last reset (TTM)
+          case 1:
+            
+            // display total time measurement since last reset (TTM)
+            configuration_variables.ui8_time_measurement_field_state = 0;
+            
+            // if there is one down_click_long_click_event
+            if (buttons_get_down_click_long_click_event())
+            {
+              ui8_odometer_reset_distance_counter_state = 1;
+            }
+
+            if (ui8_odometer_reset_distance_counter_state)
+            {
+              if (buttons_get_down_state ())
+              {
+                ui8_odometer_reset_distance_counter_state = 1;
+
+                // clear the down button possible event
+                buttons_clear_down_click_event();
+                buttons_clear_down_long_click_event();
+
+                // count time, after limit, reset
+                ui16_odometer_reset_distance_counter++;
+                
+                if (ui16_odometer_reset_distance_counter >= 300)
+                {
+                  // reset counter
+                  ui16_odometer_reset_distance_counter = 0;
+                  
+                  // reset total time measurement since last reset (TTM)
+                  configuration_variables.ui8_total_second_TTM = 0;
+                  configuration_variables.ui8_total_minute_TTM = 0;
+                  configuration_variables.ui16_total_hour_TTM = 0;
+                }
+                
+                if (ui8_lcd_menu_flash_state)
+                {
+                  // display total hours passed from TTM
+                  lcd_print(configuration_variables.ui16_total_hour_TTM, ODOMETER_FIELD, 0);
+                }
+              }
+              else // user is not pressing the down button anymore
+              {
+                ui8_odometer_reset_distance_counter_state = 0;
+              }
+            }
+            else
+            {
+              // reset counter
+              ui16_odometer_reset_distance_counter = 0;
+              
+              // display total hours passed from TTM
+              lcd_print(configuration_variables.ui16_total_hour_TTM, ODOMETER_FIELD, 0);
+            }
+            
+          break;
+        }
+        
+      break; // end of time measurement
     }
 
     if (ui8_start_odometer_show_field_number)
@@ -2073,7 +2330,7 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
   uint8_t ui8_counter;
 
   // multiply the value by 10 to not show decimal digit if ...
-  if( (ui8_options == 0) && (ui8_lcd_field != ASSIST_LEVEL_FIELD) && (ui8_lcd_field != BATTERY_POWER_FIELD) )
+  if( (ui8_options == 0) && (ui8_lcd_field != ASSIST_LEVEL_FIELD) && (ui8_lcd_field != BATTERY_POWER_FIELD) && (ui8_lcd_field != TIME_SECOND_FIELD) && (ui8_lcd_field != TIME_MINUTE_FIELD) )
   {
     ui32_number *= 10;
   }
@@ -2087,7 +2344,7 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
     }
 
     // because the LCD mask/layout is different on some field, like numbers would be inverted
-    if (ui8_lcd_field == WHEEL_SPEED_FIELD || ui8_lcd_field == BATTERY_POWER_FIELD)
+    if (ui8_lcd_field == WHEEL_SPEED_FIELD || ui8_lcd_field == BATTERY_POWER_FIELD || ui8_lcd_field == TIME_SECOND_FIELD || ui8_lcd_field == TIME_MINUTE_FIELD)
     {
       ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= NUMBERS_MASK;
     }
@@ -2098,6 +2355,8 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
     if (ui8_counter == 1 && ui8_lcd_field == TEMPERATURE_FIELD) break;
     if (ui8_counter == 2 && ui8_lcd_field == WHEEL_SPEED_FIELD) break;
     if (ui8_counter == 2 && ui8_lcd_field == BATTERY_POWER_FIELD) break;
+    if (ui8_counter == 1 && ui8_lcd_field == TIME_SECOND_FIELD) break;
+    if (ui8_counter == 2 && ui8_lcd_field == TIME_MINUTE_FIELD) break;
   }
 
   // enable only the "1" if power is >= 1000
@@ -2183,13 +2442,32 @@ void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
         }
       }
     }
-
+    
+    if (ui8_lcd_field == TIME_SECOND_FIELD)
+    {
+      ui8_lcd_frame_buffer[SECOND_DIGIT_OFFSET + ui8_counter] |= ui8_lcd_digit_mask_inverted[ui8_digit];
+    }
+    
+    if (ui8_lcd_field == TIME_MINUTE_FIELD)
+    {
+      if (ui8_counter > 0 && ui32_number == 0)
+      {
+        ui8_lcd_frame_buffer[MINUTE_DIGIT_OFFSET + ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+      }
+      else
+      {
+        ui8_lcd_frame_buffer[MINUTE_DIGIT_OFFSET + ui8_counter] |= ui8_lcd_digit_mask_inverted[ui8_digit];
+      }
+    }
+    
     // limit the number of printed digits for each field
     if (ui8_counter == 0 && ui8_lcd_field == ASSIST_LEVEL_FIELD) break;
     if (ui8_counter == 4 && ui8_lcd_field == ODOMETER_FIELD) break;
     if (ui8_counter == 1 && ui8_lcd_field == TEMPERATURE_FIELD) break;
     if (ui8_counter == 2 && ui8_lcd_field == WHEEL_SPEED_FIELD) break;
     if (ui8_counter == 2 && ui8_lcd_field == BATTERY_POWER_FIELD) break;
+    if (ui8_counter == 1 && ui8_lcd_field == TIME_SECOND_FIELD) break;
+    if (ui8_counter == 2 && ui8_lcd_field == TIME_MINUTE_FIELD) break;
 
     ui32_number /= 10;
   }
@@ -2414,6 +2692,14 @@ void lcd_enable_ttm_symbol (uint8_t ui8_state)
     ui8_lcd_frame_buffer[17] &= ~32;
 }
 
+void lcd_enable_colon_symbol (uint8_t ui8_state)
+{
+   if (ui8_state)
+    ui8_lcd_frame_buffer[23] |= 8;
+  else
+    ui8_lcd_frame_buffer[23] &= ~8; 
+}
+
 void low_pass_filter_battery_voltage_current_power (void)
 {
   // low pass filter battery voltage
@@ -2421,7 +2707,7 @@ void low_pass_filter_battery_voltage_current_power (void)
   ui32_battery_voltage_accumulated_x10000 += (uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000;
   ui16_battery_voltage_filtered_x10 = ((uint32_t) (ui32_battery_voltage_accumulated_x10000 >> BATTERY_VOLTAGE_FILTER_COEFFICIENT)) / 1000;
 
-  // low pass filter batery current
+  // low pass filter battery current
   ui16_battery_current_accumulated_x5 -= ui16_battery_current_accumulated_x5 >> BATTERY_CURRENT_FILTER_COEFFICIENT;
   ui16_battery_current_accumulated_x5 += (uint16_t) motor_controller_data.ui8_battery_current_x5;
   ui16_battery_current_filtered_x5 = ui16_battery_current_accumulated_x5 >> BATTERY_CURRENT_FILTER_COEFFICIENT;
@@ -2452,15 +2738,10 @@ void low_pass_filter_battery_voltage_current_power (void)
 
 void low_pass_filter_pedal_torque_and_power (void)
 {
-  // low pass filter
+  // low pass filter for pedal torque display
   ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
   ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
   ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
-
-  // low pass filter
-  ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
-  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
-  ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
   if (ui16_pedal_torque_filtered > 200)
   {
@@ -2474,8 +2755,13 @@ void low_pass_filter_pedal_torque_and_power (void)
   }
   else
   {
-    // do nothing to roginal values
+    // do nothing to orginal values
   }
+
+  // low pass filter for pedal power display
+  ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
+  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 20; // should be division by 10 but 20 is set for test, HUMAN_POWER_BUG FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX
+  ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
   if (ui16_pedal_power_filtered > 500)
   {
@@ -2494,7 +2780,7 @@ void low_pass_filter_pedal_torque_and_power (void)
   }
   else
   {
-    ui16_pedal_power_filtered = 0; // no point to show less than 10W
+    ui16_pedal_power_filtered = 0; // no point to show less than 10 W
   }
 }
 
