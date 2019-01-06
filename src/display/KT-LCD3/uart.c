@@ -237,7 +237,7 @@ void uart_data_clock (void)
           // bit 0: cruise control
           // bit 1: motor voltage type: 36V or 48V
           // bit 2: MOTOR_ASSISTANCE_CAN_START_WITHOUT_PEDAL_ROTATION
-          ui8_tx_buffer[7] = ((p_configuration_variables->ui8_cruise_control & 1) |
+          ui8_tx_buffer[7] = ((p_configuration_variables->ui8_cruise_control & 1) |                                                                     //remove
                              ((p_configuration_variables->ui8_motor_type & 3) << 1) |
                               ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 3) |
                               ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 4));

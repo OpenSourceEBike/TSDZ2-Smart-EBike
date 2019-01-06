@@ -331,14 +331,17 @@ static void communications_controller (void)
       // head light
       configuration_variables.ui8_lights = (ui8_rx_buffer [4] & (1 << 0)) ? 1: 0;
       lights_set_state (configuration_variables.ui8_lights);
+      
       // walk assist
       configuration_variables.ui8_walk_assist = (ui8_rx_buffer [4] & (1 << 1)) ? 1: 0;
+      
       // offroad mode
       configuration_variables.ui8_offroad_mode = (ui8_rx_buffer [4]) & (1 << 2) ? 1: 0;
 
       // battery max current
       configuration_variables.ui8_battery_max_current = ui8_rx_buffer [5];
       ebike_app_set_battery_max_current (configuration_variables.ui8_battery_max_current);
+      
       // target battery max power
       configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer [6];
 
@@ -347,6 +350,7 @@ static void communications_controller (void)
         case 0:
           // battery low voltage cut-off
           configuration_variables.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
+          
           // calc the value in ADC steps and set it up
           ui32_temp = ((uint32_t) configuration_variables.ui16_battery_low_voltage_cut_off_x10 << 8) / ((uint32_t) ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP_INVERSE_X256);
           ui32_temp /= 10;
@@ -364,7 +368,7 @@ static void communications_controller (void)
         break;
 
         case 3:
-          configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;
+          configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;                                             // remove
           configuration_variables.ui8_motor_type = (ui8_rx_buffer [7] & 6) >> 1;
           configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 8) >> 3;
           configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 16) >> 4;

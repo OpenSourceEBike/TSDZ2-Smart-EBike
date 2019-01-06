@@ -42,23 +42,28 @@
 #define ADC_THROTTLE_THRESHOLD          10 // value in ADC 8 bits step
 #define ADC_TORQUE_SENSOR_THRESHOLD     6 // value in ADC 8 bits step
 
-#define CRUISE_CONTROL_MIN      20
+#define CRUISE_CONTROL_MIN      20                                            // remove
 
 // Max voltage value for throttle, in ADC 8 bits step
 // each ADC 8 bits step = (5V / 256) = 0.0195
 #define ADC_THROTTLE_MIN_VALUE 47
 #define ADC_THROTTLE_MAX_VALUE 176
 
+
 // *************************************************************************** //
+
+
 // Torque sensor
 // Torque (force) value found experimentaly
 // measuring with a cheap digital hook scale, we found that each torque sensor unit is equal to 0.52 Nm
 // using the scale, was found that each 0.33kg was measured as 1 torque sensor units
 // Force (Nm) = 1Kg * 9.18 * 0.17 (arm cranks size)
 #define PEDAL_TORQUE_X100 52
-// *************************************************************************** //
+
 
 // *************************************************************************** //
+
+
 // PAS
 #define PAS_NUMBER_MAGNETS 20 // PAS_NUMBER_MAGNETS = 20 was validated on August 2018 by Casainho e jbalat
 
@@ -68,15 +73,19 @@
 #define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS  (93750 / PAS_NUMBER_MAGNETS) // min hard limit to 10RPM PAS cadence
 
 #define PAS_NUMBER_MAGNETS_X2 (PAS_NUMBER_MAGNETS * 2)
-// *************************************************************************** //
+
 
 // *************************************************************************** //
+
+
 // Wheel speed sensor
 #define WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS  135 // something like 200m/h with a 6'' wheel
 #define WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS  32767 // could be a bigger number but will make slow detecting wheel stopped
-// *************************************************************************** //
+
 
 // *************************************************************************** //
+
+
 // EEPROM memory variables default values
 #define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10           40 // 4.0
 #define DEFAULT_VALUE_CONFIG_0                          0
@@ -91,9 +100,11 @@
 #define DEFAULT_VALUE_OFFROAD_CONFIG                    0
 #define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT               25 // 25km/h
 #define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25         10 // 10 * 25 = 250W
-// *************************************************************************** //
+
 
 // *************************************************************************** //
+
+
 // BATTERY
 
 // ADC Battery voltage
@@ -112,7 +123,10 @@
 // 0 equal to no filtering and no delay, higher values will increase filtering but will also add bigger delay
 #define READ_BATTERY_CURRENT_FILTER_COEFFICIENT 2
 #define READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT 2
+
+
 // *************************************************************************** //
+
 
 #define READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT 4
 
