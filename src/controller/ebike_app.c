@@ -285,10 +285,7 @@ static void ebike_control_motor (void)
   // if battery_target_current == 0, put duty_cycle at 0
   // if ui8_startup_enable == 0, put duty_cycle at 0
   // if there are no errors detected on safe_tests()
-  if (ui8_adc_battery_target_current &&
-      ui8_startup_enable &&
-      (!brake_is_set()) &&
-      configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
+  if (ui8_adc_battery_target_current && ui8_startup_enable && (!brake_is_set()) && configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
   {
     motor_set_pwm_duty_cycle_target (255);
   }
@@ -328,7 +325,7 @@ static void communications_controller (void)
       // assist level
       configuration_variables.ui8_assist_level_factor_x10 = ui8_rx_buffer [3];
       
-      // lights
+      // lights state
       configuration_variables.ui8_lights = (ui8_rx_buffer [4] & (1 << 0)) ? 1: 0;
       lights_set_state (configuration_variables.ui8_lights);
       
@@ -368,16 +365,14 @@ static void communications_controller (void)
         break;
 
         case 3:
-          //configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;                                             // remove
-          
           // type of motor (36 volt, 48 volt or some experimental type)
-          configuration_variables.ui8_motor_type = (ui8_rx_buffer [7] & 6) >> 1;
+          configuration_variables.ui8_motor_type = (ui8_rx_buffer [7] & 3);
           // motor assistance without pedal rotation enable/disable when startup 
-          configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 8) >> 3;
+          configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 4) >> 2;
           // motor temperature limit function enable/disable
-          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 16) >> 4;
+          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 8) >> 3;
           // startup motor boost state
-          configuration_variables.ui8_startup_motor_power_boost_state = ui8_rx_buffer [8] & 1;
+          configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [8] & 1);
           // startup power boost max power limit
           configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [8] & 2) >> 1;
         break;
@@ -392,7 +387,7 @@ static void communications_controller (void)
         case 5:
           // startup motor power boost fade time
           configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [7];
-          configuration_variables.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer [8] & 1;
+          configuration_variables.ui8_startup_motor_power_boost_feature_enabled = (ui8_rx_buffer [8] & 1);
         break;
 
         case 6:
@@ -403,14 +398,15 @@ static void communications_controller (void)
 
         case 7:
           // offroad mode configuration
-          configuration_variables.ui8_offroad_feature_enabled = ui8_rx_buffer [7] & 1;
-          configuration_variables.ui8_offroad_enabled_on_startup = (ui8_rx_buffer [7]) & (1 << 1);
+          configuration_variables.ui8_offroad_feature_enabled = (ui8_rx_buffer [7] & 1);
+          configuration_variables.ui8_offroad_enabled_on_startup = (ui8_rx_buffer [7] & 2) >> 1;
+          // offroad mode speed limit
           configuration_variables.ui8_offroad_speed_limit = ui8_rx_buffer [8];
         break;
 
         case 8:
           // offroad mode power limit configuration
-          configuration_variables.ui8_offroad_power_limit_enabled = ui8_rx_buffer [7] & 1;
+          configuration_variables.ui8_offroad_power_limit_enabled = (ui8_rx_buffer [7] & 1);
           configuration_variables.ui8_offroad_power_limit_div25 = ui8_rx_buffer [8];
         break;
 

@@ -1492,13 +1492,13 @@ void walk_assist_state (void)
     if (buttons_get_down_state ())
     {
       // enable walk assist or cruise function depending on speed
-      if (motor_controller_data.ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60) then enable walk assist
+      if (motor_controller_data.ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60), enable walk assist
       {
         // enable walk assist
         lcd_enable_walk_symbol (1);
         motor_controller_data.ui8_walk_assist_level = 1;
       }
-      else // if current speed is more than 6.0 km/h (60) then enable cruise function
+      else // if current speed is more than 6.0 km/h (60), enable cruise function
       {
         // enable cruise function
         lcd_enable_cruise_symbol (1);
