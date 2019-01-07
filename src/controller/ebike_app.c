@@ -328,11 +328,11 @@ static void communications_controller (void)
       // assist level
       configuration_variables.ui8_assist_level_factor_x10 = ui8_rx_buffer [3];
       
-      // head light
+      // lights
       configuration_variables.ui8_lights = (ui8_rx_buffer [4] & (1 << 0)) ? 1: 0;
       lights_set_state (configuration_variables.ui8_lights);
       
-      // walk assist
+      // walk assist or cruise function 
       configuration_variables.ui8_walk_assist = (ui8_rx_buffer [4] & (1 << 1)) ? 1: 0;
       
       // offroad mode
@@ -368,12 +368,17 @@ static void communications_controller (void)
         break;
 
         case 3:
-          configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;                                             // remove
+          //configuration_variables.ui8_cruise_control = ui8_rx_buffer [7] & 1;                                             // remove
+          
+          // type of motor (36 volt, 48 volt or some experimental type)
           configuration_variables.ui8_motor_type = (ui8_rx_buffer [7] & 6) >> 1;
+          // motor assistance without pedal rotation enable/disable when startup 
           configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 8) >> 3;
+          // motor temperature limit function enable/disable
           configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 16) >> 4;
-
+          // startup motor boost state
           configuration_variables.ui8_startup_motor_power_boost_state = ui8_rx_buffer [8] & 1;
+          // startup power boost max power limit
           configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [8] & 2) >> 1;
         break;
 

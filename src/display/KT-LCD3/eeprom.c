@@ -138,7 +138,6 @@ void eeprom_init_variables (void)
 //      (p_configuration_variables->ui8_battery_cells_number < 6) ||
 //      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 > 630) ||
 //      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 < 160) ||
-//      (p_configuration_variables->ui8_cruise_control > 1) ||                                        // remove
 //      (p_configuration_variables->ui8_motor_type > 2) ||
 //      (p_configuration_variables->ui8_motor_temperature_min_value_to_limit < 124) ||
 //      (p_configuration_variables->ui8_motor_temperature_max_value_to_limit < 124) ||

@@ -41,7 +41,7 @@ int main (void);
 
 // Local VS global variables
 // Sometimes I got the following error when compiling the firmware: motor.asm:750: Error: <r> relocation error
-// when I have this code inside a function: "static uint8_t ui8_cruise_counter = 0;"
+// when I have this code inside a function: "static uint8_t ui8_example_counter = 0;"
 // and the solution was define the variable as global instead
 // Another error example:
 // *** buffer overflow detected ***: sdcc terminated
@@ -104,23 +104,25 @@ int main (void)
       continue;
     }
 
-#ifdef DEBUG_UART
+    #ifdef DEBUG_UART
+    
     ui16_TIM3_counter = TIM3_GetCounter ();
+    
     if ((ui16_TIM3_counter - ui16_debug_uart_counter) > 50)
     {
       ui16_debug_uart_counter = ui16_TIM3_counter;
 
       // sugestion: no more than 6 variables printed (takes about 3ms to printf 6 variables)
       printf ("%d,%d,%d,%d\n",
-        ui16_motor_get_motor_speed_erps(),
-        ui8_duty_cycle,
-        ui8_adc_battery_current,
-        ui8_foc_angle
-        );
+      ui16_motor_get_motor_speed_erps(),
+      ui8_duty_cycle,
+      ui8_adc_battery_current,
+      ui8_foc_angle
+      );
     }
-#endif
+    
+    #endif
   }
 
   return 0;
 }
-

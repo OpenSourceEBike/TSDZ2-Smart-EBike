@@ -13,9 +13,7 @@
 
 void lights_init (void)
 {
-  GPIO_Init(LIGHTS__PORT,
-            LIGHTS__PIN,
-            GPIO_MODE_OUT_PP_LOW_SLOW);
+  GPIO_Init(LIGHTS__PORT, LIGHTS__PIN, GPIO_MODE_OUT_PP_LOW_SLOW);
 }
 
 void lights_set_state (uint8_t ui8_state)

@@ -156,6 +156,7 @@ static uint16_t ui16_second_counter = 0;
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
 void lcd_enable_lights_symbol (uint8_t ui8_state);
+void lcd_enable_cruise_symbol (uint8_t ui8_state);
 void lcd_enable_walk_symbol (uint8_t ui8_state);
 void lcd_enable_km_symbol (uint8_t ui8_state);
 void lcd_enable_mil_symbol (uint8_t ui8_state);
@@ -1487,15 +1488,29 @@ void walk_assist_state (void)
 {
   if (buttons_get_down_long_click_event ())
   {
-    // user need to keep pressing the button to have walk assist
+    // if down button is still pressed
     if (buttons_get_down_state ())
     {
-      motor_controller_data.ui8_walk_assist_level = 1;
-      lcd_enable_walk_symbol (1);
+      // enable walk assist or cruise function depending on speed
+      if (motor_controller_data.ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60) then enable walk assist
+      {
+        // enable walk assist
+        lcd_enable_walk_symbol (1);
+        motor_controller_data.ui8_walk_assist_level = 1;
+      }
+      else // if current speed is more than 6.0 km/h (60) then enable cruise function
+      {
+        // enable cruise function
+        lcd_enable_cruise_symbol (1);
+        motor_controller_data.ui8_walk_assist_level = 1;
+      }
     }
-    else
+    else // button not longer pressed
     {
+      // disable walk assist or cruise function
       motor_controller_data.ui8_walk_assist_level = 0;
+      
+      // clear button event
       buttons_clear_down_long_click_event ();
     }
   }

@@ -30,7 +30,7 @@
 
 // Local VS global variables
 // Sometimes I got the following error when compiling the firmware: motor.asm:750: Error: <r> relocation error
-// when I have this code inside a function: "static uint8_t ui8_cruise_counter = 0;"
+// when I have this code inside a function: "static uint8_t ui8_example_counter = 0;"
 // and the solution was define the variable as global instead
 // Another error example:
 // *** buffer overflow detected ***: sdcc terminated
@@ -83,4 +83,3 @@ int main (void)
 
   return 0;
 }
-
