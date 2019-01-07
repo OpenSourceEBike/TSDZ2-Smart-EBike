@@ -119,6 +119,8 @@ static uint16_t calc_filtered_battery_voltage (void);
 static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
+static void apply_walk_assist ();
+static void apply_cruise ();
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
@@ -162,10 +164,12 @@ static void ebike_control_motor (void)
 
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage ();
 
+
   // calc max battery current for boost state
   // calc max battery current for regular state
   // calc max battery current (defined by user on LCD3)
   uint8_t ui8_adc_max_battery_current_boost_state = 0;
+
 
   if (ui16_battery_voltage_filtered > 15)
   {
@@ -203,6 +207,7 @@ static void ebike_control_motor (void)
     }
   }
 
+
   // start when we press the pedals
   ui8_startup_enable = configuration_variables.ui8_assist_level_factor_x10 && ui8_torque_sensor ? 1 : 0;
 
@@ -220,34 +225,57 @@ static void ebike_control_motor (void)
   {
     boost_run_statemachine ();  
     ui8_boost_enabled_and_applied = apply_boost (ui8_tmp_pas_cadence_rpm, ui8_adc_max_battery_current_boost_state, &ui8_adc_battery_target_current);
-  }  
+  }
 
   if (!ui8_boost_enabled_and_applied)
   {
     ui8_adc_battery_target_current = ui8_adc_max_battery_current;
   }
 
+
   /* Boost: make transition from boost to regular level */
   if (configuration_variables.ui8_startup_motor_power_boost_feature_enabled)
   {
     apply_boost_fade_out (&ui8_adc_battery_target_current);
-  }  
+  }
+
 
 #if THROTTLE
   /* Throttle */
   apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
 #endif
 
+  
+  /* Walk assist or Cruise */
+  if (configuration_variables.ui8_walk_assist)
+  {
+    // enable walk assist or cruise function depending on speed
+    if (ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60), enable walk assist
+    {
+      // enable walk assist
+      apply_walk_assist();
+    }
+    else // if current speed is more than 6.0 km/h (60), enable cruise function
+    {
+      // enable cruise function
+      apply_cruise();
+    }
+  }
+  
+  
   ui8_tmp_max_speed = configuration_variables.ui8_wheel_max_speed;
-
+  
+  
   /* Offroad mode (limit speed if offroad mode is not active) */
   if (configuration_variables.ui8_offroad_feature_enabled) 
   {
     apply_offroad_mode (ui16_battery_voltage_filtered, &ui8_tmp_max_speed, &ui8_adc_battery_target_current);
   }
 
+
   /* Speed limit */
   apply_speed_limit (ui16_wheel_speed_x10, ui8_tmp_max_speed, &ui8_adc_battery_target_current);
+
 
   /* User configured max power on display */
   if (configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
@@ -255,8 +283,7 @@ static void ebike_control_motor (void)
     // limit the current to max value defined by user on LCD max power, if:
     // - user defined to make that limitation
     // - we are not on boost or fade state
-    if ((configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power == 1) ||
-        (!((ui8_boost_enabled_and_applied == 1) || (ui8_startup_boost_fade_enable == 1))))
+    if ((configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power == 1) || (!((ui8_boost_enabled_and_applied == 1) || (ui8_startup_boost_fade_enable == 1))))
     {
       // now let's limit the target battery current to battery max current (use min value of both)
       ui8_adc_battery_target_current = ui8_min (ui8_adc_battery_target_current, ui8_adc_max_battery_power_current);
@@ -327,6 +354,8 @@ static void communications_controller (void)
       
       // lights state
       configuration_variables.ui8_lights = (ui8_rx_buffer [4] & (1 << 0)) ? 1: 0;
+      
+      // set lights
       lights_set_state (configuration_variables.ui8_lights);
       
       // walk assist or cruise function 
@@ -337,6 +366,8 @@ static void communications_controller (void)
 
       // battery max current
       configuration_variables.ui8_battery_max_current = ui8_rx_buffer [5];
+      
+      // set max current from battery
       ebike_app_set_battery_max_current (configuration_variables.ui8_battery_max_current);
       
       // target battery max power
@@ -551,6 +582,7 @@ static void uart_send_package (void)
   }
 }
 
+
 // each 1 unit = 0.625 amps
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value)
 {
@@ -619,11 +651,13 @@ static void calc_motor_temperature (void)
   configuration_variables.ui8_motor_temperature = (uint8_t) (configuration_variables.ui16_motor_temperature_x2 >> 1);
 }
 
+
 static uint16_t calc_filtered_battery_voltage (void)
 {
   uint16_t ui16_batt_voltage_filtered = (uint16_t) motor_get_adc_battery_voltage_filtered_10b () * ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512;
   return (ui16_batt_voltage_filtered >> 9);
 }
+
 
 static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_speed, uint8_t *ui8_target_current)
 {
@@ -640,6 +674,7 @@ static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_
   }
 }
 
+
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current)
 {
   *ui8_target_current = (uint8_t) (map ((uint32_t) ui16_speed_x10,
@@ -648,6 +683,7 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
                                         (uint32_t) *ui8_target_current,
                                         (uint32_t) 0));
 }
+
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
@@ -663,6 +699,7 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
     if (*ui8_target_current) { *ui8_motor_enable = 1; }
   }
 #endif
+
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)
 {
@@ -691,6 +728,19 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current)
                       (uint32_t) 0));
   }
 }
+
+
+static void apply_walk_assist ()
+{
+  //lights_set_state (1);
+}
+
+
+static void apply_cruise ()
+{
+  //lights_set_state (0);
+}
+
 
 static void boost_run_statemachine (void)
 {
@@ -886,6 +936,7 @@ static void torque_sensor_read (void)
   }
 }
 
+
 static void throttle_read (void)
 {
 #if THROTTLE
@@ -900,6 +951,7 @@ static void throttle_read (void)
   ui8_throttle = 0;
 #endif
 }
+
 
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
 // we do: receive every byte and assembly as a package, finally, signal that we have a package to process (on main slow loop)
@@ -948,10 +1000,12 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
   }
 }
 
+
 struct_configuration_variables* get_configuration_variables (void)
 {
   return &configuration_variables;
 }
+
 
 static void safe_tests (void)
 {
