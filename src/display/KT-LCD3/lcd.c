@@ -1435,12 +1435,14 @@ void calc_battery_voltage_soc (void)
   }
 }
 
+
 void power(void)
 {
   lcd_print(ui16_battery_power_filtered, BATTERY_POWER_FIELD, 0);
   lcd_enable_motor_symbol(1);
   lcd_enable_w_symbol(1);
 }
+
 
 void assist_level_state (void)
 {
@@ -1460,6 +1462,7 @@ void assist_level_state (void)
     lcd_enable_assist_symbol (1);
   }
 }
+
 
 void lights_state (void)
 {
@@ -1483,6 +1486,7 @@ void lights_state (void)
   
   lcd_enable_lights_symbol(ui8_lights_state);
 }
+
 
 void walk_assist_state (void)
 {
@@ -1515,6 +1519,7 @@ void walk_assist_state (void)
     }
   }
 }
+
 
 void offroad_mode (void)
 {
@@ -2497,7 +2502,6 @@ void lcd_enable_w_symbol (uint8_t ui8_state)
     ui8_lcd_frame_buffer[9] &= ~128;
 }
 
-
 void lcd_enable_odometer_point_symbol (uint8_t ui8_state)
 {
   if (ui8_state)
@@ -2505,7 +2509,6 @@ void lcd_enable_odometer_point_symbol (uint8_t ui8_state)
   else
     ui8_lcd_frame_buffer[6] &= ~8;
 }
-
 
 void lcd_enable_brake_symbol (uint8_t ui8_state)
 {
@@ -2715,6 +2718,7 @@ void lcd_enable_colon_symbol (uint8_t ui8_state)
     ui8_lcd_frame_buffer[23] &= ~8; 
 }
 
+
 void low_pass_filter_battery_voltage_current_power (void)
 {
   // low pass filter battery voltage
@@ -2750,6 +2754,7 @@ void low_pass_filter_battery_voltage_current_power (void)
     ui16_battery_power_filtered *= 25;
   }
 }
+
 
 void low_pass_filter_pedal_torque_and_power (void)
 {
@@ -2799,6 +2804,7 @@ void low_pass_filter_pedal_torque_and_power (void)
   }
 }
 
+
 static void low_pass_filter_pedal_cadence (void)
 {
   // low pass filter
@@ -2815,6 +2821,7 @@ static void low_pass_filter_pedal_cadence (void)
     ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
   }
 }
+
 
 void calc_wh (void)
 {
@@ -2843,6 +2850,7 @@ void calc_wh (void)
   }
 }
 
+
 void calc_odometer (void)
 {
   uint32_t uint32_temp;
@@ -2863,6 +2871,7 @@ void calc_odometer (void)
     configuration_variables.ui16_odometer_distance_x10 = (uint16_t) uint32_temp;
   }
 }
+
 
 static void automatic_power_off_management (void)
 {
@@ -2900,15 +2909,18 @@ static void automatic_power_off_management (void)
   }
 }
 
+
 struct_configuration_variables* get_configuration_variables (void)
 {
   return &configuration_variables;
 }
 
+
 struct_motor_controller_data* lcd_get_motor_controller_data (void)
 {
   return &motor_controller_data;
 }
+
 
 void lcd_init (void)
 {
@@ -2919,6 +2931,7 @@ void lcd_init (void)
   // init variables with the stored value on EEPROM
   eeprom_init_variables ();
 }
+
 
 void lcd_set_backlight_intensity (uint8_t ui8_intensity)
 {
@@ -2933,9 +2946,11 @@ void lcd_set_backlight_intensity (uint8_t ui8_intensity)
   }
 }
 
+
 void update_menu_flashing_state(void)
 {
   // ***************************************************************************************************
+  
   // For flashing on menus
   if(ui8_lcd_menu_flash_counter == 0)
   {
@@ -2951,9 +2966,9 @@ void update_menu_flashing_state(void)
     }
   }
   ui8_lcd_menu_flash_counter--;
-  // ***************************************************************************************************
 
   // ***************************************************************************************************
+  
   ui8_lcd_menu_counter_100ms_state = 0;
   if (ui8_lcd_menu_counter_100ms++ > 10)
   {
@@ -2967,9 +2982,9 @@ void update_menu_flashing_state(void)
     ui8_lcd_menu_counter_500ms = 0;
     ui8_lcd_menu_counter_500ms_state = 1;
   }
-  // ***************************************************************************************************
 
   // ***************************************************************************************************
+  
   // For flashing the temperature field when the current is being limited due to motor over temperature
   // flash only if current is being limited: ui8_temperature_current_limiting_value != 255
   if (motor_controller_data.ui8_temperature_current_limiting_value != 255)
@@ -3015,8 +3030,10 @@ void update_menu_flashing_state(void)
   {
     ui8_lcd_menu_flash_state_temperature = 1;
   }
+  
   // ***************************************************************************************************
 }
+
 
 void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 {
@@ -3028,6 +3045,7 @@ void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
     *ui8_p_state = (*ui8_p_state + 1) % ui8_state_max_number;
   }
 }
+
 
 void calc_battery_soc_watts_hour(void)
 {
@@ -3060,6 +3078,7 @@ void calc_battery_soc_watts_hour(void)
   }
 }
 
+
 void lcd_power_off (uint8_t updateDistanceOdo)
 {
   if (updateDistanceOdo)
@@ -3090,6 +3109,7 @@ void lcd_power_off (uint8_t updateDistanceOdo)
   // block here
   while (1) ;
 }
+
 
 void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
 {
