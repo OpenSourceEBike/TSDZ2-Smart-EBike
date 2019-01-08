@@ -378,7 +378,7 @@ void lcd_execute_main_screen (void)
   lights_state ();
   brake ();
   time_measurement ();
-  assist_level_state (); // needs to be the last because function clears all button events
+  assist_level_state ();
 }
 
 void lcd_execute_menu_config (void)
@@ -1256,11 +1256,13 @@ uint8_t first_time_management (void)
   return ui8_status;
 }
 
+
 void power_off_management (void)
 {
   // turn off
   if (buttons_get_onoff_long_click_event ()) { lcd_power_off (1); }
 }
+
 
 void temperature (void)
 {
@@ -1338,7 +1340,7 @@ void time_measurement (void)
       }
     }
   
-  // reset passed seconds
+  // reset elapsed seconds
   ui8_second = 0;
   
   // display either TM or TTM
@@ -1446,17 +1448,41 @@ void power(void)
 
 void assist_level_state (void)
 {
-  var_number_t lcd_var_number;
+  // if UP button is clicked
+  if (buttons_get_up_click_event ())
+  {
+    // clear button event
+    buttons_clear_up_click_event ();
+    
+    // increment assist level
+    configuration_variables.ui8_assist_level++;
+    
+    // check if assist level variable is out of bounds
+    if (configuration_variables.ui8_assist_level > configuration_variables.ui8_number_of_assist_levels)
+    {
+      // set assist level to max
+      configuration_variables.ui8_assist_level = configuration_variables.ui8_number_of_assist_levels; 
+    }
+  }
+  
+  // if DOWN button is clicked
+  if (buttons_get_down_click_event ())
+  {
+    // clear button event
+    buttons_clear_down_click_event ();
+    
+    // check if assist level is out of bounds
+    if (configuration_variables.ui8_assist_level > 0)
+    {
+      // decrement assist level
+      configuration_variables.ui8_assist_level--;
+    }
+  }
 
-  lcd_var_number.p_var_number = &configuration_variables.ui8_assist_level;
-  lcd_var_number.ui8_size = 8;
-  lcd_var_number.ui8_decimal_digit = 1;
-  lcd_var_number.ui32_max_value = configuration_variables.ui8_number_of_assist_levels;
-  lcd_var_number.ui32_min_value = 0;
-  lcd_var_number.ui32_increment_step = 1;
-  lcd_var_number.ui8_odometer_field = ASSIST_LEVEL_FIELD;
-  lcd_configurations_print_number(&lcd_var_number);
+  // display assist level
+  lcd_print (configuration_variables.ui8_assist_level, ASSIST_LEVEL_FIELD, 1);
 
+  // if offroad mode is disabled also display "assist" symbol
   if (motor_controller_data.ui8_offroad_mode == 0)
   {
     lcd_enable_assist_symbol (1);
@@ -1466,10 +1492,13 @@ void assist_level_state (void)
 
 void lights_state (void)
 {
+  // if UP button is click and hold
   if (buttons_get_up_long_click_event ())
   {
+    // clear button event
     buttons_clear_up_long_click_event ();
-
+    
+    // toggle light state and display backlight
     if (ui8_lights_state == 0)
     {
       ui8_lights_state = 1;
@@ -1484,6 +1513,7 @@ void lights_state (void)
     }
   }
   
+  // enable light symbol on display
   lcd_enable_lights_symbol(ui8_lights_state);
 }
 
