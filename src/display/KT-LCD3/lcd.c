@@ -1089,7 +1089,7 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 4000;
       lcd_var_number.ui32_min_value = 1000;
-      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui32_increment_step = 63;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
     break;

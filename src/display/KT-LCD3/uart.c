@@ -91,6 +91,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
   }
 }
 
+
 void uart_data_clock (void)
 {
   static uint32_t ui32_wss_tick_temp;
@@ -115,7 +116,7 @@ void uart_data_clock (void)
 
       // send a variable for each package sent but first verify if the last one was received otherwise, keep repeating
       // keep cycling so all variables are sent
-#define VARIABLE_ID_MAX_NUMBER 9
+#define VARIABLE_ID_MAX_NUMBER 10
       if ((ui8_rx_buffer [1]) == ui8_master_comm_package_id) // last package data ID was receipt, so send the next one
       {
         ui8_master_comm_package_id = (ui8_master_comm_package_id + 1) % VARIABLE_ID_MAX_NUMBER;
@@ -276,7 +277,13 @@ void uart_data_clock (void)
           ui8_tx_buffer[7] = p_configuration_variables->ui8_offroad_power_limit_enabled & 1;
           ui8_tx_buffer[8] = p_configuration_variables->ui8_offroad_power_limit_div25;
         break;
-
+        
+        case 9:
+          // ADC battery current ramp up inverse step
+          ui8_tx_buffer[7] = (uint8_t) (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step & 0xff);
+          ui8_tx_buffer[8] = (uint8_t) (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step >> 8);
+        break;
+        
         default:
           ui8_lcd_variable_id = 0;
         break;
@@ -308,10 +315,12 @@ void uart_data_clock (void)
   }
 }
 
+
 uint8_t uart_received_first_package (void)
 {
   return (ui8_uart_received_first_package == 10) ? 1: 0;
 }
+
 
 #if __SDCC_REVISION < 9624
 void putchar(char c)

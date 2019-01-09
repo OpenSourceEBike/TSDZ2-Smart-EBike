@@ -75,26 +75,27 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_OFFROAD_SPEED_LIMIT,
     DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED,
     DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25,
-    DEFAULT_VALUE_ODOMETER_X10,
-    DEFAULT_VALUE_ODOMETER_X10,
-    DEFAULT_VALUE_ODOMETER_X10,
-    DEFAULT_VALUE_TRIP_X10,
-    DEFAULT_VALUE_TRIP_X10,
-    DEFAULT_VALUE_TRIP_X10,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_3,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5,
-    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6,
-    DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL,
-    DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE,
-    DEFAULT_VALUE_TOTAL_SECOND_TTM,
-    DEFAULT_VALUE_TOTAL_MINUTE_TTM,
-    DEFAULT_VALUE_TOTAL_HOUR_TTM,
-    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0,
-    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1
+    DEFAULT_VALUE_ODOMETER_X10,                                         // 59 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_X10,                                         // 60 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_X10,                                         // 61 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TRIP_X10,                                             // 62 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TRIP_X10,                                             // 63 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TRIP_X10,                                             // 64 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0,                           // 65 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1,                           // 66 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2,                           // 67 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_3,                           // 68 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4,                           // 69 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5,                           // 70 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6,                           // 71 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_MAX_WHEEL_SPEED_IMPERIAL,                             // 72 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE,                         // 73 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TOTAL_SECOND_TTM,                                     // 74 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TOTAL_MINUTE_TTM,                                     // 75 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TOTAL_HOUR_TTM_0,                                     // 76 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_TOTAL_HOUR_TTM_1,                                     // 77 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0,           // 78 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1            // 79 + EEPROM_BASE_ADDRESS (Array index)
   };
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
@@ -106,10 +107,13 @@ void eeprom_init (void)
   uint8_t ui8_data;
 
   // start by reading address 0 and see if value is different from our key,
-  // if so mean that eeprom memory is clean and we need to populate: should happen after erasing the microcontroller
+  // if it is different it means that EEPROM memory is "empty" and we need to populate.
+  // This should always happen after erasing the microcontroller.
+  
   ui8_data = FLASH_ReadByte (ADDRESS_KEY);
-  if (ui8_data != KEY) // verify if our key exist
+  if (ui8_data != KEY) // verify if our key exists
   {
+    // write default values
     eeprom_write_array (array_default_values, ((uint32_t) EEPROM_BYTES_STORED));
   }
 }
@@ -162,13 +166,17 @@ static void eeprom_read_values_to_variables (void)
 
   p_configuration_variables->ui8_assist_level = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL);
 
+  // wheel perimeter
   ui16_temp = FLASH_ReadByte (ADDRESS_WHEEL_PERIMETER_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_WHEEL_PERIMETER_1);
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
   p_configuration_variables->ui16_wheel_perimeter = ui16_temp;
 
+  // max wheel speed
   p_configuration_variables->ui8_wheel_max_speed = FLASH_ReadByte (ADDRESS_MAX_WHEEL_SPEED);
   p_configuration_variables->ui8_wheel_max_speed_imperial = FLASH_ReadByte (ADDRESS_MAX_WHEEL_SPEED_IMPERIAL);
+  
+  // units
   p_configuration_variables->ui8_units_type = FLASH_ReadByte (ADDRESS_UNITS_TYPE);
 
   ui32_temp = FLASH_ReadByte (ADDRESS_HW_X10_OFFSET_0);
@@ -202,11 +210,8 @@ static void eeprom_read_values_to_variables (void)
   
   // time measurement variables
   p_configuration_variables->ui8_time_measurement_field_state = FLASH_ReadByte (ADDRESS_TIME_MEASUREMENT_FIELD_STATE);
-  
   p_configuration_variables->ui8_total_second_TTM = FLASH_ReadByte (ADDRESS_TOTAL_SECOND_TTM);
-  
   p_configuration_variables->ui8_total_minute_TTM = FLASH_ReadByte (ADDRESS_TOTAL_MINUTE_TTM);
-  
   ui16_temp = FLASH_ReadByte (ADDRESS_TOTAL_HOUR_TTM_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_TOTAL_HOUR_TTM_1);
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
@@ -416,10 +421,12 @@ static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
 
   FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
   
-  FLASH_Unlock (FLASH_MEMTYPE_DATA); // Unlock Data memory  
+  // unlock memory
+  FLASH_Unlock (FLASH_MEMTYPE_DATA); 
+  
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
 
-  // on next loop, we write the array to EEPROM and then read again and compared the values,
+  // on next loop, we write the array to EEPROM and then read again and compare the values,
   // if they are different, we keep writing until they are equal
   do
   {
@@ -433,7 +440,7 @@ static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
     // read back the full array
     variables_to_array (array_data_read_back);
 
-    // compare each byte of read array so see if the values were correctly written
+    // compare each byte of read array to see if the values were correctly written
     ui8_data_written_correctly = 1;
     p_array_data = p_array;
     for (ui8_i = 0; ui8_i < ui8_len; ui8_i++)
@@ -448,6 +455,7 @@ static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
   }
   while (ui8_data_written_correctly == 0); // loop until data is written correctly
 
+  // lock memory
   FLASH_Lock (FLASH_MEMTYPE_DATA);
 }
 
@@ -456,19 +464,21 @@ void eeprom_erase_key_value (void)
   uint8_t ui8_data;
   FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG);
 
-
-  FLASH_Unlock(FLASH_MEMTYPE_DATA); // Unlock Data memory
+  // unlock memory
+  FLASH_Unlock(FLASH_MEMTYPE_DATA);
+  
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) { } // Wait until Data EEPROM area unlocked flag is set
 
   do
   {
-    // set to 0 the KEY
+    // set the key to 0
     FLASH_ProgramByte(ADDRESS_KEY, 0);
 
     // read back the KEY value
     ui8_data = FLASH_ReadByte(ADDRESS_KEY);
   }
   while (ui8_data != 0); // loop until key value is stored as 0
-
+  
+  // lock memory
   FLASH_Lock (FLASH_MEMTYPE_DATA);
 }

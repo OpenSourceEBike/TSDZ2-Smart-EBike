@@ -455,8 +455,8 @@ static void communications_controller (void)
         break;
         
         case 9:
-          // current ramp up step
-          //configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
+          // current ramp up inverse step
+          configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
         break;
 
         default:
