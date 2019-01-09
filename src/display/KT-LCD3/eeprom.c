@@ -92,7 +92,9 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE,
     DEFAULT_VALUE_TOTAL_SECOND_TTM,
     DEFAULT_VALUE_TOTAL_MINUTE_TTM,
-    DEFAULT_VALUE_TOTAL_HOUR_TTM
+    DEFAULT_VALUE_TOTAL_HOUR_TTM,
+    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0,
+    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1
   };
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
@@ -281,6 +283,12 @@ static void eeprom_read_values_to_variables (void)
   ui8_temp = FLASH_ReadByte (ADDRESS_TRIP_X10_2);
   ui32_temp += (((uint32_t) ui8_temp << 16) & 0xff0000);
   p_configuration_variables->ui32_trip_x10 = ui32_temp;
+  
+  // ADC battery current ramp up inverse step
+  ui16_temp = FLASH_ReadByte (ADRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0);
+  ui8_temp = FLASH_ReadByte (ADRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1);
+  ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
+  p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step = ui16_temp;
 }
 
 void eeprom_write_variables (void)
@@ -320,9 +328,9 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [19] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
   ui8_array [20] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
   ui8_array [21] = (p_configuration_variables->ui8_motor_type & 3) |
-                      ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
-                      ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3) |
-                      ((p_configuration_variables->ui8_temperature_field_config & 3) << 4);
+                  ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
+                  ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3) |
+                  ((p_configuration_variables->ui8_temperature_field_config & 3) << 4);
 
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
@@ -389,11 +397,13 @@ static void variables_to_array (uint8_t *ui8_array)
 
   // write time measurement values
   ui8_array [74] = p_configuration_variables->ui8_total_second_TTM;
-  
   ui8_array [75] = p_configuration_variables->ui8_total_minute_TTM;
-  
   ui8_array [76] = p_configuration_variables->ui16_total_hour_TTM & 255;
   ui8_array [77] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
+  
+  // write ADC battery current ramp up inverse step value
+  ui8_array [78] = p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step & 255;
+  ui8_array [79] = (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step >> 8) & 255;
 }
 
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)

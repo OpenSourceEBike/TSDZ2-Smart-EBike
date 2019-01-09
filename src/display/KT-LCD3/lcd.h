@@ -99,6 +99,7 @@ typedef struct _configuration_variables
   uint16_t ui16_odometer_distance_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
+  uint16_t ui16_ADC_battery_current_ramp_up_inverse_step;
 } struct_configuration_variables;
 
 // LCD RAM has 32*8 bits

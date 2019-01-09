@@ -87,19 +87,36 @@
 
 
 // EEPROM memory variables default values
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10           40 // 4.0
-#define DEFAULT_VALUE_CONFIG_0                          0
-#define DEFAULT_VALUE_BATTERY_MAX_CURRENT               10 // 10 amps
-#define DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10      50 // 500 watts
-#define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0 134 // 48v battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
-#define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1 1
-#define DEFAULT_VALUE_WHEEL_PERIMETER_0                 2 // 26'' wheel: 2050mm perimeter (2 + (8 << 8))
-#define DEFAULT_VALUE_WHEEL_PERIMETER_1                 8
-#define DEFAULT_VALUE_WHEEL_MAX_SPEED                   50 // 50km/h
-#define DEFAULT_VALUE_CONFIG_1                          0
-#define DEFAULT_VALUE_OFFROAD_CONFIG                    0
-#define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT               25 // 25km/h
-#define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25         10 // 10 * 25 = 250W
+#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10                     40 // 4.0
+#define DEFAULT_VALUE_CONFIG_0                                    0
+#define DEFAULT_VALUE_BATTERY_MAX_CURRENT                         10 // 10 amps
+#define DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10                50 // 500 watts
+#define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0           134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8)) = 390
+#define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1           1
+#define DEFAULT_VALUE_WHEEL_PERIMETER_0                           2 // 26'' wheel: 2050mm perimeter (2 + (8 << 8))
+#define DEFAULT_VALUE_WHEEL_PERIMETER_1                           8
+#define DEFAULT_VALUE_WHEEL_MAX_SPEED                             50 // 50km/h
+#define DEFAULT_VALUE_CONFIG_1                                    0
+#define DEFAULT_VALUE_OFFROAD_CONFIG                              0
+#define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT                         25 // 25km/h
+#define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25                   10 // 10 * 25 = 250 W
+#define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0  161 // 1953, see note below, (161 + (7 << 8)) = 1953
+#define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1  7
+
+/*---------------------------------------------------------
+  NOTE: regarding ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP
+
+  Target: ramp 5 amps per second
+
+  Every second has 15625 PWM cycles interrupts,
+  one ADC battery current step --> 0.625 amps:
+
+  5 / 0.625 = 8 (we need to do 8 steps ramp up per second)
+
+  Therefore:
+
+  15625 / 8 = 1953 (our default value)
+---------------------------------------------------------*/
 
 
 // *************************************************************************** //

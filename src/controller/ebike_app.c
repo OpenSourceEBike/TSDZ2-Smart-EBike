@@ -119,8 +119,8 @@ static uint16_t calc_filtered_battery_voltage (void);
 static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
-static void apply_walk_assist (uint8_t ui8_walk_assist_power_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
-static void apply_cruise ();
+static void apply_walk_assist (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
+static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
@@ -253,12 +253,12 @@ static void ebike_control_motor (void)
     if (ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60), enable walk assist
     {
       // enable walk assist
-      apply_walk_assist(50, &ui8_startup_enable, &ui8_adc_battery_target_current);
+      apply_walk_assist(&ui8_startup_enable, &ui8_adc_battery_target_current);
     }
     else // if current speed is more than 6.0 km/h (60), enable cruise function
     {
       // enable cruise function
-      apply_cruise();
+      //apply_cruise(&ui8_startup_enable, &ui8_adc_battery_target_current);
     }
   }
   
@@ -452,6 +452,11 @@ static void communications_controller (void)
           // offroad mode power limit configuration
           configuration_variables.ui8_offroad_power_limit_enabled = (ui8_rx_buffer [7] & 1);
           configuration_variables.ui8_offroad_power_limit_div25 = ui8_rx_buffer [8];
+        break;
+        
+        case 9:
+          // current ramp up step
+          //configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
         break;
 
         default:
@@ -745,8 +750,18 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current)
 }
 
 
-static void apply_walk_assist (uint8_t ui8_walk_assist_power_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
+static void apply_walk_assist (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
 {
+  // set walk assist power value in relation to user set assist level 
+  uint8_t ui8_walk_assist_power_value = configuration_variables.ui8_assist_level_factor_x10 * 5; // multiply with some value that gives an appropriate power value 
+  
+  // check so that walk assist power value is not too large, if it is -> limit the value
+  if (ui8_walk_assist_power_value > 50)
+  {
+    ui8_walk_assist_power_value = 50;
+  }
+  
+  // map the walk assist power value to appropriate target current
   uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_walk_assist_power_value,
                                      (uint32_t) 0,
                                      (uint32_t) 255,
@@ -761,9 +776,22 @@ static void apply_walk_assist (uint8_t ui8_walk_assist_power_value, uint8_t *ui8
 }
 
 
-static void apply_cruise ()
+static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
 {
-  //lights_set_state (0);
+/*   uint8_t ui8_cruise_power_value = 0;
+  
+  // map the cruise power value to appropriate target current
+  uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_cruise_power_value,
+                                     (uint32_t) 0,
+                                     (uint32_t) 255,
+                                     (uint32_t) 0,
+                                     (uint32_t) ui8_adc_battery_current_max));
+                                     
+  // set target current
+  *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
+
+  // enable motor assistance because user requests cruise
+  if (*ui8_target_current) { *ui8_motor_enable = 1; } */
 }
 
 

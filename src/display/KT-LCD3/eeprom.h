@@ -92,7 +92,9 @@
 #define ADDRESS_TOTAL_MINUTE_TTM                                            75 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_HOUR_TTM_0                                            76 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_HOUR_TTM_1                                            77 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 78
+#define ADRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0                   78 + EEPROM_BASE_ADDRESS
+#define ADRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1                   79 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 80
 
 void eeprom_init (void);
 void eeprom_init_variables (void);

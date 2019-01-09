@@ -26,7 +26,9 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_CONFIG_1,
     DEFAULT_VALUE_OFFROAD_CONFIG,
     DEFAULT_VALUE_OFFROAD_SPEED_LIMIT,
-    DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25
+    DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25,
+    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0,
+    DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1
   };
 
 static void eeprom_read_values_to_variables (void);
@@ -87,12 +89,14 @@ static void eeprom_read_values_to_variables (void)
 
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
   p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte (ADDRESS_MOTOR_POWER_X10);
-
+  
+  // battery low cut off voltage
   ui16_temp = FLASH_ReadByte (ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1);
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
   p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 = ui16_temp;
-
+  
+  // wheel perimeter
   ui16_temp = FLASH_ReadByte (ADDRESS_WHEEL_PERIMETER_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_WHEEL_PERIMETER_1);
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
@@ -111,6 +115,12 @@ static void eeprom_read_values_to_variables (void)
 
   p_configuration_variables->ui8_offroad_speed_limit = FLASH_ReadByte (ADDRESS_OFFROAD_SPEED_LIMIT);
   p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_DIV25);
+  
+  // ADC battery current ramp up inverse step
+  ui16_temp = FLASH_ReadByte (ADRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0);
+  ui8_temp = FLASH_ReadByte (ADRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1);
+  ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
+  p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step = ui16_temp;
 }
 
 void eeprom_write_variables (void)
@@ -144,6 +154,8 @@ static void variables_to_array (uint8_t *ui8_array)
                         ((p_configuration_variables->ui8_offroad_power_limit_enabled & 1) << 2);
   ui8_array [12] = p_configuration_variables->ui8_offroad_speed_limit;
   ui8_array [13] = p_configuration_variables->ui8_offroad_power_limit_div25;
+  ui8_array [14] = p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step & 255;
+  ui8_array [15] = (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step >> 8) & 255;
 }
 
 static void eeprom_write_array (uint8_t *array)

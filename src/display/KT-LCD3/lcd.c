@@ -1066,7 +1066,7 @@ void lcd_execute_menu_config_submenu_various (void)
   uint32_t ui32_odometer_x10;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1081,9 +1081,21 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
     break;
-
-    // motor assistance startup without pedal rotation
+    
+    // ADC battery current ramp up inverse step
     case 1:
+      lcd_var_number.p_var_number = &configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step;
+      lcd_var_number.ui8_size = 16;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 4000;
+      lcd_var_number.ui32_min_value = 1000;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    // motor assistance startup without pedal rotation
+    case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1095,7 +1107,7 @@ void lcd_execute_menu_config_submenu_various (void)
     break;
   
     // set odometer
-    case 2:
+    case 3:
       ui32_odometer_x10 = configuration_variables.ui32_odometer_x10;
 
       if (configuration_variables.ui8_units_type)

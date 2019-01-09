@@ -25,8 +25,8 @@
 #define DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS                       5
 #define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2 // 26'' wheel: 2050mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                             8
-#define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50
-#define DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL                      20
+#define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50 // 50 kph
+#define DEFAULT_VALUE_WHEEL_MAX_SPEED_IMPERIAL                      20 // 20 mph
 #define DEFAULT_VALUE_UNITS_TYPE                                    0 // 0 = km/h and km
 
 #define DEFAULT_VALUE_WH_OFFSET                                     0
@@ -83,7 +83,7 @@
 #define DEFAULT_VALUE_ODOMETER_X10                                  0 // Default value for odometer
 #define DEFAULT_VALUE_TRIP_X10                                      0 // Default value for trip distance
 
-// these are the default values for the sub field menus for every odometer field state
+// default values for the sub field menus for every odometer field state
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2                    0
@@ -92,9 +92,29 @@
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6                    0
 
+// default values for time measurement
 #define DEFAULT_VALUE_TOTAL_SECOND_TTM                              0
 #define DEFAULT_VALUE_TOTAL_MINUTE_TTM                              0
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM                                0
+
+// default values for ADC battery current ramp up inverse step
+#define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0    161 // 1953, see note below, (161 + (7 << 8)) = 1953
+#define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1    7
+
+/*---------------------------------------------------------
+  NOTE: regarding ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP
+
+  Target: ramp 5 amps per second
+
+  Every second has 15625 PWM cycles interrupts,
+  one ADC battery current step --> 0.625 amps:
+
+  5 / 0.625 = 8 (we need to do 8 steps ramp up per second)
+
+  Therefore:
+
+  15625 / 8 = 1953 (our default value)
+---------------------------------------------------------*/
 
 // *************************************************************************** //
 

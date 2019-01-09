@@ -94,6 +94,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
 void uart_data_clock (void)
 {
   static uint32_t ui32_wss_tick_temp;
+  
   struct_motor_controller_data *p_motor_controller_data;
   struct_configuration_variables *p_configuration_variables;
 

@@ -448,6 +448,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   static uint8_t ui8_temp;
   
+  struct_configuration_variables *p_configuration_variables;
+  p_configuration_variables = get_configuration_variables ();
+
 
   /****************************************************************************/
   
@@ -766,7 +769,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // Implement ramp up ADC battery current
   if (ui8_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
   {
-    if (ui16_counter_adc_battery_current_ramp_up++ >= ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP)
+    if (ui16_counter_adc_battery_current_ramp_up++ >= p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step)
     {
       ui16_counter_adc_battery_current_ramp_up = 0;
       ui8_controller_adc_battery_max_current++;
@@ -774,7 +777,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   else if (ui8_adc_target_battery_max_current < ui8_controller_adc_battery_max_current)
   {
-    // we are not doing a ramp down here, just reducing to the target value
+    // we are not doing a ramp down here, just directly setting to the target value
     ui8_controller_adc_battery_max_current = ui8_adc_target_battery_max_current;
   }
   
@@ -1002,6 +1005,7 @@ uint16_t ui16_motor_get_motor_speed_erps (void)
   return ui16_motor_speed_erps;
 }
 
+
 void read_battery_voltage (void)
 {
   // low pass filter the voltage readed value, to avoid possible fast spikes/noise
@@ -1010,6 +1014,7 @@ void read_battery_voltage (void)
   ui16_adc_battery_voltage_filtered_10b = ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
 }
 
+
 void read_battery_current (void)
 {
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
@@ -1017,6 +1022,7 @@ void read_battery_current (void)
   ui16_adc_battery_current_accumulated += ui16_adc_battery_current_10b;
   ui8_adc_battery_current_filtered_10b = ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
 }
+
 
 void calc_foc_angle (void)
 {
