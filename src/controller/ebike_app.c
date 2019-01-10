@@ -49,7 +49,7 @@ volatile uint8_t ui8_adc_battery_current_offset;
 volatile uint8_t ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t ui8_adc_target_battery_max_current;
 uint8_t ui8_adc_battery_current_max;
-uint8_t ui8_walk_assist_PWM = 0;
+uint8_t ui8_walk_assist_PWM;
 
 
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
@@ -762,22 +762,31 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current)
 
 static void apply_walk_assist (uint8_t *ui8_target_current)
 {
+  // set walk assist flag
+  
   // set target current to max current
   *ui8_target_current = ui8_adc_battery_current_max;
   
-  // set walk assist power value in relation to user set assist level 
-  ui8_walk_assist_PWM = configuration_variables.ui8_assist_level_factor_x10;
-  
-  // check so that walk assist power value is not too large, if it is -> limit the value
-  if (ui8_walk_assist_PWM > 100)
+  // check so that assist level is not more than 5.0 (50), if it is - > limit walk assist PWM to max
+  if (configuration_variables.ui8_assist_level_factor_x10 > 50)
   {
     ui8_walk_assist_PWM = 100;
+  }
+  else
+  {
+    // set walk assist PWM as product of assist level multiplied with some suitable value so that walk assist PWM is useful 
+    ui8_walk_assist_PWM = configuration_variables.ui8_assist_level_factor_x10 * 2; // example: assist level x10 = 0,2  ->  assist level = 20  :  20 * 2  ->  walk assist PWM = 40
   }
 }
 
 
 static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
 {
+  // save current speed to maintain
+  
+  // activate cruise flag
+  
+  
 /*   uint8_t ui8_cruise_power_value = 0;
   
   // map the cruise power value to appropriate target current
