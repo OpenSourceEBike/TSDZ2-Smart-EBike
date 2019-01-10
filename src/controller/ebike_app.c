@@ -49,6 +49,8 @@ volatile uint8_t ui8_adc_battery_current_offset;
 volatile uint8_t ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t ui8_adc_target_battery_max_current;
 uint8_t ui8_adc_battery_current_max;
+uint8_t ui8_walk_assist_PWM = 0;
+
 
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_pas_direction = 0;
@@ -64,6 +66,7 @@ uint8_t ui8_startup_boost_timer = 0;
 uint8_t ui8_startup_boost_fade_steps = 0;
 uint16_t ui16_startup_boost_fade_variable_x256;
 uint16_t ui16_startup_boost_fade_variable_step_amount_x256;
+
 
 // wheel speed
 volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
@@ -318,6 +321,9 @@ static void ebike_control_motor (void)
   /*************************************************************************************************************
   NOTE:
   
+  If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND brake is not set AND there are no 
+  errors detected in function "safe_tests", set the target duty cycle to walk assist PWM.
+  
   If the battery_target_current == 0 AND ui8_startup_enable == 0 AND brake is not set AND there are no 
   errors detected in function "safe_tests", set the target duty cycle to max (255) and the current will be 
   controlled by the battery current controller. Else set the target duty cycle to 0.
@@ -326,7 +332,7 @@ static void ebike_control_motor (void)
   
   if (ui8_adc_battery_target_current && configuration_variables.ui8_walk_assist && (!brake_is_set()) && configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
   {
-    motor_set_pwm_duty_cycle_target (100);
+    motor_set_pwm_duty_cycle_target (ui8_walk_assist_PWM);
   }
   else if (ui8_adc_battery_target_current && ui8_startup_enable && (!brake_is_set()) && configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
   {
@@ -756,24 +762,17 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current)
 
 static void apply_walk_assist (uint8_t *ui8_target_current)
 {
+  // set target current to max current
+  *ui8_target_current = ui8_adc_battery_current_max;
+  
   // set walk assist power value in relation to user set assist level 
-  uint8_t ui8_walk_assist_power_value = configuration_variables.ui8_assist_level_factor_x10;
+  ui8_walk_assist_PWM = configuration_variables.ui8_assist_level_factor_x10;
   
   // check so that walk assist power value is not too large, if it is -> limit the value
-  if (ui8_walk_assist_power_value > 30)
+  if (ui8_walk_assist_PWM > 100)
   {
-    ui8_walk_assist_power_value = 30;
+    ui8_walk_assist_PWM = 100;
   }
-  
-  // map the walk assist power value to appropriate target current
-  uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_walk_assist_power_value,
-                                     (uint32_t) 0,
-                                     (uint32_t) 255,
-                                     (uint32_t) 0,
-                                     (uint32_t) ui8_adc_battery_current_max));
-                                     
-  // set target current
-  *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
 }
 
 

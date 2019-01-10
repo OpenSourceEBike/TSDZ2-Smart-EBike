@@ -1087,7 +1087,7 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_var_number.p_var_number = &configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 4000;
+      lcd_var_number.ui32_max_value = 6000;
       lcd_var_number.ui32_min_value = 1000;
       lcd_var_number.ui32_increment_step = 63;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
