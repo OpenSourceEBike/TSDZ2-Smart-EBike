@@ -134,9 +134,12 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
-static uint8_t    ui8_second        = 0;
-static uint8_t    ui8_second_TM     = 0;
-static uint16_t   ui16_minute_TM    = 0;
+static uint8_t    ui8_second = 0;
+static uint8_t    ui8_second_TM = 0;
+static uint16_t   ui16_minute_TM = 0;
+
+static uint8_t    ui8_temp_leon = 0;
+static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
 uint8_t ui8_start_odometer_show_field_number = 0;
 uint8_t ui8_odometer_show_field_number_counter_0 = 0;
@@ -163,6 +166,8 @@ void lcd_enable_wheel_speed_point_symbol (uint8_t ui8_state);
 void lcd_enable_kmh_symbol (uint8_t ui8_state);
 void lcd_enable_mph_symbol (uint8_t ui8_state);
 void lcd_enable_odo_symbol (uint8_t ui8_state);
+void lcd_enable_avs_symbol (uint8_t ui8_state);
+void lcd_enable_mxs_symbol (uint8_t ui8_state);
 void calc_wh (void);
 void assist_level_state (void);
 void brake (void);
@@ -1674,7 +1679,8 @@ void odometer_increase_field_state (void)
 {
   configuration_variables.ui8_odometer_field_state++;
   
-  if (configuration_variables.ui8_odometer_field_state >= 6) 
+  // check if out of bounds
+  if (configuration_variables.ui8_odometer_field_state >= 7) // 7 field states, 0 -> 6
   {
     configuration_variables.ui8_odometer_field_state = 0;
     
@@ -2378,6 +2384,97 @@ void odometer (void)
         }
         
       break; // end of time measurement
+    
+      case 6: // wheel speed
+      
+        if (buttons_get_up_click_long_click_event ())
+        {
+          buttons_clear_up_click_long_click_event ();
+          
+          // increment menu state with one
+          configuration_variables.ui8_odometer_sub_field_state++;
+          
+          // check overflow, if true -> reset to first menu state
+          if (configuration_variables.ui8_odometer_sub_field_state >= 2)
+          {
+            configuration_variables.ui8_odometer_sub_field_state = 0;
+          }
+
+          odometer_start_show_field_number ();
+        }
+        
+        switch (configuration_variables.ui8_odometer_sub_field_state)
+        {
+          // wheel speed
+          case 0:
+            // set wheel speed field state
+            ui8_temp_leon = 0;
+          break;
+          
+          // average wheel speed since last reset
+          case 1:
+            // set wheel speed field state
+            ui8_temp_leon = 1;          
+            lcd_enable_avs_symbol (1);
+          break;
+          
+          // maximum measured wheel speed since power on
+          case 2:
+          
+            // set wheel speed field state
+            ui8_temp_leon = 2;
+            lcd_enable_mxs_symbol (1);
+            
+            // if there is one down_click_long_click_event
+            if (buttons_get_down_click_long_click_event())
+            {
+              ui8_odometer_reset_distance_counter_state = 1;
+            }
+
+            if (ui8_odometer_reset_distance_counter_state)
+            {
+              if (buttons_get_down_state ())
+              {
+                ui8_odometer_reset_distance_counter_state = 1;
+
+                // clear the down button possible event
+                buttons_clear_down_click_event();
+                buttons_clear_down_long_click_event();
+
+                // count time, after limit, reset
+                ui16_odometer_reset_distance_counter++;
+                
+                if (ui16_odometer_reset_distance_counter >= 300)
+                {
+                  // reset counter
+                  ui16_odometer_reset_distance_counter = 0;
+                  
+                  // reset maximum measured wheel speed since power on
+                  ui8_max_measured_wheel_speed_x10 = 0;
+                }
+                
+                if (ui8_lcd_menu_flash_state)
+                {
+                  lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+                }
+              }
+              else // user is not pressing the down button anymore
+              {
+                ui8_odometer_reset_distance_counter_state = 0;
+              }
+            }
+            else
+            {
+              // reset counter
+              ui16_odometer_reset_distance_counter = 0;
+              
+              lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+            }
+            
+          break;
+        }
+        
+      break; // end of wheel speed
     }
 
     if (ui8_start_odometer_show_field_number)
@@ -2421,18 +2518,65 @@ void odometer (void)
 
 void wheel_speed (void)
 {
+  // check if wheel speed is higher than maximum measured wheel speed
+  if (motor_controller_data.ui16_wheel_speed_x10 > ui8_max_measured_wheel_speed_x10)
+  {
+    // wheel speed is higher than maximum measured wheel speed so update variable
+    ui8_max_measured_wheel_speed_x10 = motor_controller_data.ui16_wheel_speed_x10;
+  }
+  
   // show wheel speed only when we should not start show odometer field number
   if (ui8_start_odometer_show_field_number == 0)
   {
-    if (configuration_variables.ui8_units_type)
+    switch (ui8_temp_leon)
     {
-      lcd_print(((float) motor_controller_data.ui16_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
-      lcd_enable_mph_symbol (1);
-    }
-    else
-    {
-      lcd_print(motor_controller_data.ui16_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
-      lcd_enable_kmh_symbol (1);
+      // display wheel speed
+      case 0:
+      
+        if (configuration_variables.ui8_units_type)
+        {
+          lcd_print(((float) motor_controller_data.ui16_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
+          lcd_enable_mph_symbol (1);
+        }
+        else
+        {
+          lcd_print(motor_controller_data.ui16_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
+          lcd_enable_kmh_symbol (1);
+        }
+        
+      break;
+      
+      // display average wheel speed since last reset             FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX 
+      case 1:
+      
+        if (configuration_variables.ui8_units_type)
+        {
+          lcd_print(((float) motor_controller_data.ui16_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
+          lcd_enable_mph_symbol (1);
+        }
+        else
+        {
+          lcd_print(motor_controller_data.ui16_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
+          lcd_enable_kmh_symbol (1);
+        }
+        
+      break;
+      
+      // display maximum measured wheel speed since power on
+      case 2:
+      
+        if (configuration_variables.ui8_units_type)
+        {
+          lcd_print(((float) ui8_max_measured_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
+          lcd_enable_mph_symbol (1);
+        }
+        else
+        {
+          lcd_print(ui8_max_measured_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
+          lcd_enable_kmh_symbol (1);
+        }
+        
+      break;
     }
   }
 }
@@ -2443,12 +2587,10 @@ void lcd_clear (void)
   memset(ui8_lcd_frame_buffer, 0, LCD_FRAME_BUFFER_SIZE);
 }
 
-
 void lcd_set_frame_buffer (void)
 {
   memset(ui8_lcd_frame_buffer, 255, LCD_FRAME_BUFFER_SIZE);
 }
-
 
 void lcd_update (void)
 {
@@ -3195,7 +3337,7 @@ void lcd_power_off (uint8_t updateDistanceOdo)
 {
   if (updateDistanceOdo)
   {
-    // add used watthour to watthour variable 
+    // add used watt hour to watt hour variable 
     configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
     
     // add the traveled distance to odometer variable
