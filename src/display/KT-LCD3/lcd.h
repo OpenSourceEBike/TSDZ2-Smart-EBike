@@ -102,6 +102,7 @@ typedef struct _configuration_variables
   uint16_t ui16_ADC_battery_current_ramp_up_inverse_step;
   uint8_t ui8_walk_assist_function_enabled;
   uint8_t ui8_walk_assist_level_factor [10];
+  uint8_t ui8_wheel_speed_field_state;
 } struct_configuration_variables;
 
 // LCD RAM has 32*8 bits

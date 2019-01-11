@@ -33,7 +33,6 @@
 #define DEFAULT_VALUE_HW_X10_100_PERCENT                            0
 #define DEAFULT_VALUE_SHOW_NUMERIC_BATTERY_SOC                      0
 #define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
-#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  1 // 1 = time measurement since last power on (TM)
 
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                           16 // 16 amps
 #define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      0 // e.g. 20 = 20 * 25 = 500, 0 is disabled
@@ -93,6 +92,7 @@
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6                    0
 
 // default values for time measurement
+#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  1 // 1 = display time measurement since last power on (TM)
 #define DEFAULT_VALUE_TOTAL_SECOND_TTM                              0
 #define DEFAULT_VALUE_TOTAL_MINUTE_TTM                              0
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_0                              0
@@ -129,6 +129,9 @@
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7                    50
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8                    55
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9                    60
+
+// default values wheel speed measurement
+#define DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE                       0 // 0 = display wheel speed, 1 = display average wheel speed, 2 = display max measured wheel speed
 
 // *************************************************************************** //
 

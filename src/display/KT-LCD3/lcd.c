@@ -134,11 +134,13 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
+static uint16_t   ui16_second_counter = 0;
+static uint16_t   ui16_seconds_since_power_on = 0;
 static uint8_t    ui8_second = 0;
 static uint8_t    ui8_second_TM = 0;
 static uint16_t   ui16_minute_TM = 0;
 
-static uint8_t    ui8_temp_leon = 0;
+static uint8_t    ui8_average_measured_wheel_speed_x10 = 0;
 static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
 uint8_t ui8_start_odometer_show_field_number = 0;
@@ -152,8 +154,6 @@ uint8_t ui8_odometer_reset_distance_counter_state = 1;
 uint8_t load_odometer_sub_field_state_from_EEPROM = 1;
 static uint8_t ui8_long_click_started = 0;
 static uint8_t ui8_long_click_counter = 0;
-
-static uint16_t ui16_second_counter = 0;
 
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
@@ -1383,6 +1383,12 @@ void temperature (void)
 
 void time_measurement (void)
 {
+  // increment seconds since power on
+    
+    // increment second
+    ui16_seconds_since_power_on += ui8_second;
+  
+  
   // increment time measurement since power on
   
     // increment second
@@ -1397,6 +1403,7 @@ void time_measurement (void)
       // increment minute
       ui16_minute_TM++;
     }
+  
   
   // increment total time measurement since last reset (TTM)
   
@@ -1422,7 +1429,7 @@ void time_measurement (void)
         configuration_variables.ui16_total_hour_TTM++;
       }
     }
-  
+    
   // reset elapsed seconds
   ui8_second = 0;
   
@@ -1609,7 +1616,7 @@ void walk_assist_state (void)
     if (buttons_get_down_state ())
     {
       // enable walk assist or cruise function depending on speed
-      if (motor_controller_data.ui16_wheel_speed_x10 < 60) // if wheel speed is less than 6.0 km/h (60), enable walk assist
+      if (motor_controller_data.ui16_wheel_speed_x10 < 80) // if wheel speed is less than 8.0 km/h (80), enable walk assist
       {
         // check if walk assist function is enabled
         if (configuration_variables.ui8_walk_assist_function_enabled)
@@ -1619,7 +1626,7 @@ void walk_assist_state (void)
           motor_controller_data.ui8_walk_assist_level = 1;
         }
       }
-      else // if wheel speed is more than 6.0 km/h (60), enable cruise function
+      else // if wheel speed is more than 8.0 km/h (80), enable cruise function
       {
         // enable cruise function
         lcd_enable_cruise_symbol (1);
@@ -2395,7 +2402,7 @@ void odometer (void)
           configuration_variables.ui8_odometer_sub_field_state++;
           
           // check overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state >= 2)
+          if (configuration_variables.ui8_odometer_sub_field_state >= 3)
           {
             configuration_variables.ui8_odometer_sub_field_state = 0;
           }
@@ -2408,21 +2415,27 @@ void odometer (void)
           // wheel speed
           case 0:
             // set wheel speed field state
-            ui8_temp_leon = 0;
+            configuration_variables.ui8_wheel_speed_field_state = 0;
+            
+            // display wheel speed in odometer field
+            lcd_print(motor_controller_data.ui16_wheel_speed_x10, ODOMETER_FIELD, 1);
           break;
           
-          // average wheel speed since last reset
+          // average wheel speed since power on
           case 1:
             // set wheel speed field state
-            ui8_temp_leon = 1;          
+            configuration_variables.ui8_wheel_speed_field_state = 1;          
             lcd_enable_avs_symbol (1);
+            
+            // display average wheel speed since power on in odometer field
+            lcd_print(ui8_average_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
           break;
           
           // maximum measured wheel speed since power on
           case 2:
           
             // set wheel speed field state
-            ui8_temp_leon = 2;
+            configuration_variables.ui8_wheel_speed_field_state = 2;
             lcd_enable_mxs_symbol (1);
             
             // if there is one down_click_long_click_event
@@ -2525,10 +2538,20 @@ void wheel_speed (void)
     ui8_max_measured_wheel_speed_x10 = motor_controller_data.ui16_wheel_speed_x10;
   }
   
+  // calculate average wheel speed since power on in km/s
+  float average_measured_wheel_speed_x10_temp = (float) configuration_variables.ui16_odometer_distance_x10 / (float) ui16_seconds_since_power_on;
+    
+  // convert to km/h
+  average_measured_wheel_speed_x10_temp = average_measured_wheel_speed_x10_temp * 3600;
+    
+  // set calculated value to average wheel speed variable
+  ui8_average_measured_wheel_speed_x10 = (uint8_t) average_measured_wheel_speed_x10_temp;
+  
+  
   // show wheel speed only when we should not start show odometer field number
   if (ui8_start_odometer_show_field_number == 0)
   {
-    switch (ui8_temp_leon)
+    switch (configuration_variables.ui8_wheel_speed_field_state)
     {
       // display wheel speed
       case 0:
@@ -2546,17 +2569,17 @@ void wheel_speed (void)
         
       break;
       
-      // display average wheel speed since last reset             FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX 
+      // display average wheel speed since power on
       case 1:
       
         if (configuration_variables.ui8_units_type)
         {
-          lcd_print(((float) motor_controller_data.ui16_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
+          lcd_print(((float) ui8_average_measured_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
           lcd_enable_mph_symbol (1);
         }
         else
         {
-          lcd_print(motor_controller_data.ui16_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
+          lcd_print(ui8_average_measured_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
           lcd_enable_kmh_symbol (1);
         }
         

@@ -49,8 +49,10 @@ volatile uint8_t ui8_adc_battery_current_offset;
 volatile uint8_t ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t ui8_adc_target_battery_max_current;
 uint8_t ui8_adc_battery_current_max;
-uint8_t ui8_walk_assist_PWM;
 
+static uint8_t    ui8_walk_assist_PWM = 0;
+static uint8_t    ui8_save_current_speed_to_maintain = 1;
+static uint16_t   ui16_target_wheel_speed_x10 = 0;
 
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_pas_direction = 0;
@@ -72,7 +74,7 @@ uint16_t ui16_startup_boost_fade_variable_step_amount_x256;
 volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
 uint8_t ui8_wheel_speed_max = 0;
 float f_wheel_speed_x10;
-uint16_t ui16_wheel_speed_x10;
+static uint16_t ui16_wheel_speed_x10;
 volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
 
 volatile struct_configuration_variables configuration_variables;
@@ -123,7 +125,7 @@ static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
 static void apply_walk_assist (uint8_t *ui8_target_current);
-//static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
+static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
@@ -253,16 +255,21 @@ static void ebike_control_motor (void)
   if (configuration_variables.ui8_walk_assist)
   {
     // enable walk assist or cruise function depending on speed
-    if (ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60), enable walk assist
+    if (ui16_wheel_speed_x10 < 80) // if current speed is less than 8.0 km/h (80), enable walk assist
     {
       // enable walk assist
-      apply_walk_assist(&ui8_adc_battery_target_current);
+      apply_walk_assist (&ui8_adc_battery_target_current);
     }
-    else // if current speed is more than 6.0 km/h (60), enable cruise function
+    else // if current speed is more than 8.0 km/h (80), enable cruise function
     {
       // enable cruise function
-      //apply_cruise(&ui8_startup_enable, &ui8_adc_battery_target_current);
+      apply_cruise (&ui8_startup_enable, &ui8_adc_battery_target_current);
     }
+  }
+  else
+  {
+    // set flag to save current speed to maintain (for cruise function)
+    ui8_save_current_speed_to_maintain = 1;
   }
   
   
@@ -321,7 +328,8 @@ static void ebike_control_motor (void)
   /*************************************************************************************************************
   NOTE:
   
-  If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND brake is not set AND there are no 
+  If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND 
+  wheel speed is below threshold for walk assist function AND brake is not set AND there are no 
   errors detected in function "safe_tests", set the target duty cycle to walk assist PWM.
   
   If the battery_target_current == 0 AND ui8_startup_enable == 0 AND brake is not set AND there are no 
@@ -330,7 +338,7 @@ static void ebike_control_motor (void)
   
   *************************************************************************************************************/
   
-  if (ui8_adc_battery_target_current && configuration_variables.ui8_walk_assist && (!brake_is_set()) && configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
+  if (ui8_adc_battery_target_current && configuration_variables.ui8_walk_assist && (ui16_wheel_speed_x10 < 80) && (!brake_is_set()) && configuration_variables.ui8_error_states == ERROR_STATE_NO_ERRORS)
   {
     motor_set_pwm_duty_cycle_target (ui8_walk_assist_PWM);
   }
@@ -779,28 +787,42 @@ static void apply_walk_assist (uint8_t *ui8_target_current)
 }
 
 
-/* static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
+static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
 {
   // save current speed to maintain
+  if (ui8_save_current_speed_to_maintain)
+  {
+    // reset flag to save current speed to maintain (for cruise function)
+    ui8_save_current_speed_to_maintain = 0;
+    
+    // set current speed to maintain
+    ui16_target_wheel_speed_x10 = ui16_wheel_speed_x10;
+  }
   
-  // activate cruise flag
-  
-  
-  uint8_t ui8_cruise_power_value = 0;
-  
-  // map the cruise power value to appropriate target current
-  uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_cruise_power_value,
-                                     (uint32_t) 0,
-                                     (uint32_t) 255,
-                                     (uint32_t) 0,
-                                     (uint32_t) ui8_adc_battery_current_max));
-                                     
-  // set target current
-  *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
+  // check if target speed is maintained and adjust target current appropriately 
+  if (ui16_target_wheel_speed_x10 > ui16_wheel_speed_x10) // if target wheel speed is larger than current wheel speed = too slow, increase target current
+  {
+    uint8_t ui8_cruise_power_value = (uint8_t) (ui16_target_wheel_speed_x10 - ui16_wheel_speed_x10) * 10;
+    
+    // map the cruise power value to appropriate target current
+    uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_cruise_power_value,
+                                       (uint32_t) 0,
+                                       (uint32_t) 255,
+                                       (uint32_t) 0,
+                                       (uint32_t) ui8_adc_battery_current_max));
+                                       
+    // set target current
+    *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
+  }
+  else // else current wheel speed is larger than target wheel speed = too fast, decrease target current
+  {
+    // set target current
+    *ui8_target_current = ui8_max (*ui8_target_current, 0);
+  }
 
   // enable motor assistance because user requests cruise
   if (*ui8_target_current) { *ui8_motor_enable = 1; }
-} */
+}
 
 
 static void boost_run_statemachine (void)
