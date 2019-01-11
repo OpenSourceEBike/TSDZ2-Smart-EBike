@@ -123,7 +123,7 @@ static void apply_offroad_mode (uint16_t ui16_battery_voltage, uint8_t *ui8_max_
 static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, uint8_t *ui8_target_current);
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
 static void apply_walk_assist (uint8_t *ui8_target_current);
-static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
+//static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
 
 #if THROTTLE
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
@@ -762,32 +762,31 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current)
 
 static void apply_walk_assist (uint8_t *ui8_target_current)
 {
-  // set walk assist flag
-  
   // set target current to max current
   *ui8_target_current = ui8_adc_battery_current_max;
   
-  // check so that assist level is not more than 5.0 (50), if it is - > limit walk assist PWM to max
-  if (configuration_variables.ui8_assist_level_factor_x10 > 50)
+  // check so that walk assist level factor is not too large (too powerful), if it is -> limit walk assist PWM
+  if (configuration_variables.ui8_assist_level_factor_x10 > 100)
   {
+    // limit and set walk assist PWM to some value not too powerful 
     ui8_walk_assist_PWM = 100;
   }
   else
   {
-    // set walk assist PWM as product of assist level multiplied with some suitable value so that walk assist PWM is useful 
-    ui8_walk_assist_PWM = configuration_variables.ui8_assist_level_factor_x10 * 2; // example: assist level x10 = 0,2  ->  assist level = 20  :  20 * 2  ->  walk assist PWM = 40
+    // set walk assist PWM from user defined value on display (walk assist level factor)
+    ui8_walk_assist_PWM = configuration_variables.ui8_assist_level_factor_x10;
   }
 }
 
 
-static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
+/* static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
 {
   // save current speed to maintain
   
   // activate cruise flag
   
   
-/*   uint8_t ui8_cruise_power_value = 0;
+  uint8_t ui8_cruise_power_value = 0;
   
   // map the cruise power value to appropriate target current
   uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_cruise_power_value,
@@ -800,8 +799,8 @@ static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current
   *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
 
   // enable motor assistance because user requests cruise
-  if (*ui8_target_current) { *ui8_motor_enable = 1; } */
-}
+  if (*ui8_target_current) { *ui8_motor_enable = 1; }
+} */
 
 
 static void boost_run_statemachine (void)

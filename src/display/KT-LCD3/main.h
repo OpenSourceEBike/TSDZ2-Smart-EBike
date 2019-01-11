@@ -117,6 +117,19 @@
   15625 / 8 = 1953 (our default value)
 ---------------------------------------------------------*/
 
+// default values for walk assist function
+#define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0 // disabled
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1                    20
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2                    25
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3                    30
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_4                    35
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_5                    40
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_6                    45
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7                    50
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8                    55
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9                    60
+
 // *************************************************************************** //
 
 // Torque sensor value found experimentaly

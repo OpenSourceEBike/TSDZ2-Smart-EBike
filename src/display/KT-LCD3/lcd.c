@@ -22,7 +22,6 @@
 #include "pins.h"
 #include "uart.h"
 
-#define LCD_MENU_CONFIG_SUBMENU_MAX_NUMBER 10
 
 uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 
@@ -189,6 +188,7 @@ void lcd_execute_menu_config_submenu_wheel_config (void);
 void lcd_execute_menu_config_submenu_battery (void);
 void lcd_execute_menu_config_submenu_battery_soc (void);
 void lcd_execute_menu_config_submenu_assist_level (void);
+void lcd_execute_menu_config_submenu_walk_assist (void);
 void lcd_execute_menu_config_submenu_motor_startup_power_boost (void);
 void lcd_execute_menu_config_submenu_motor_temperature (void);
 void lcd_execute_menu_config_submenu_lcd ();
@@ -366,6 +366,7 @@ void lcd_clock (void)
   power_off_management ();
 }
 
+
 void lcd_execute_main_screen (void)
 {
   temperature ();
@@ -380,6 +381,7 @@ void lcd_execute_main_screen (void)
   time_measurement ();
   assist_level_state ();
 }
+
 
 void lcd_execute_menu_config (void)
 {
@@ -399,7 +401,7 @@ void lcd_execute_menu_config (void)
     }
 
     // advance on submenu on button_onoff_click_event
-    advance_on_submenu (&ui8_lcd_menu_config_submenu_number, LCD_MENU_CONFIG_SUBMENU_MAX_NUMBER);
+    advance_on_submenu (&ui8_lcd_menu_config_submenu_number, 11); // 11 sub menus
 
     // check if we should enter a submenu
     if (buttons_get_up_click_event () || buttons_get_down_click_event ())
@@ -437,28 +439,32 @@ void lcd_execute_menu_config (void)
       case 3:
         lcd_execute_menu_config_submenu_assist_level ();
       break;
-
+      
       case 4:
-        lcd_execute_menu_config_submenu_motor_startup_power_boost ();
+        lcd_execute_menu_config_submenu_walk_assist ();
       break;
 
       case 5:
-        lcd_execute_menu_config_submenu_motor_temperature ();        
+        lcd_execute_menu_config_submenu_motor_startup_power_boost ();
       break;
 
       case 6:
-        lcd_execute_menu_config_submenu_lcd ();
+        lcd_execute_menu_config_submenu_motor_temperature ();        
       break;
 
       case 7:
-        lcd_execute_menu_config_submenu_offroad_mode ();
+        lcd_execute_menu_config_submenu_lcd ();
       break;
 
       case 8:
-        lcd_execute_menu_config_submenu_various ();
+        lcd_execute_menu_config_submenu_offroad_mode ();
       break;
 
       case 9:
+        lcd_execute_menu_config_submenu_various ();
+      break;
+
+      case 10:
         lcd_execute_menu_config_submenu_technical ();
       break;
 
@@ -477,6 +483,7 @@ void lcd_execute_menu_config (void)
     }
   }
 }
+
 
 void lcd_execute_menu_config_submenu_wheel_config(void)
 {
@@ -582,6 +589,7 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
   }
 }
 
+
 void lcd_execute_menu_config_submenu_battery (void)
 {
   var_number_t lcd_var_number;
@@ -648,6 +656,7 @@ void lcd_execute_menu_config_submenu_battery (void)
 
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
+
 
 void lcd_execute_menu_config_submenu_battery_soc (void)
 {
@@ -725,6 +734,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
 
+
 void lcd_execute_menu_config_submenu_assist_level (void)
 {
   var_number_t lcd_var_number;
@@ -732,7 +742,7 @@ void lcd_execute_menu_config_submenu_assist_level (void)
   // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 1));
 
-  // number of assist levels: 0 to 9
+  // number of assist levels: 1 to 9
   if (ui8_lcd_menu_config_submenu_state == 0)
   {
     lcd_var_number.p_var_number = &configuration_variables.ui8_number_of_assist_levels;
@@ -743,6 +753,8 @@ void lcd_execute_menu_config_submenu_assist_level (void)
     lcd_var_number.ui32_increment_step = 1;
     lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
     lcd_configurations_print_number(&lcd_var_number);
+    
+    lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
   }
   // value of each assist level factor
   else
@@ -755,10 +767,61 @@ void lcd_execute_menu_config_submenu_assist_level (void)
     lcd_var_number.ui32_increment_step = 1;
     lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
     lcd_configurations_print_number(&lcd_var_number);
+    
+    lcd_enable_assist_symbol (1);
+    lcd_print(ui8_lcd_menu_config_submenu_state, ASSIST_LEVEL_FIELD, 1);
   }
-
-  lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
+
+
+void lcd_execute_menu_config_submenu_walk_assist (void)
+{
+  var_number_t lcd_var_number;
+  
+  // advance on submenus on button_onoff_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, configuration_variables.ui8_number_of_assist_levels + 2);
+
+  // enable/disable walk assist function
+  if (ui8_lcd_menu_config_submenu_state == 0)
+  {
+    lcd_var_number.p_var_number = &configuration_variables.ui8_walk_assist_function_enabled;
+    lcd_var_number.ui8_size = 8;
+    lcd_var_number.ui8_decimal_digit = 0;
+    lcd_var_number.ui32_max_value = 1;
+    lcd_var_number.ui32_min_value = 0;
+    lcd_var_number.ui32_increment_step = 1;
+    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+    lcd_configurations_print_number(&lcd_var_number);
+    
+    if (configuration_variables.ui8_walk_assist_function_enabled)
+    {
+      lcd_enable_walk_symbol (1);
+    }
+    else
+    {
+      lcd_enable_walk_symbol (0);
+    }
+    
+    lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
+  }
+  // value of each walk assist power value
+  else
+  {
+    lcd_var_number.p_var_number = &configuration_variables.ui8_walk_assist_level_factor[(ui8_lcd_menu_config_submenu_state - 1)];
+    lcd_var_number.ui8_size = 8;
+    lcd_var_number.ui8_decimal_digit = 0;
+    lcd_var_number.ui32_max_value = 100;
+    lcd_var_number.ui32_min_value = 0;
+    lcd_var_number.ui32_increment_step = 1;
+    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+    lcd_configurations_print_number(&lcd_var_number);
+    
+    lcd_enable_walk_symbol (1);
+    lcd_enable_assist_symbol (1);
+    lcd_print(ui8_lcd_menu_config_submenu_state - 1, ASSIST_LEVEL_FIELD, 1);
+  }
+}
+
 
 void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
 {
@@ -852,6 +915,7 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
 
+
 void lcd_execute_menu_config_submenu_motor_temperature (void)
 {
   var_number_t lcd_var_number;
@@ -903,6 +967,7 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
 
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
+
 
 void lcd_execute_menu_config_submenu_lcd (void)
 {
@@ -978,6 +1043,7 @@ void lcd_execute_menu_config_submenu_lcd (void)
 
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
+
 
 void lcd_execute_menu_config_submenu_offroad_mode (void)
 {
@@ -1087,7 +1153,7 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_var_number.p_var_number = &configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 6000;
+      lcd_var_number.ui32_max_value = 8000;
       lcd_var_number.ui32_min_value = 1000;
       lcd_var_number.ui32_increment_step = 63;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -1538,13 +1604,17 @@ void walk_assist_state (void)
     if (buttons_get_down_state ())
     {
       // enable walk assist or cruise function depending on speed
-      if (motor_controller_data.ui16_wheel_speed_x10 < 60) // if current speed is less than 6.0 km/h (60), enable walk assist
+      if (motor_controller_data.ui16_wheel_speed_x10 < 60) // if wheel speed is less than 6.0 km/h (60), enable walk assist
       {
-        // enable walk assist
-        lcd_enable_walk_symbol (1);
-        motor_controller_data.ui8_walk_assist_level = 1;
+        // check if walk assist function is enabled
+        if (configuration_variables.ui8_walk_assist_function_enabled)
+        {
+          // enable walk assist function
+          lcd_enable_walk_symbol (1);
+          motor_controller_data.ui8_walk_assist_level = 1;
+        }
       }
-      else // if current speed is more than 6.0 km/h (60), enable cruise function
+      else // if wheel speed is more than 6.0 km/h (60), enable cruise function
       {
         // enable cruise function
         lcd_enable_cruise_symbol (1);

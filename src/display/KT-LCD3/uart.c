@@ -192,13 +192,17 @@ void uart_data_clock (void)
       ui8_tx_buffer[0] = 0x59;
       ui8_tx_buffer[1] = ui8_master_comm_package_id;
       ui8_tx_buffer[2] = ui8_slave_comm_package_id;
-
-      // set assist level value
-      if (p_configuration_variables->ui8_assist_level)
+      
+      // assist level
+      if (p_motor_controller_data->ui8_walk_assist_level) // if walk assist function is enabled, send walk assist level factor
+      {
+        ui8_tx_buffer[3] = p_configuration_variables->ui8_walk_assist_level_factor [(p_configuration_variables->ui8_assist_level)];
+      }
+      else if (p_configuration_variables->ui8_assist_level) // send assist level factor for normal operation 
       {
         ui8_tx_buffer[3] = p_configuration_variables->ui8_assist_level_factor [((p_configuration_variables->ui8_assist_level) - 1)];
       }
-      else
+      else // send nothing 
       {
         ui8_tx_buffer[3] = 0;
       }
