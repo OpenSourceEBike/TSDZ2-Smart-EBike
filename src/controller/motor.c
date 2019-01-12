@@ -644,7 +644,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
   ui8_current_controller_counter++;
 
-  if (ui8_current_controller_counter > 12) 
+  if (ui8_current_controller_counter > 12)
   {
     // reset counter
     ui8_current_controller_counter = 0;
