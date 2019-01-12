@@ -153,8 +153,6 @@ uint8_t   ui8_odometer_show_field_number = 0;
 uint16_t  ui16_odometer_reset_distance_counter = 0;
 uint8_t   ui8_odometer_reset_distance_counter_state = 1;
 
-static uint16_t ui16_walk_assist_button_counter = 0;
-
 static uint8_t ui8_long_click_started = 0;
 static uint8_t ui8_long_click_counter = 0;
 
@@ -1631,9 +1629,6 @@ void walk_assist_state (void)
     // if down button is still pressed
     if (buttons_get_down_state ())
     {
-      // reset button hold counter
-      ui16_walk_assist_button_counter = 0;
-      
       // enable walk assist or cruise function depending on speed
       if (motor_controller_data.ui16_wheel_speed_x10 < 80) // if wheel speed is less than 8.0 km/h (80), enable walk assist
       {
@@ -1658,20 +1653,11 @@ void walk_assist_state (void)
     }
     else // button not longer pressed
     {
-      // clear button long down click event
-      buttons_clear_down_long_click_event ();
-    }
-  }
-  else
-  {
-    // count how long button is not pressed and if over limit, disable function
-    if (ui16_walk_assist_button_counter++ > 400)
-    {
       // disable walk assist or cruise function
       motor_controller_data.ui8_walk_assist_level = 0;
       
-      // reset button hold counter
-      ui16_walk_assist_button_counter = 0;
+      // clear button long down click event
+      buttons_clear_down_long_click_event ();
     }
   }
 }

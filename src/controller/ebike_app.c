@@ -812,7 +812,7 @@ static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current
       ui16_error_term = 25;
     }
     
-    // map the proportional response value to appropriate target current
+    // map the proportional response value to an appropriate target current value
     uint8_t ui8_temp = (uint8_t) (map ((uint32_t) (ui16_error_term * 10), // proportional gain of 10 
                                        (uint32_t) 0,
                                        (uint32_t) 250, // 25 (error term) * 10 (proportional gain) = 250 (max "throttle")
