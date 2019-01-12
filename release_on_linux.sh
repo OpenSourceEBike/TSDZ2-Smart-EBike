@@ -6,7 +6,7 @@ echo Please enter the new version number, e.g. 1.0.0
 
 read VERSION
 
-RELEASE_FOLDER=$HOME/$VERSION
+RELEASE_FOLDER=${PWD}/releases/$VERSION
 
 if [ ! -d "$RELEASE_FOLDER" ]; then
 	# create folder
