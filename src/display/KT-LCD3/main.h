@@ -133,6 +133,9 @@
 // default values wheel speed measurement
 #define DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE                       0 // 0 = display wheel speed, 1 = display average wheel speed, 2 = display max measured wheel speed
 
+// default values for cruise function
+#define DEFAULT_VALUE_CRUISE_FUNCTION_ENABLED                       0 // disabled
+
 // *************************************************************************** //
 
 // Torque sensor value found experimentaly

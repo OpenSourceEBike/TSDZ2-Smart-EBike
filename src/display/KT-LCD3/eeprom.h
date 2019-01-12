@@ -106,7 +106,8 @@
 #define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_8                                  89 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_9                                  90 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_SPEED_FIELD_STATE                                     91 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 92
+#define ADDRESS_CRUISE_FUNCTION_ENABLED                                     92 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 93
 
 void eeprom_init (void);
 void eeprom_init_variables (void);

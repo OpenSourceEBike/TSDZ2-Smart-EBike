@@ -101,20 +101,20 @@ static uint8_t ui8_motor_controller_init = 1;
 static uint8_t ui8_lights_state = 0;
 static uint8_t lcd_lights_symbol = 0;
 
-static uint8_t ui8_lcd_menu = 0;
-static uint8_t ui8_lcd_menu_config_submenu_state = 0;
-static uint8_t ui8_lcd_menu_flash_counter = 0;
+static uint8_t  ui8_lcd_menu = 0;
+static uint8_t  ui8_lcd_menu_config_submenu_state = 0;
+static uint8_t  ui8_lcd_menu_flash_counter = 0;
 static uint16_t ui16_lcd_menu_flash_counter_temperature = 0;
-static uint8_t ui8_lcd_menu_flash_state;
-static uint8_t ui8_lcd_menu_flash_state_temperature;
-static uint8_t ui8_lcd_menu_config_submenu_number = 0;
-static uint8_t ui8_lcd_menu_config_submenu_active = 0;
+static uint8_t  ui8_lcd_menu_flash_state;
+static uint8_t  ui8_lcd_menu_flash_state_temperature;
+static uint8_t  ui8_lcd_menu_config_submenu_number = 0;
+static uint8_t  ui8_lcd_menu_config_submenu_active = 0;
 
-static uint8_t ui8_lcd_menu_counter_100ms = 0;
-static uint8_t ui8_lcd_menu_counter_100ms_state = 0;
+static uint8_t  ui8_lcd_menu_counter_100ms = 0;
+static uint8_t  ui8_lcd_menu_counter_100ms_state = 0;
 
-static uint8_t ui8_lcd_menu_counter_500ms = 0;
-static uint8_t ui8_lcd_menu_counter_500ms_state = 0;
+static uint8_t  ui8_lcd_menu_counter_500ms = 0;
+static uint8_t  ui8_lcd_menu_counter_500ms_state = 0;
 
 static struct_motor_controller_data motor_controller_data;
 static struct_configuration_variables configuration_variables;
@@ -134,6 +134,8 @@ static uint16_t ui16_battery_voltage_soc_x10;
 
 static volatile uint16_t ui16_timer3_counter = 0;
 
+uint8_t load_odometer_sub_field_state_from_EEPROM = 1;
+
 static uint16_t   ui16_second_counter = 0;
 static uint16_t   ui16_seconds_since_power_on = 0;
 static uint8_t    ui8_second = 0;
@@ -143,15 +145,16 @@ static uint16_t   ui16_minute_TM = 0;
 static uint8_t    ui8_average_measured_wheel_speed_x10 = 0;
 static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
-uint8_t ui8_start_odometer_show_field_number = 0;
-uint8_t ui8_odometer_show_field_number_counter_0 = 0;
-uint8_t ui8_odometer_show_field_number_counter_1 = 1;
-uint8_t ui8_odometer_show_field_number_state = 0;
-uint8_t ui8_odometer_show_field_number = 0;
-uint16_t ui16_odometer_reset_distance_counter = 0;
-uint8_t ui8_odometer_reset_distance_counter_state = 1;
+uint8_t   ui8_start_odometer_show_field_number = 0;
+uint8_t   ui8_odometer_show_field_number_counter_0 = 0;
+uint8_t   ui8_odometer_show_field_number_counter_1 = 1;
+uint8_t   ui8_odometer_show_field_number_state = 0;
+uint8_t   ui8_odometer_show_field_number = 0;
+uint16_t  ui16_odometer_reset_distance_counter = 0;
+uint8_t   ui8_odometer_reset_distance_counter_state = 1;
 
-uint8_t load_odometer_sub_field_state_from_EEPROM = 1;
+static uint16_t ui16_walk_assist_button_counter = 0;
+
 static uint8_t ui8_long_click_started = 0;
 static uint8_t ui8_long_click_counter = 0;
 
@@ -1131,13 +1134,14 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
 }
 
+
 void lcd_execute_menu_config_submenu_various (void)
 {
   var_number_t lcd_var_number;
   uint32_t ui32_odometer_x10;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1216,6 +1220,18 @@ void lcd_execute_menu_config_submenu_various (void)
         lcd_enable_km_symbol(1);
       }
     break;
+  
+    // cruise function enable/disable
+    case 4:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_cruise_function_enabled;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;  
   }
 
   lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
@@ -1615,6 +1631,9 @@ void walk_assist_state (void)
     // if down button is still pressed
     if (buttons_get_down_state ())
     {
+      // reset button hold counter
+      ui16_walk_assist_button_counter = 0;
+      
       // enable walk assist or cruise function depending on speed
       if (motor_controller_data.ui16_wheel_speed_x10 < 80) // if wheel speed is less than 8.0 km/h (80), enable walk assist
       {
@@ -1628,18 +1647,31 @@ void walk_assist_state (void)
       }
       else // if wheel speed is more than 8.0 km/h (80), enable cruise function
       {
-        // enable cruise function
-        lcd_enable_cruise_symbol (1);
-        motor_controller_data.ui8_walk_assist_level = 1;
+        // check if cruise function is enabled
+        if (configuration_variables.ui8_cruise_function_enabled)
+        {
+          // enable cruise function
+          lcd_enable_cruise_symbol (1);
+          motor_controller_data.ui8_walk_assist_level = 1;
+        }
       }
     }
     else // button not longer pressed
     {
+      // clear button long down click event
+      buttons_clear_down_long_click_event ();
+    }
+  }
+  else
+  {
+    // count how long button is not pressed and if over limit, disable function
+    if (ui16_walk_assist_button_counter++ > 400)
+    {
       // disable walk assist or cruise function
       motor_controller_data.ui8_walk_assist_level = 0;
       
-      // clear button event
-      buttons_clear_down_long_click_event ();
+      // reset button hold counter
+      ui16_walk_assist_button_counter = 0;
     }
   }
 }

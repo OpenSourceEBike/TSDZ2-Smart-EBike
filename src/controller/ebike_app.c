@@ -802,12 +802,20 @@ static void apply_cruise (uint8_t *ui8_motor_enable, uint8_t *ui8_target_current
   // check if target speed is maintained and adjust target current appropriately 
   if (ui16_target_wheel_speed_x10 > ui16_wheel_speed_x10) // if target wheel speed is larger than current wheel speed = too slow, increase target current
   {
-    uint8_t ui8_cruise_power_value = (uint8_t) (ui16_target_wheel_speed_x10 - ui16_wheel_speed_x10) * 10;
+    // calculate error term
+    uint16_t ui16_error_term = (ui16_target_wheel_speed_x10 - ui16_wheel_speed_x10);
     
-    // map the cruise power value to appropriate target current
-    uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_cruise_power_value,
+    // check if error term is too large
+    if (ui16_error_term > 25)
+    {
+      // limit error term
+      ui16_error_term = 25;
+    }
+    
+    // map the proportional response value to appropriate target current
+    uint8_t ui8_temp = (uint8_t) (map ((uint32_t) (ui16_error_term * 10), // proportional gain of 10 
                                        (uint32_t) 0,
-                                       (uint32_t) 255,
+                                       (uint32_t) 250, // 25 (error term) * 10 (proportional gain) = 250 (max "throttle")
                                        (uint32_t) 0,
                                        (uint32_t) ui8_adc_battery_current_max));
                                        

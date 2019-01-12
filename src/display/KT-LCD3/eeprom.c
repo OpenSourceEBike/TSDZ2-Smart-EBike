@@ -107,7 +107,8 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7,                           // 88 + EEPROM_BASE_ADDRESS (Array index)
     DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8,                           // 89 + EEPROM_BASE_ADDRESS (Array index)
     DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9,                           // 90 + EEPROM_BASE_ADDRESS (Array index)
-    DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE                               // 91 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE,                              // 91 + EEPROM_BASE_ADDRESS (Array index)
+    DEFAULT_VALUE_CRUISE_FUNCTION_ENABLED                               // 92 + EEPROM_BASE_ADDRESS (Array index)
   };
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
@@ -316,6 +317,9 @@ static void eeprom_read_values_to_variables (void)
   
   // wheel speed measurement
   p_configuration_variables->ui8_wheel_speed_field_state = FLASH_ReadByte (ADDRESS_WHEEL_SPEED_FIELD_STATE);
+  
+  // cruise function
+  p_configuration_variables->ui8_cruise_function_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_ENABLED);
 }
 
 void eeprom_write_variables (void)
@@ -441,6 +445,9 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write time measurement field state
   ui8_array [91] = p_configuration_variables->ui8_wheel_speed_field_state;
+  
+  // write cruise function variables
+  ui8_array [92] = p_configuration_variables->ui8_cruise_function_enabled;
 }
 
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
