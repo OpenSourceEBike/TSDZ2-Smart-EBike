@@ -70,6 +70,13 @@ static int16_t   i16_control_output = 0;
 #define   CRUISE_PID_KI   0
 #define   CRUISE_PID_KD   0
 
+// TEMP VARIABLES FOR CRUISE PID
+uint8_t ui8_cruise_pid_p = 0;
+uint8_t ui8_cruise_pid_i = 0;
+uint8_t ui8_cruise_pid_i_limit = 0;
+uint8_t ui8_cruise_pid_d = 0;
+
+
 
 // variables for various system functions
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
@@ -517,7 +524,18 @@ static void communications_controller (void)
           // current ramp up inverse step
           configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
         break;
-
+        
+        case 10:
+          ui8_cruise_pid_p = ui8_rx_buffer [7];
+          ui8_cruise_pid_i = ui8_rx_buffer [8];
+        break;
+        
+        case 11:
+          // offroad mode power limit configuration
+          ui8_cruise_pid_i_limit = ui8_rx_buffer [7];
+          ui8_cruise_pid_d = ui8_rx_buffer [8];
+        break;
+        
         default:
           // nothing
         break;
@@ -846,11 +864,11 @@ static void apply_cruise (uint8_t *ui8_target_current)
     ui8_save_current_speed_to_maintain = 0;
     
     // reset PID variables
-    i16_error = 0;
-    i16_last_error = 0;
-    i16_integral = 0;
-    i16_derivative = 0;
-    i16_control_output = 0;
+    i16_error = 0;          // error should be 0 when cruise function starts
+    i16_last_error = 0;     // last error should be 0 when cruise function starts 
+    i16_integral = 250;     // integral can start at around 250 when cruise function starts ( 250 = around 64 target PWM = around 8 km/h depending on gear and bike )
+    i16_derivative = 0;     // derivative should be 0 when cruise function starts 
+    i16_control_output = 0; // control signal/output should be 0 when cruise function starts
     
     // set current wheel speed to maintain
     ui16_target_wheel_speed_x10 = ui16_wheel_speed_x10;
@@ -863,7 +881,14 @@ static void apply_cruise (uint8_t *ui8_target_current)
   i16_integral = i16_integral + i16_error;
   
   // limit integral
-  if (i16_integral > 100) { i16_integral = 100; }
+  if (i16_integral > (ui8_cruise_pid_i_limit * 10))
+  {
+    i16_integral = (ui8_cruise_pid_i_limit * 10); 
+  }
+  else if (i16_integral < 0)
+  {
+    i16_integral = 0;
+  }
   
   // calculate derivative
   i16_derivative = i16_error - i16_last_error;
@@ -872,19 +897,19 @@ static void apply_cruise (uint8_t *ui8_target_current)
   i16_last_error = i16_error;
   
   // calculate control output ( output =  P I D )
-  i16_control_output = (CRUISE_PID_KP * i16_error) + (CRUISE_PID_KI * i16_integral) + (CRUISE_PID_KD * i16_derivative);
+  i16_control_output = (ui8_cruise_pid_p * i16_error) + (ui8_cruise_pid_i * i16_integral) + (ui8_cruise_pid_d * i16_derivative);
   
   // limit control output to just positive values
   if (i16_control_output < 0) { i16_control_output = 0; }
   
-  // limit control output to a maximum value
+  // limit control output to the maximum value
   if (i16_control_output > 1000) { i16_control_output = 1000; }
   
   // map the control output to an appropriate target PWM value
   ui8_cruise_target_PWM = (uint8_t) (map ((uint32_t) (i16_control_output),
-                                          (uint32_t) 0,
-                                          (uint32_t) 1000,
-                                          (uint32_t) 0, // minimum target PWM
+                                          (uint32_t) 0,     // minimum control output
+                                          (uint32_t) 1000,  // maximum control output
+                                          (uint32_t) 0,     // minimum target PWM
                                           (uint32_t) 255)); // maximum target PWM
 }
 

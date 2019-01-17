@@ -104,6 +104,19 @@ typedef struct _configuration_variables
   uint8_t ui8_walk_assist_level_factor [10];
   uint8_t ui8_wheel_speed_field_state;
   uint8_t ui8_cruise_function_enabled;
+  uint8_t ui8_cruise_function_set_target_speed_enabled;
+  uint8_t ui8_cruise_function_target_speed_kph;
+  uint8_t ui8_cruise_function_target_speed_mph;
+  uint8_t ui8_show_cruise_function_set_target_speed;
+  uint8_t ui8_show_distance_data_odometer_field;
+  uint8_t ui8_show_battery_state_odometer_field;
+  uint8_t ui8_show_pedal_data_odometer_field;
+  uint8_t ui8_show_time_measurement_odometer_field;
+  uint8_t ui8_show_wheel_speed_odometer_field;
+  uint8_t ui8_cruise_temp_pid_p_value;  // TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP
+  uint8_t ui8_cruise_temp_pid_i_value;
+  uint8_t ui8_cruise_temp_pid_i_limit_value;
+  uint8_t ui8_cruise_temp_pid_d_value;
 } struct_configuration_variables;
 
 // LCD RAM has 32*8 bits
