@@ -176,16 +176,16 @@
 
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1                    20
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2                    25
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3                    30
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_4                    35
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_5                    40
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_6                    45
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7                    50
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8                    55
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9                    60
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0   // target PWM for walk assist
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1                    25
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2                    30
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3                    35
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_4                    40
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_5                    45
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_6                    50
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7                    55
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8                    60
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9                    65
 
 
 
