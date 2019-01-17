@@ -116,7 +116,7 @@ void uart_data_clock (void)
 
       // send a variable for each package sent but first verify if the last one was received otherwise, keep repeating
       // keep cycling so all variables are sent
-      #define VARIABLE_ID_MAX_NUMBER 12 // temptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemp
+      #define VARIABLE_ID_MAX_NUMBER 11
       if ((ui8_rx_buffer [1]) == ui8_master_comm_package_id) // last package data ID was receipt, so send the next one
       {
         ui8_master_comm_package_id = (ui8_master_comm_package_id + 1) % VARIABLE_ID_MAX_NUMBER;
@@ -287,15 +287,16 @@ void uart_data_clock (void)
           ui8_tx_buffer[7] = (uint8_t) (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step & 0xff);
           ui8_tx_buffer[8] = (uint8_t) (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step >> 8);
         break;
-
+        
         case 10:
-          ui8_tx_buffer[7] = p_configuration_variables->ui8_cruise_temp_pid_p_value; // temptemptemptemptemptemptemptemptemptemptemptemptemptemptemptemp
-          ui8_tx_buffer[8] = p_configuration_variables->ui8_cruise_temp_pid_i_value;
-        break;
-
-        case 11:
-          ui8_tx_buffer[7] = p_configuration_variables->ui8_cruise_temp_pid_i_limit_value; // temptemptemptemptemptemptemptemptemptemptemp
-          ui8_tx_buffer[8] = p_configuration_variables->ui8_cruise_temp_pid_d_value;
+          if (p_configuration_variables->ui8_cruise_function_set_target_speed_enabled)
+          {
+            ui8_tx_buffer[7] = p_configuration_variables->ui8_cruise_function_target_speed_kph;
+          }
+          else
+          {
+            ui8_tx_buffer[7] = 0;
+          }
         break;
         
         default:

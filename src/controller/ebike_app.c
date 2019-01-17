@@ -52,47 +52,47 @@ volatile uint8_t  ui8_adc_target_battery_max_current;
 uint8_t           ui8_adc_battery_current_max;
 
 
-// variables for walk assist and cruise function
+
+// variables for walk assist
 static uint8_t    ui8_walk_assist_target_PWM = 0;
+
+
+
+// variables for cruise function
 static uint8_t    ui8_cruise_target_PWM = 0;
-static uint8_t    ui8_save_current_speed_to_maintain = 1;
+static uint8_t    ui8_initialize_cruise_PID = 1;
+static uint16_t   ui16_received_target_wheel_speed_x10 = 0;
 static uint16_t   ui16_target_wheel_speed_x10 = 0;
 
+#define           CRUISE_PID_KP                 12
+#define           CRUISE_PID_KI                 1
+#define           CRUISE_PID_INTEGRAL_LIMIT     1000
+#define           CRUISE_PID_KD                 0
 
-// variables for cruise function PID controller
-static int16_t   i16_error = 0;
-static int16_t   i16_last_error = 0;
-static int16_t   i16_integral = 0;
-static int16_t   i16_derivative = 0;
-static int16_t   i16_control_output = 0;
-
-#define   CRUISE_PID_KP   40
-#define   CRUISE_PID_KI   0
-#define   CRUISE_PID_KD   0
-
-// TEMP VARIABLES FOR CRUISE PID
-uint8_t ui8_cruise_pid_p = 0;
-uint8_t ui8_cruise_pid_i = 0;
-uint8_t ui8_cruise_pid_i_limit = 0;
-uint8_t ui8_cruise_pid_d = 0;
+static int16_t    i16_error = 0;
+static int16_t    i16_last_error = 0;
+static int16_t    i16_integral = 0;
+static int16_t    i16_derivative = 0;
+static int16_t    i16_control_output = 0;
 
 
 
 // variables for various system functions
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-volatile uint8_t ui8_pas_direction = 0;
-uint8_t ui8_pas_cadence_rpm = 0;
-uint16_t ui16_pedal_torque_x10;
-uint16_t ui16_pedal_power_x10;
-uint8_t ui8_pedal_human_power = 0;
-uint8_t ui8_startup_boost_enable = 0;
-uint8_t ui8_startup_boost_fade_enable = 0;
-uint8_t ui8_startup_boost_state_machine = 0;
-uint8_t ui8_startup_boost_no_torque = 0;
-uint8_t ui8_startup_boost_timer = 0;
-uint8_t ui8_startup_boost_fade_steps = 0;
-uint16_t ui16_startup_boost_fade_variable_x256;
-uint16_t ui16_startup_boost_fade_variable_step_amount_x256;
+volatile uint8_t  ui8_pas_direction = 0;
+uint8_t   ui8_pas_cadence_rpm = 0;
+uint16_t  ui16_pedal_torque_x10;
+uint16_t  ui16_pedal_power_x10;
+uint8_t   ui8_pedal_human_power = 0;
+uint8_t   ui8_startup_boost_enable = 0;
+uint8_t   ui8_startup_boost_fade_enable = 0;
+uint8_t   ui8_startup_boost_state_machine = 0;
+uint8_t   ui8_startup_boost_no_torque = 0;
+uint8_t   ui8_startup_boost_timer = 0;
+uint8_t   ui8_startup_boost_fade_steps = 0;
+uint16_t  ui16_startup_boost_fade_variable_x256;
+uint16_t  ui16_startup_boost_fade_variable_step_amount_x256;
+
 
 
 // variables for wheel speed
@@ -302,8 +302,8 @@ static void ebike_control_motor (void)
   }
   else
   {
-    // set flag to save current speed to maintain (for cruise function)
-    ui8_save_current_speed_to_maintain = 1;
+    // set flag to initialize cruise PID if user later activates function
+    ui8_initialize_cruise_PID = 1;
   }
   
   
@@ -526,14 +526,8 @@ static void communications_controller (void)
         break;
         
         case 10:
-          ui8_cruise_pid_p = ui8_rx_buffer [7];
-          ui8_cruise_pid_i = ui8_rx_buffer [8];
-        break;
-        
-        case 11:
-          // offroad mode power limit configuration
-          ui8_cruise_pid_i_limit = ui8_rx_buffer [7];
-          ui8_cruise_pid_d = ui8_rx_buffer [8];
+          // received target speed for cruise
+          ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer [7] * 10);
         break;
         
         default:
@@ -857,11 +851,11 @@ static void apply_cruise (uint8_t *ui8_target_current)
   // set target current to max current
   *ui8_target_current = ui8_adc_battery_current_max;
   
-  // save current speed to maintain
-  if (ui8_save_current_speed_to_maintain)
+  // initialize cruise PID controller
+  if (ui8_initialize_cruise_PID)
   {
     // reset flag to save current speed to maintain (for cruise function)
-    ui8_save_current_speed_to_maintain = 0;
+    ui8_initialize_cruise_PID = 0;
     
     // reset PID variables
     i16_error = 0;          // error should be 0 when cruise function starts
@@ -870,8 +864,17 @@ static void apply_cruise (uint8_t *ui8_target_current)
     i16_derivative = 0;     // derivative should be 0 when cruise function starts 
     i16_control_output = 0; // control signal/output should be 0 when cruise function starts
     
-    // set current wheel speed to maintain
-    ui16_target_wheel_speed_x10 = ui16_wheel_speed_x10;
+    // check what target wheel speed to use (received or current)
+    if (ui16_received_target_wheel_speed_x10 > 0)
+    {
+      // set received target wheel speed to target wheel speed
+      ui16_target_wheel_speed_x10 = ui16_received_target_wheel_speed_x10;
+    }
+    else
+    {
+      // set current wheel speed to maintain
+      ui16_target_wheel_speed_x10 = ui16_wheel_speed_x10;
+    }
   }
   
   // calculate error
@@ -881,9 +884,9 @@ static void apply_cruise (uint8_t *ui8_target_current)
   i16_integral = i16_integral + i16_error;
   
   // limit integral
-  if (i16_integral > (ui8_cruise_pid_i_limit * 10))
+  if (i16_integral > CRUISE_PID_INTEGRAL_LIMIT)
   {
-    i16_integral = (ui8_cruise_pid_i_limit * 10); 
+    i16_integral = CRUISE_PID_INTEGRAL_LIMIT; 
   }
   else if (i16_integral < 0)
   {
@@ -897,7 +900,7 @@ static void apply_cruise (uint8_t *ui8_target_current)
   i16_last_error = i16_error;
   
   // calculate control output ( output =  P I D )
-  i16_control_output = (ui8_cruise_pid_p * i16_error) + (ui8_cruise_pid_i * i16_integral) + (ui8_cruise_pid_d * i16_derivative);
+  i16_control_output = (CRUISE_PID_KP * i16_error) + (CRUISE_PID_KI * i16_integral) + (CRUISE_PID_KD * i16_derivative);
   
   // limit control output to just positive values
   if (i16_control_output < 0) { i16_control_output = 0; }
@@ -907,8 +910,8 @@ static void apply_cruise (uint8_t *ui8_target_current)
   
   // map the control output to an appropriate target PWM value
   ui8_cruise_target_PWM = (uint8_t) (map ((uint32_t) (i16_control_output),
-                                          (uint32_t) 0,     // minimum control output
-                                          (uint32_t) 1000,  // maximum control output
+                                          (uint32_t) 0,     // minimum control output from PID
+                                          (uint32_t) 1000,  // maximum control output from PID
                                           (uint32_t) 0,     // minimum target PWM
                                           (uint32_t) 255)); // maximum target PWM
 }

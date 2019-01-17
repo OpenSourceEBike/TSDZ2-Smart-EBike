@@ -174,7 +174,6 @@
 
 
 
-
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0
@@ -190,11 +189,6 @@
 
 
 
-// default values wheel speed measurement
-#define DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE                       0   // 0 = display wheel speed, 1 = display average wheel speed, 2 = display max measured wheel speed
-
-
-
 // default values for cruise function
 #define DEFAULT_VALUE_CRUISE_FUNCTION_ENABLED                       0   // disabled by default
 #define DEFAULT_VALUE_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED      0   // disabled by default
@@ -204,20 +198,17 @@
 
 
 
+// default values wheel speed field state
+#define DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE                       0   // 0 = display wheel speed, 1 = display average wheel speed, 2 = display max measured wheel speed
+
+
+
 // default values for showing odometer variables
 #define DEFAULT_VALUE_SHOW_DISTANCE_DATA_ODOMETER_FIELD             1   // enabled by default
 #define DEFAULT_VALUE_SHOW_BATTERY_STATE_ODOMETER_FIELD             1   // enabled by default
 #define DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD                1   // enabled by default
 #define DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD          1   // enabled by default
 #define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               1   // enabled by default
-
-
-
-// DEFAULT TEMP
-#define DEFAULT_VALUE_CRUISE_PID_P_VALUE 12 
-#define DEFAULT_VALUE_CRUISE_PID_I_VALUE 1
-#define DEFAULT_VALUE_CRUISE_PID_I_LIMIT_VALUE 10
-#define DEFAULT_VALUE_CRUISE_PID_D_VALUE 0   
 
 
 

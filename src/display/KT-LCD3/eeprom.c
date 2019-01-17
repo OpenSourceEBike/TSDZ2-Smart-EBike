@@ -107,22 +107,20 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7,                           // 88 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8,                           // 89 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9,                           // 90 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE,                              // 91 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_FUNCTION_ENABLED,                              // 92 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_PID_P_VALUE,                                       // 93 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_PID_I_VALUE,                                       // 94 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_PID_I_LIMIT_VALUE,                                 // 95 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_PID_D_VALUE,                                       // 96 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_BATTERY_STATE_ODOMETER_FIELD,                    // 97 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD,                       // 98 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD,                 // 99 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD,                      // 100 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED,             // 101 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_FUNCTION_TARGET_SPEED_KPH,                     // 102 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CRUISE_FUNCTION_TARGET_SPEED_MPH,                     // 103 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_DISTANCE_DATA_ODOMETER_FIELD,                    // 104 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED                 // 105 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CRUISE_FUNCTION_ENABLED,                              // 91 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED,             // 92 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CRUISE_FUNCTION_TARGET_SPEED_KPH,                     // 93 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CRUISE_FUNCTION_TARGET_SPEED_MPH,                     // 94 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED,                // 95 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WHEEL_SPEED_FIELD_STATE,                              // 96 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_DISTANCE_DATA_ODOMETER_FIELD,                    // 97 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_BATTERY_STATE_ODOMETER_FIELD,                    // 98 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD,                       // 99 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD,                 // 100 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD                       // 101 + EEPROM_BASE_ADDRESS (Array index)
 };
+
+
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
 static void eeprom_read_values_to_variables (void);
@@ -338,16 +336,17 @@ static void eeprom_read_values_to_variables (void)
   }
   
   
-  // wheel speed measurement
-  p_configuration_variables->ui8_wheel_speed_field_state = FLASH_ReadByte (ADDRESS_WHEEL_SPEED_FIELD_STATE);
-  
-  
   // cruise function
   p_configuration_variables->ui8_cruise_function_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_ENABLED);
   p_configuration_variables->ui8_cruise_function_set_target_speed_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED);
   p_configuration_variables->ui8_cruise_function_target_speed_kph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_KPH);
   p_configuration_variables->ui8_cruise_function_target_speed_mph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_MPH);
-  p_configuration_variables->ui8_show_cruise_function_set_target_speed = FLASH_ReadByte (ADDRESS_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED);  
+  p_configuration_variables->ui8_show_cruise_function_set_target_speed = FLASH_ReadByte (ADDRESS_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED);    
+  
+  
+  // wheel speed measurement
+  p_configuration_variables->ui8_wheel_speed_field_state = FLASH_ReadByte (ADDRESS_WHEEL_SPEED_FIELD_STATE);
+  
   
   // show variables in odometer field
   p_configuration_variables->ui8_show_distance_data_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_DISTANCE_DATA_ODOMETER_FIELD);
@@ -356,13 +355,12 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_show_time_measurement_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD);
   p_configuration_variables->ui8_show_wheel_speed_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_WHEEL_SPEED_ODOMETER_FIELD);
 
-
   
-    // TEMP TMEP TMEP TEMP TMEP
+/*     // TEMP TMEP TMEP TEMP TMEP
     p_configuration_variables->ui8_cruise_temp_pid_p_value = FLASH_ReadByte (ADDRESS_CRUISE_PID_P_VALUE);
     p_configuration_variables->ui8_cruise_temp_pid_i_value = FLASH_ReadByte (ADDRESS_CRUISE_PID_I_VALUE);
     p_configuration_variables->ui8_cruise_temp_pid_i_limit_value = FLASH_ReadByte (ADDRESS_CRUISE_PID_I_LIMIT_VALUE);
-    p_configuration_variables->ui8_cruise_temp_pid_d_value = FLASH_ReadByte (ADDRESS_CRUISE_PID_D_VALUE);
+    p_configuration_variables->ui8_cruise_temp_pid_d_value = FLASH_ReadByte (ADDRESS_CRUISE_PID_D_VALUE); */
 }
 
 void eeprom_write_variables (void)
@@ -475,9 +473,11 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [76] = p_configuration_variables->ui16_total_hour_TTM & 255;
   ui8_array [77] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
   
+  
   // write ADC battery current ramp up inverse step value
   ui8_array [78] = p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step & 255;
   ui8_array [79] = (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step >> 8) & 255;
+  
   
   // write walk assist function variables
   ui8_array [80] = p_configuration_variables->ui8_walk_assist_function_enabled;
@@ -486,30 +486,32 @@ static void variables_to_array (uint8_t *ui8_array)
     ui8_array [81 + ui8_index] = p_configuration_variables->ui8_walk_assist_level_factor [ui8_index];
   }
   
-  // write time measurement field state
-  ui8_array [91] = p_configuration_variables->ui8_wheel_speed_field_state;
   
   // write cruise function variables
-  ui8_array [92] = p_configuration_variables->ui8_cruise_function_enabled;
+  ui8_array [91] = p_configuration_variables->ui8_cruise_function_enabled;
+  ui8_array [92] = p_configuration_variables->ui8_cruise_function_set_target_speed_enabled;
+  ui8_array [93] = p_configuration_variables->ui8_cruise_function_target_speed_kph;
+  ui8_array [94] = p_configuration_variables->ui8_cruise_function_target_speed_mph;
+  ui8_array [95] = p_configuration_variables->ui8_show_cruise_function_set_target_speed;  
   
-    // write TEMP TEMPMTEPMTEPMTEPMEPTMEMPT
-    ui8_array [93] = p_configuration_variables->ui8_cruise_temp_pid_p_value;
-    ui8_array [94] = p_configuration_variables->ui8_cruise_temp_pid_i_value;
-    ui8_array [95] = p_configuration_variables->ui8_cruise_temp_pid_i_limit_value;
-    ui8_array [96] = p_configuration_variables->ui8_cruise_temp_pid_d_value;
-
+  
+  // write wheel speed field state
+  ui8_array [96] = p_configuration_variables->ui8_wheel_speed_field_state;
+  
+  
   // write show odometer variables
-  ui8_array [97] = p_configuration_variables->ui8_show_battery_state_odometer_field;
-  ui8_array [98] = p_configuration_variables->ui8_show_pedal_data_odometer_field;
-  ui8_array [99] = p_configuration_variables->ui8_show_time_measurement_odometer_field;
-  ui8_array [100] = p_configuration_variables->ui8_show_wheel_speed_odometer_field;
+  ui8_array [97] = p_configuration_variables->ui8_show_distance_data_odometer_field;
+  ui8_array [98] = p_configuration_variables->ui8_show_battery_state_odometer_field;
+  ui8_array [99] = p_configuration_variables->ui8_show_pedal_data_odometer_field;
+  ui8_array [100] = p_configuration_variables->ui8_show_time_measurement_odometer_field;
+  ui8_array [101] = p_configuration_variables->ui8_show_wheel_speed_odometer_field;
   
-  ui8_array [101] = p_configuration_variables->ui8_cruise_function_set_target_speed_enabled;
-  ui8_array [102] = p_configuration_variables->ui8_cruise_function_target_speed_kph;
-  ui8_array [103] = p_configuration_variables->ui8_cruise_function_target_speed_mph;
   
-  ui8_array [104] = p_configuration_variables->ui8_show_distance_data_odometer_field;
-  ui8_array [105] = p_configuration_variables->ui8_show_cruise_function_set_target_speed;
+/*     // write TEMP TEMPMTEPMTEPMTEPMEPTMEMPT
+    ui8_array [102] = p_configuration_variables->ui8_cruise_temp_pid_p_value;
+    ui8_array [103] = p_configuration_variables->ui8_cruise_temp_pid_i_value;
+    ui8_array [104] = p_configuration_variables->ui8_cruise_temp_pid_i_limit_value;
+    ui8_array [105] = p_configuration_variables->ui8_cruise_temp_pid_d_value; */
 }
 
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
