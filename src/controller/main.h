@@ -55,7 +55,7 @@
 // measuring with a cheap digital hook scale, we found that each torque sensor unit is equal to 0.52 Nm
 // using the scale, was found that each 0.33kg was measured as 1 torque sensor units
 // Force (Nm) = 1Kg * 9.18 * 0.17 (arm cranks size)
-#define PEDAL_TORQUE_X100 52
+#define PEDAL_TORQUE_X100                     52
 
 
 
