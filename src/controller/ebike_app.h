@@ -52,8 +52,12 @@ typedef struct _configuration_variables
   uint8_t ui8_offroad_power_limit_enabled;
   uint8_t ui8_offroad_power_limit_div25;
   uint8_t ui8_error_states;
-  uint16_t ui16_ADC_battery_current_ramp_up_inverse_step;
+  uint8_t ui8_ramp_up_amps_per_second_x10;
 } struct_configuration_variables;
+
+
+
+extern volatile uint16_t ui16_current_ramp_up_inverse_step;
 
 extern volatile uint8_t ui8_adc_torque_sensor_min_value;
 extern volatile uint8_t ui8_adc_torque_sensor_max_value;

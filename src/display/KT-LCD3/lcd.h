@@ -99,7 +99,7 @@ typedef struct _configuration_variables
   uint16_t ui16_odometer_distance_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
-  uint16_t ui16_ADC_battery_current_ramp_up_inverse_step;
+  uint8_t ui8_ramp_up_amps_per_second_x10;
   uint8_t ui8_walk_assist_function_enabled;
   uint8_t ui8_walk_assist_level_factor [10];
   uint8_t ui8_cruise_function_enabled;
@@ -114,6 +114,8 @@ typedef struct _configuration_variables
   uint8_t ui8_show_time_measurement_odometer_field;
   uint8_t ui8_show_wheel_speed_odometer_field;
 } struct_configuration_variables;
+
+
 
 // LCD RAM has 32*8 bits
 #define LCD_FRAME_BUFFER_SIZE 32

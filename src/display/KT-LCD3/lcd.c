@@ -284,14 +284,14 @@ void lcd_clock (void)
     buttons_clear_up_down_click_event ();
     ui8_lcd_menu = 1;
   }
-
-  // enter in menu set power: ONOFF + UP click event
+  
+  // enter menu configuration power: ONOFF + UP click event
   if (!configuration_variables.ui8_offroad_feature_enabled && buttons_get_onoff_state () && buttons_get_up_state ())
   {
     buttons_clear_all_events ();
     ui8_lcd_menu = 2;
   }
-
+  
   // change temperature field state: ONOFF + DOWN click event
   if (!configuration_variables.ui8_offroad_feature_enabled && buttons_get_onoff_state () && buttons_get_down_state ())
   {
@@ -341,7 +341,7 @@ void lcd_clock (void)
     case 1:
       lcd_execute_menu_config ();
     break;
-
+    
     case 2:
       lcd_execute_menu_config_power ();
     break;
@@ -388,7 +388,7 @@ void lcd_execute_main_screen (void)
   lights_state ();
   brake ();
   time_measurement ();
-  assist_level_state ();
+  assist_level_state (); // needs to be last as it clears all button events
 }
 
 
@@ -1139,8 +1139,8 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
 
   switch (ui8_lcd_menu_config_submenu_state)
-  {
-    // motor temperature enable
+  { 
+    // limit motor temperature enable
     case 0:
       lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_limit_feature_enabled;
       lcd_var_number.ui8_size = 8;
@@ -1206,6 +1206,9 @@ void lcd_execute_menu_config_submenu_lcd (void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
       configuration_variables.ui8_lcd_backlight_off_brightness = ui8_temp / 5;
+      
+      // show user the chosen backlight brightness
+      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness);
     break;
 
     // backlight on brightness
@@ -1220,6 +1223,9 @@ void lcd_execute_menu_config_submenu_lcd (void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
       configuration_variables.ui8_lcd_backlight_on_brightness = ui8_temp / 5;
+      
+      // show user the chosen backlight brightness
+      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness);
     break;
 
     // auto power off
@@ -1364,14 +1370,14 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
     
-    // ADC battery current ramp up inverse step
+    // ramp up, amps per second
     case 1:
-      lcd_var_number.p_var_number = &configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step;
-      lcd_var_number.ui8_size = 16;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 8000;
-      lcd_var_number.ui32_min_value = 1000;
-      lcd_var_number.ui32_increment_step = 63;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_ramp_up_amps_per_second_x10;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 1;
+      lcd_var_number.ui32_max_value = 140;
+      lcd_var_number.ui32_min_value = 4;
+      lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
     break;
@@ -1481,7 +1487,6 @@ void lcd_execute_menu_config_submenu_technical (void)
 }
 
 
-
 void lcd_execute_menu_config_power (void)
 {
   // because this click envent can happen and will block the detection of button_onoff_long_click_event
@@ -1519,6 +1524,9 @@ void lcd_execute_menu_config_power (void)
   lcd_var_number.ui8_odometer_field = BATTERY_POWER_FIELD;
   lcd_configurations_print_number(&lcd_var_number);
   configuration_variables.ui8_target_max_battery_power_div25 = (uint8_t) (ui16_temp / 25);
+  
+  lcd_enable_w_symbol (1);
+  lcd_enable_motor_symbol (1);
 }
 
 
@@ -1792,6 +1800,14 @@ void assist_level_state (void)
   {
     lcd_enable_assist_symbol (1);
   }
+  
+  // clear all button events
+  buttons_clear_up_click_event();
+  buttons_clear_up_click_long_click_event();
+  buttons_clear_up_long_click_event();
+  buttons_clear_down_click_event();
+  buttons_clear_down_click_long_click_event();
+  buttons_clear_down_long_click_event();
 }
 
 
@@ -1807,16 +1823,18 @@ void lights_state (void)
     if (ui8_lights_state == 0)
     {
       ui8_lights_state = 1;
-      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); 
       motor_controller_data.ui8_lights = 1;
     }
     else
     {
       ui8_lights_state = 0;
-      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); 
       motor_controller_data.ui8_lights = 0;
     }
   }
+  
+  // set backlight brightness
+  if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
+  else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
   
   // enable light symbol on display
   lcd_enable_lights_symbol(ui8_lights_state);
@@ -1903,6 +1921,10 @@ void brake (void)
 
 void odometer_increase_field_state (void)
 {
+  // Update the sub menu states
+  update_odometer_sub_field_state ();
+  
+  // increment odometer field state
   configuration_variables.ui8_odometer_field_state++;
   
   // check if out of bounds
@@ -1913,6 +1935,9 @@ void odometer_increase_field_state (void)
     // set flag to read saved value in EEPROM
     load_odometer_sub_field_state_from_EEPROM = 1;
   }
+  
+  // load last odometer menu states
+  load_odometer_sub_field_state ();
 }
 
 
@@ -2026,16 +2051,11 @@ void odometer (void)
   // if user clicks onoff click event
   if (buttons_get_onoff_click_event ())
   {
+    // clear button ON/OFF event
     buttons_clear_onoff_click_event ();
-    
-    // Update the sub menu states
-    update_odometer_sub_field_state ();
     
     // increment odometer field state
     odometer_increase_field_state ();
-    
-    // load last odometer menu states
-    load_odometer_sub_field_state ();
     
     // show field number
     odometer_start_show_field_number ();
@@ -2059,14 +2079,8 @@ void odometer (void)
         // check if user has disabled to show distance data in the odometer field
         if (configuration_variables.ui8_show_distance_data_odometer_field == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2353,14 +2367,8 @@ void odometer (void)
         // check if user has disabled to show battery state of charge in the odometer field
         if (configuration_variables.ui8_show_numeric_battery_soc == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2402,14 +2410,8 @@ void odometer (void)
         // check if user has disabled to show battery voltage or current in the odometer field
         if (configuration_variables.ui8_show_battery_state_odometer_field == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2452,14 +2454,8 @@ void odometer (void)
         // check if user has disabled to show pedal data in the odometer field
         if (configuration_variables.ui8_show_pedal_data_odometer_field == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2506,14 +2502,8 @@ void odometer (void)
         // check if user has enabled temperature limit function
         if (configuration_variables.ui8_temperature_limit_feature_enabled == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2534,14 +2524,8 @@ void odometer (void)
         // check if user has disabled to show time measurement in the odometer field
         if (configuration_variables.ui8_show_time_measurement_odometer_field == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2687,14 +2671,8 @@ void odometer (void)
         // check if user has disabled to show wheel speed in the odometer field
         if (configuration_variables.ui8_show_wheel_speed_odometer_field == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }
@@ -2722,25 +2700,46 @@ void odometer (void)
             // set wheel speed field state
             configuration_variables.ui8_wheel_speed_field_state = 0;
             
-            // display wheel speed in odometer field
-            lcd_print(motor_controller_data.ui16_wheel_speed_x10, ODOMETER_FIELD, 1);
+            // display wheel speed in either imperial or metric units in the odometer field
+            if (configuration_variables.ui8_units_type)
+            {
+              // imperial
+              lcd_print(((float) motor_controller_data.ui16_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
+            }
+            else
+            {
+              // metric
+              lcd_print(motor_controller_data.ui16_wheel_speed_x10, ODOMETER_FIELD, 1);
+            }
           break;
           
           // average wheel speed since power on
           case 1:
             // set wheel speed field state
-            configuration_variables.ui8_wheel_speed_field_state = 1;          
+            configuration_variables.ui8_wheel_speed_field_state = 1;
+            
+            // enable average speed symbol
             lcd_enable_avs_symbol (1);
             
-            // display average wheel speed since power on in odometer field
-            lcd_print(ui8_average_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+            // display average wheel speed in either imperial or metric units in the odometer field
+            if (configuration_variables.ui8_units_type)
+            {
+              // imperial
+              lcd_print(((float) ui8_average_measured_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
+            }
+            else
+            {
+              // metric
+              lcd_print(ui8_average_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+            }
           break;
           
           // maximum measured wheel speed since power on
           case 2:
-          
             // set wheel speed field state
             configuration_variables.ui8_wheel_speed_field_state = 2;
+            
+            // enable max speed symbol
             lcd_enable_mxs_symbol (1);
             
             // if there is one down_click_long_click_event
@@ -2773,7 +2772,17 @@ void odometer (void)
                 
                 if (ui8_lcd_menu_flash_state)
                 {
-                  lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+                  // display max measured wheel speed in either imperial or metric units in the odometer field
+                  if (configuration_variables.ui8_units_type)
+                  {
+                    // imperial
+                    lcd_print(((float) ui8_max_measured_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
+                  }
+                  else
+                  {
+                    // metric
+                    lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+                  }
                 }
               }
               else // user is not pressing the down button anymore
@@ -2786,28 +2795,32 @@ void odometer (void)
               // reset counter
               ui16_odometer_reset_distance_counter = 0;
               
-              lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+              // display max measured wheel speed in either imperial or metric units in the odometer field
+              if (configuration_variables.ui8_units_type)
+              {
+                // imperial
+                lcd_print(((float) ui8_max_measured_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
+              }
+              else
+              {
+                // metric
+                lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+              }
             }
             
           break;
         }
         
       break; // end of wheel speed
-    
+      
       // cruise function
       case 7:
         
         // check if user has disabled to show cruise set target speed
         if (configuration_variables.ui8_show_cruise_function_set_target_speed == 0)
         {
-          // Update the sub menu states
-          update_odometer_sub_field_state ();
-          
           // increment odometer field state
           odometer_increase_field_state ();
-          
-          // load last odometer menu states
-          load_odometer_sub_field_state ();
           
           break;
         }

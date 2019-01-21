@@ -152,6 +152,9 @@
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_1                              0
 
 
+// default values for ramp up
+#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50 // 5.0 amps per second ramp up
+
 
 // default values for ADC battery current ramp up inverse step
 #define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0    161 // 1953, see note below, (161 + (7 << 8)) = 1953

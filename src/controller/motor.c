@@ -700,7 +700,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
 
 
+
   /****************************************************************************/
+  
   
   
   // calculate final PWM duty_cycle values to be applied to TIMER1
@@ -763,15 +765,20 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   TIM1->CCR1L = (uint8_t) (ui8_phase_a_voltage << 1);
 
 
+
   /****************************************************************************/
   
   
-  // Implement ramp up ADC battery current
+  
+  // ramp up ADC battery current
   if (ui8_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
   {
-    if (ui16_counter_adc_battery_current_ramp_up++ >= p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step)
+    if (ui16_counter_adc_battery_current_ramp_up++ >= ui16_current_ramp_up_inverse_step)
     {
+      // reset counter
       ui16_counter_adc_battery_current_ramp_up = 0;
+      
+      // increment current
       ui8_controller_adc_battery_max_current++;
     }
   }
@@ -782,7 +789,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   
 
+
   /****************************************************************************/
+
+
 
   // calc PAS timming between each positive pulses, in PWM cycles ticks
   // calc PAS on and off timming of each pulse, in PWM cycles ticks
@@ -865,7 +875,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
 
 
+
   /****************************************************************************/
+  
   
   
   // calc wheel speed sensor timming between each positive pulses, in PWM cycles ticks

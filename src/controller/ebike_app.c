@@ -36,8 +36,8 @@
 #define BOOST_STATE_FADE                  4
 #define BOOST_STATE_BOOST_WAIT_TO_RESTART 5
 
-uint8_t ui8_adc_battery_max_current = ADC_BATTERY_CURRENT_MAX;
-uint8_t ui8_target_battery_max_power_x10 = ADC_BATTERY_CURRENT_MAX;
+uint8_t ui8_adc_battery_max_current       = ADC_BATTERY_CURRENT_MAX;
+uint8_t ui8_target_battery_max_power_x10  = ADC_BATTERY_CURRENT_MAX;
 
 
 volatile uint8_t  ui8_throttle = 0;
@@ -50,6 +50,9 @@ volatile uint8_t  ui8_adc_battery_current_offset;
 volatile uint8_t  ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t  ui8_adc_target_battery_max_current;
 uint8_t           ui8_adc_battery_current_max;
+
+volatile uint16_t ui16_current_ramp_up_inverse_step;
+
 
 
 
@@ -521,13 +524,31 @@ static void communications_controller (void)
         break;
         
         case 9:
-          // current ramp up inverse step
-          configuration_variables.ui16_ADC_battery_current_ramp_up_inverse_step = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
-        break;
-        
-        case 10:
+          // ramp up, amps per second
+          configuration_variables.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer [7];
+          
+          // calculate current step for ramp up
+          ui16_current_ramp_up_inverse_step = (uint16_t) ( ((uint32_t) 97656) / ((uint32_t) configuration_variables.ui8_ramp_up_amps_per_second_x10) ); // see note below
+          
+          /*---------------------------------------------------------
+          NOTE: regarding ramp up 
+
+          Example of calculation:
+          
+          Target: ramp 5 amps per second
+
+          Every second has 15625 PWM cycles interrupts,
+          one ADC battery current step --> 0.625 amps:
+
+          5 / 0.625 = 8 (we need to do 8 steps ramp up per second)
+
+          Therefore:
+
+          15625 / 8 = 1953 (our default value)
+          ---------------------------------------------------------*/
+          
           // received target speed for cruise
-          ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer [7] * 10);
+          ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer [8] * 10);
         break;
         
         default:
