@@ -77,7 +77,6 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
-  uint8_t ui8_cruise_control;
   uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;
@@ -100,6 +99,20 @@ typedef struct _configuration_variables
   uint16_t ui16_odometer_distance_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
+  uint16_t ui16_ADC_battery_current_ramp_up_inverse_step;
+  uint8_t ui8_walk_assist_function_enabled;
+  uint8_t ui8_walk_assist_level_factor [10];
+  uint8_t ui8_cruise_function_enabled;
+  uint8_t ui8_cruise_function_set_target_speed_enabled;
+  uint8_t ui8_cruise_function_target_speed_kph;
+  uint8_t ui8_cruise_function_target_speed_mph;
+  uint8_t ui8_show_cruise_function_set_target_speed;
+  uint8_t ui8_wheel_speed_field_state;
+  uint8_t ui8_show_distance_data_odometer_field;
+  uint8_t ui8_show_battery_state_odometer_field;
+  uint8_t ui8_show_pedal_data_odometer_field;
+  uint8_t ui8_show_time_measurement_odometer_field;
+  uint8_t ui8_show_wheel_speed_odometer_field;
 } struct_configuration_variables;
 
 // LCD RAM has 32*8 bits

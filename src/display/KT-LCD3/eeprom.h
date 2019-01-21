@@ -11,6 +11,8 @@
 
 #include "lcd.h"
 
+
+
 #define KEY                                                                 0xe4
 
 #define EEPROM_BASE_ADDRESS                                                 0x4000
@@ -79,20 +81,46 @@
 #define ADDRESS_TRIP_X10_0                                                  62 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TRIP_X10_1                                                  63 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TRIP_X10_2                                                  64 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_0                                   65 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_1                                   66 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_2                                   67 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_3                                   68 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_4                                   69 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_5                                   70 + EEPROM_BASE_ADDRESS
-#define ADRESS_ODOMETER_SUB_FIELD_STATE_6                                   71 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_0                                  65 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_1                                  66 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_2                                  67 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_3                                  68 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_4                                  69 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_5                                  70 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ODOMETER_SUB_FIELD_STATE_6                                  71 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MAX_WHEEL_SPEED_IMPERIAL                                    72 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TIME_MEASUREMENT_FIELD_STATE                                73 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_SECOND_TTM                                            74 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_MINUTE_TTM                                            75 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_HOUR_TTM_0                                            76 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_HOUR_TTM_1                                            77 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 78
+#define ADDRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0                  78 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1                  79 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_FUNCTION_ENABLED                                80 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_0                                  81 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_1                                  82 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_2                                  83 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_3                                  84 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_4                                  85 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_5                                  86 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_6                                  87 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_7                                  88 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_8                                  89 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WALK_ASSIST_LEVEL_FACTOR_9                                  90 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CRUISE_FUNCTION_ENABLED                                     91 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED                    92 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_KPH                            93 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_MPH                            94 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED                       95 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WHEEL_SPEED_FIELD_STATE                                     96 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_DISTANCE_DATA_ODOMETER_FIELD                           97 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_BATTERY_STATE_ODOMETER_FIELD                           98 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_PEDAL_DATA_ODOMETER_FIELD                              99 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD                        100 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_WHEEL_SPEED_ODOMETER_FIELD                             101 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 102
+
+
 
 void eeprom_init (void);
 void eeprom_init_variables (void);

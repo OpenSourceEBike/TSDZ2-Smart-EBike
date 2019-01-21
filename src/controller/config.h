@@ -39,13 +39,6 @@
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP 20
 #define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP 20
 
-// Target: ramp 5 amps per second
-// every second has 15625 PWM cycles interrupts
-// 1 ADC battery current step --> 0.625 amps
-// 5 / 0.625 = 8 (we need to do 8 steps ramp up per second)
-// 15625 / 8 = 1953
-#define ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP 1953
-
 // *************************************************************************** //
 // MOTOR
 

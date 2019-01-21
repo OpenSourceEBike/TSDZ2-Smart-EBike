@@ -33,7 +33,6 @@ typedef struct _configuration_variables
   uint8_t ui8_motor_type;
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
   uint8_t ui8_target_battery_max_power_div25;
-  uint8_t ui8_cruise_control;
   uint8_t configuration_variables;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_assist_level;
@@ -53,6 +52,7 @@ typedef struct _configuration_variables
   uint8_t ui8_offroad_power_limit_enabled;
   uint8_t ui8_offroad_power_limit_div25;
   uint8_t ui8_error_states;
+  uint16_t ui16_ADC_battery_current_ramp_up_inverse_step;
 } struct_configuration_variables;
 
 extern volatile uint8_t ui8_adc_torque_sensor_min_value;
