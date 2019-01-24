@@ -254,11 +254,13 @@ static void eeprom_read_values_to_variables (void)
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
   p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 = ui16_temp;
 
+
+  // motor type, motor assistance startup without pedal rotation, temperature limit enabled, tempereture field state
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_motor_type = ui8_temp & 3;
   p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
-  p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 8) >> 3;
-  p_configuration_variables->ui8_temperature_field_config = (ui8_temp & 48) >> 4;
+  p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 24) >> 3;
+  p_configuration_variables->ui8_temperature_field_state = (ui8_temp & 224) >> 5;
   
   
   // assist levels
@@ -386,10 +388,13 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [18] = p_configuration_variables->ui8_battery_cells_number;
   ui8_array [19] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
   ui8_array [20] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
+  
+  
+  // write motor type, motor assistance startup without pedal rotation, temperature limit enabled, tempereture field state
   ui8_array [21] = (p_configuration_variables->ui8_motor_type & 3) |
                   ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
-                  ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3) |
-                  ((p_configuration_variables->ui8_temperature_field_config & 3) << 4);
+                  ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3) |
+                  ((p_configuration_variables->ui8_temperature_field_state & 7) << 5);
 
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {

@@ -86,7 +86,7 @@ typedef struct _configuration_variables
   uint8_t ui8_temperature_limit_feature_enabled;
   uint8_t ui8_motor_temperature_min_value_to_limit;
   uint8_t ui8_motor_temperature_max_value_to_limit;
-  uint8_t ui8_temperature_field_config;
+  uint8_t ui8_temperature_field_state;
   uint8_t ui8_lcd_power_off_time_minutes;
   uint8_t ui8_lcd_backlight_on_brightness;
   uint8_t ui8_lcd_backlight_off_brightness;

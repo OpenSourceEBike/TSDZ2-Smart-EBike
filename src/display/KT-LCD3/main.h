@@ -59,7 +59,7 @@
 #define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 --> 48V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
-#define DEFAULT_VALUE_CONFIG_0                                      0   // ui8_motor_type = 0; ui8_motor_assistance_startup_config = 0
+#define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, assistance without pedal rotation, temperature limit enabled, temperature field state
 
 
 

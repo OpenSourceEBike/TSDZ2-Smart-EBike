@@ -927,10 +927,10 @@ void lcd_execute_menu_config_main_screen_setup (void)
   {
     // temperature field setup
     case 0:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_field_config;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_field_state;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 6;
+      lcd_var_number.ui32_max_value = 5;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -1331,6 +1331,7 @@ void lcd_execute_menu_config_submenu_various (void)
 {
   var_number_t lcd_var_number;
   uint32_t ui32_odometer_x10;
+  //uint16_t ui16_temp;                                                                        NO PROGRAM SPACE FOR THIS
   
   // advance on submenus on button_onoff_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
@@ -1349,6 +1350,32 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
     
+/*     // motor power limit                                                                     NO PROGRAM SPACE FOR THIS
+    case 1:
+      ui16_temp = ((uint16_t) configuration_variables.ui8_target_max_battery_power_div25) * 25;
+      lcd_var_number.p_var_number = &ui16_temp;
+      lcd_var_number.ui8_size = 16;
+      lcd_var_number.ui8_decimal_digit = 1; // need to be for BATTERY_POWER_FIELD
+      lcd_var_number.ui32_max_value = 1900;
+      lcd_var_number.ui32_min_value = 0;
+
+      if (configuration_variables.ui8_target_max_battery_power_div25 < 10)
+      {
+        lcd_var_number.ui32_increment_step = 25;
+      }
+      else
+      {
+        lcd_var_number.ui32_increment_step = 50;
+      }
+
+      lcd_var_number.ui8_odometer_field = BATTERY_POWER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      configuration_variables.ui8_target_max_battery_power_div25 = (uint8_t) (ui16_temp / 25);
+      
+      lcd_enable_w_symbol (1);
+      lcd_enable_motor_symbol (1);
+    break; */
+  
     // ramp up, amps per second
     case 1:
       lcd_var_number.p_var_number = &configuration_variables.ui8_ramp_up_amps_per_second_x10;
@@ -1556,22 +1583,18 @@ void temperature (void)
   {
     if (ui8_lcd_menu_flash_state_temperature)
     {
-      lcd_print(motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 0);
+      lcd_print(motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
       lcd_enable_temperature_degrees_symbol (1);
     }
   }
   else
   {
-    switch (configuration_variables.ui8_temperature_field_config)
+    switch (configuration_variables.ui8_temperature_field_state)
     {
       // show motor temperature
       case 1:
-        // check if function enabled
-        if (configuration_variables.ui8_temperature_limit_feature_enabled != 1) 
-        {
-          configuration_variables.ui8_temperature_field_config = 0;
-        }
-        else 
+        // if function is enabled -> display motor temperature
+        if (configuration_variables.ui8_temperature_limit_feature_enabled == 1)
         {
           lcd_print (motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
           lcd_enable_temperature_degrees_symbol (1);
@@ -1580,24 +1603,39 @@ void temperature (void)
       
       // show battery state of charge watt-hours
       case 2:
-        lcd_print(ui16_battery_soc_watts_hour, TEMPERATURE_FIELD, 1);
-      break;
-      
-      // consumed watt-hours
-      case 3:
-        lcd_print(ui32_wh_x10, TEMPERATURE_FIELD, 1);
+        lcd_print (ui16_battery_soc_watts_hour, TEMPERATURE_FIELD, 1);
       break;
       
       // battery voltage
-      case 4:
-        lcd_print(ui16_battery_voltage_filtered_x10, TEMPERATURE_FIELD, 1);
+      case 3:
+        lcd_print (ui16_battery_voltage_filtered_x10/10, TEMPERATURE_FIELD, 1);
       break;
       
       // battery current
-      case 5:
-        lcd_print(ui16_battery_current_filtered_x5 << 1, TEMPERATURE_FIELD, 1);
+      case 4:
+        lcd_print (ui16_battery_current_filtered_x5/5, TEMPERATURE_FIELD, 1);
       break;
       
+      // pedal cadence
+      case 5:
+        lcd_print (ui8_pedal_cadence_filtered, TEMPERATURE_FIELD, 1);
+      break;
+/*       
+      // average wheel speed                                                                       NO PROGRAM SPACE FOR THIS
+      case 6:
+        // check in what unit of measurement to display average wheel speed
+        if (configuration_variables.ui8_units_type)
+        {
+          // imperial
+          lcd_print (((float) ui8_average_measured_wheel_speed_x10/16), TEMPERATURE_FIELD, 1);
+        }
+        else
+        {
+          // metric
+          lcd_print (ui8_average_measured_wheel_speed_x10/10, TEMPERATURE_FIELD, 1);
+        }
+      break;
+       */
       // show nothing
       default:
       break;
@@ -2294,12 +2332,12 @@ void odometer (void)
         
         switch (configuration_variables.ui8_odometer_sub_field_state_1)
         {
-          // battery SOC in watts/hour
+          // battery SOC in percentage
           case 0:
             lcd_print(ui16_battery_soc_watts_hour, ODOMETER_FIELD, 0);
           break;
 
-          // Wh value
+          // consumed watt-hours
           case 1:
             lcd_print(ui32_wh_x10, ODOMETER_FIELD, 1);
           break;
@@ -2392,7 +2430,7 @@ void odometer (void)
             lcd_print (ui16_pedal_power_filtered, ODOMETER_FIELD, 0);
           break;
 
-          // pedal cadence value
+          // pedal cadence
           case 1:
             lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 0);
           break;

@@ -550,7 +550,7 @@ static void communications_controller (void)
 
           Example of calculation:
           
-          Target: ramp 5 amps per second
+          Target ramp up: 5 amps per second
 
           Every second has 15625 PWM cycles interrupts,
           one ADC battery current step --> 0.625 amps:
