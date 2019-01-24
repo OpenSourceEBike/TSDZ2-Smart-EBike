@@ -135,7 +135,6 @@ static uint16_t ui16_battery_soc_watts_hour;
 static uint16_t ui16_battery_voltage_soc_x10;
 
 static uint8_t ui8_reset_to_defaults_counter;
-static uint8_t ui8_state_temp_field;
 
 uint8_t ui8_lcd_power_off_time_counter_minutes = 0;
 static uint16_t ui16_lcd_power_off_time_counter = 0;
@@ -461,6 +460,10 @@ void lcd_execute_menu_config (void)
 
       ui8_lcd_menu_config_submenu_active = 0;
       ui8_lcd_menu_config_submenu_state = 0;
+      
+      // set backlight brightness after user has configured settings, looks nicer this way
+      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
+      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
     }
   }
 }
@@ -1177,7 +1180,7 @@ void lcd_execute_menu_config_submenu_lcd (void)
       lcd_configurations_print_number(&lcd_var_number);
       configuration_variables.ui8_lcd_backlight_off_brightness = ui8_temp / 5;
       
-      // show user the chosen backlight brightness
+      // show user the chosen backlight brightness, looks nicer this way
       lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness);
     break;
 
@@ -1194,7 +1197,7 @@ void lcd_execute_menu_config_submenu_lcd (void)
       lcd_configurations_print_number(&lcd_var_number);
       configuration_variables.ui8_lcd_backlight_on_brightness = ui8_temp / 5;
       
-      // show user the chosen backlight brightness
+      // show user the chosen backlight brightness, looks nicer this way
       lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness);
     break;
 
@@ -1208,6 +1211,11 @@ void lcd_execute_menu_config_submenu_lcd (void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
+      // set backlight brightness after user has configured settings, looks nicer this way
+      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
+      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
+      
     break;
 
     // reset to defaults
@@ -1229,6 +1237,7 @@ void lcd_execute_menu_config_submenu_lcd (void)
         // Turn off LCD
         lcd_power_off (0);
       }
+      
     break;
   }
 
@@ -1557,8 +1566,16 @@ void temperature (void)
     {
       // show motor temperature
       case 1:
-        lcd_print(motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
-        lcd_enable_temperature_degrees_symbol (1);
+        // check if function enabled
+        if (configuration_variables.ui8_temperature_limit_feature_enabled != 1) 
+        {
+          configuration_variables.ui8_temperature_field_config = 0;
+        }
+        else 
+        {
+          lcd_print (motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
+          lcd_enable_temperature_degrees_symbol (1);
+        }
       break;
       
       // show battery state of charge watt-hours
@@ -2392,7 +2409,7 @@ void odometer (void)
       case 4:
       
         // check if user has enabled temperature limit function
-        if (configuration_variables.ui8_temperature_limit_feature_enabled == 0)
+        if (configuration_variables.ui8_temperature_limit_feature_enabled != 1)
         {
           // increment odometer field state
           odometer_increase_field_state ();

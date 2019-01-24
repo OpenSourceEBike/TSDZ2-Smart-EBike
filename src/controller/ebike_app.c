@@ -160,7 +160,9 @@ static void apply_walk_assist (uint8_t *ui8_target_current);
 static void apply_cruise (uint8_t *ui8_target_current);
 
 #if THROTTLE
-  static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
+
+static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
+
 #endif
 
 
@@ -283,8 +285,14 @@ static void ebike_control_motor (void)
 
 
 #if THROTTLE
-  /* Throttle */
-  apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
+
+  /* Apply throttle if this feature is enabled by the user and motor temperature limit function is not enabled */
+  if (configuration_variables.ui8_temperature_limit_feature_enabled == 2)
+  {
+    /* Throttle */
+    apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
+  }
+
 #endif
 
   
@@ -340,14 +348,13 @@ static void ebike_control_motor (void)
 
 
   /* Limit current if motor temperature too high and this feature is enabled by the user */
-  if (configuration_variables.ui8_temperature_limit_feature_enabled)
+  if (configuration_variables.ui8_temperature_limit_feature_enabled == 1)
   {
     apply_temperature_limiting (&ui8_adc_battery_target_current);
   }
   else
   {
-    // TODO: keep ui8_temperature_current_limiting_value = 255 because 255 means no current limiting happening
-    // otherwise temperature symbol on display will be blinking
+    // keep ui8_temperature_current_limiting_value = 255 because 255 means no current limiting happening, otherwise temperature symbol on display will be blinking
     configuration_variables.ui8_temperature_current_limiting_value = 255;
   }
 
@@ -479,7 +486,7 @@ static void communications_controller (void)
           configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 4) >> 2;
           
           // motor temperature limit function enable/disable
-          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 8) >> 3;
+          configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 24) >> 3;
           
           // startup motor boost state
           configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [8] & 1);
@@ -527,8 +534,16 @@ static void communications_controller (void)
           // ramp up, amps per second
           configuration_variables.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer [7];
           
+          // check that value seems correct
+          if (configuration_variables.ui8_ramp_up_amps_per_second_x10 < 4 || configuration_variables.ui8_ramp_up_amps_per_second_x10 > 100)
+          {
+            // value is not valid, set to default
+            configuration_variables.ui8_ramp_up_amps_per_second_x10 = 50;
+          }
+          
           // calculate current step for ramp up
-          ui16_current_ramp_up_inverse_step = (uint16_t) ( ((uint32_t) 97656) / ((uint32_t) configuration_variables.ui8_ramp_up_amps_per_second_x10) ); // see note below
+          ui32_temp = ((uint32_t) 97656) / ((uint32_t) configuration_variables.ui8_ramp_up_amps_per_second_x10); // see note below
+          ui16_current_ramp_up_inverse_step = (uint16_t) ui32_temp;
           
           /*---------------------------------------------------------
           NOTE: regarding ramp up 
@@ -605,7 +620,7 @@ static void uart_send_package (void)
     ui8_tx_buffer[8] &= ~1;
   }
 
-  if (configuration_variables.ui8_temperature_limit_feature_enabled)
+  if (configuration_variables.ui8_temperature_limit_feature_enabled == 1)
   {
     ui8_tx_buffer[9] = UI8_ADC_THROTTLE;
     ui8_tx_buffer[10] = configuration_variables.ui8_motor_temperature;
@@ -802,6 +817,7 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
 
 
 #if THROTTLE
+
   static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
   {
     uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_throttle_value,
@@ -816,6 +832,7 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
     // enable motor assistance because user is using throttle
     if (*ui8_target_current) { *ui8_motor_enable = 1; }
   }
+  
 #endif
 
 
@@ -946,8 +963,7 @@ static void boost_run_statemachine (void)
     {
       // ebike is stopped, wait for throttle signal to startup boost
       case BOOST_STATE_BOOST_DISABLED:
-        if ((ui8_torque_sensor > 0) &&
-            (!brake_is_set()))
+        if ((ui8_torque_sensor > 0) && (!brake_is_set()))
         {
           ui8_startup_boost_state_machine = BOOST_STATE_START_BOOST;
         }
@@ -1075,19 +1091,17 @@ static void torque_sensor_read (void)
 {
   // map value from 0 up to 255
   // map value from 0 up to 255
-  ui8_torque_sensor_raw = (uint8_t) (map (
-      UI8_ADC_TORQUE_SENSOR,
-      (uint8_t) ui8_adc_torque_sensor_min_value,
-      (uint8_t) ui8_adc_torque_sensor_max_value,
-      (uint8_t) 0,
-      (uint8_t) 255));
+  ui8_torque_sensor_raw = (uint8_t) (map (  UI8_ADC_TORQUE_SENSOR,
+                                            (uint8_t) ui8_adc_torque_sensor_min_value,
+                                            (uint8_t) ui8_adc_torque_sensor_max_value,
+                                            (uint8_t) 0,
+                                            (uint8_t) 255));
 
   switch (ui8_tstr_state_machine)
   {
     // ebike is stopped, wait for throttle signal
     case STATE_NO_PEDALLING:
-    if ((ui8_torque_sensor_raw > 0) &&
-        (!brake_is_set()))
+    if ((ui8_torque_sensor_raw > 0) && (!brake_is_set()))
     {
       ui8_tstr_state_machine = STATE_STARTUP_PEDALLING;
     }
@@ -1136,15 +1150,18 @@ static void torque_sensor_read (void)
 static void throttle_read (void)
 {
 #if THROTTLE
+
   // map value from 0 up to 255
-  ui8_throttle = (uint8_t) (map (
-      UI8_ADC_THROTTLE,
-      (uint8_t) ADC_THROTTLE_MIN_VALUE,
-      (uint8_t) ADC_THROTTLE_MAX_VALUE,
-      (uint8_t) 0,
-      (uint8_t) 255));
+  ui8_throttle =  (uint8_t) (map (  UI8_ADC_THROTTLE,
+                                    (uint8_t) ADC_THROTTLE_MIN_VALUE,
+                                    (uint8_t) ADC_THROTTLE_MAX_VALUE,
+                                    (uint8_t) 0,
+                                    (uint8_t) 255));
+                  
 #else
+  
   ui8_throttle = 0;
+  
 #endif
 }
 
@@ -1218,7 +1235,7 @@ static void safe_tests (void)
 
     switch (safe_tests_state_machine)
     {
-      // start when torque sensor or throttle or walk assist
+      // start when torque sensor or throttle or walk assist / cruise
       case 0:
       if (ui8_torque_sensor_raw || ui8_throttle || configuration_variables.ui8_walk_assist)
       {
@@ -1250,14 +1267,14 @@ static void safe_tests (void)
         break;
       }
 
-      // if release of: torque sensor AND throttle AND walk assist -> restart
+      // if release of: torque sensor AND throttle AND walk assist / cruise -> restart
       if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0) && (configuration_variables.ui8_walk_assist == 0))
       {
         safe_tests_state_machine = 0;
       }
       break;
 
-      // wait 3 consecutive seconds for torque sensor and throttle and walk assist == 0, then restart
+      // wait 3 consecutive seconds for torque sensor and throttle and walk assist / cruise == 0, then restart
       case 2:
       if ((ui8_torque_sensor_raw == 0) && (ui8_throttle == 0) && (configuration_variables.ui8_walk_assist == 0))
       {

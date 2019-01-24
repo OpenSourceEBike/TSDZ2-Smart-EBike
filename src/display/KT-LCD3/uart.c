@@ -213,6 +213,7 @@ void uart_data_clock (void)
       ui8_tx_buffer[4] = ((p_motor_controller_data->ui8_lights & 1) |
                          ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1) |
                          ((p_motor_controller_data->ui8_offroad_mode & 1) << 2));
+                         
       // battery max current in amps
       ui8_tx_buffer[5] = p_configuration_variables->ui8_battery_max_current;
 
@@ -244,7 +245,8 @@ void uart_data_clock (void)
           // enable/disable motor temperature limit function
           ui8_tx_buffer[7] = ((p_configuration_variables->ui8_motor_type & 3) |
                              ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
-                             ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3));
+                             ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3));
+                             
           // motor power boost startup state
           ui8_tx_buffer[8] = p_configuration_variables->ui8_startup_motor_power_boost_state;
         break;

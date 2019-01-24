@@ -13,40 +13,40 @@
 
 //#define DEBUG_UART
 
-#define PWM_CYCLES_COUNTER_MAX                3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
-#define PWM_CYCLES_SECOND                     15625L  // 1 / 64us(PWM period)
-#define PWM_DUTY_CYCLE_MAX                    254
-#define PWM_DUTY_CYCLE_MIN                    20
-#define MIDDLE_PWM_DUTY_CYCLE_MAX             (PWM_DUTY_CYCLE_MAX/2)
+#define PWM_CYCLES_COUNTER_MAX                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
+#define PWM_CYCLES_SECOND                         15625L  // 1 / 64us(PWM period)
+#define PWM_DUTY_CYCLE_MAX                        254
+#define PWM_DUTY_CYCLE_MIN                        20
+#define MIDDLE_PWM_DUTY_CYCLE_MAX                 (PWM_DUTY_CYCLE_MAX/2)
 
 
 
-#define MOTOR_ROTOR_ANGLE_90                  (63  + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_150                 (106 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_210                 (148 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_270                 (191 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_330                 (233 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_30                  (20  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_90                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_150                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_210                     (148 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_270                     (191 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_330                     (233 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_30                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 
 
-#define MOTOR_OVER_SPEED_ERPS                 520 // motor max speed, protection max value | 30 points for the sinewave at max speed
-#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL    700 // experimental max motor speed to allow a higher cadence
+#define MOTOR_OVER_SPEED_ERPS                     520 // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL        700 // experimental max motor speed to allow a higher cadence
 
 
 
 // Possible values: 0, 1, 2, 3, 4, 5, 6
 // 0 equal to no filtering and no delay, higher values will increase filtering but will also add bigger delay
-#define THROTTLE_FILTER_COEFFICIENT           1
-#define ADC_THROTTLE_THRESHOLD                10  // value in ADC 8 bits step
-#define ADC_TORQUE_SENSOR_THRESHOLD           6   // value in ADC 8 bits step
+#define THROTTLE_FILTER_COEFFICIENT               1
+#define ADC_THROTTLE_THRESHOLD                    10  // value in ADC 8 bits step
+#define ADC_TORQUE_SENSOR_THRESHOLD               6   // value in ADC 8 bits step
 
 
 
 // Max voltage value for throttle, in ADC 8 bits step
 // each ADC 8 bits step = (5V / 256) = 0.0195
-#define ADC_THROTTLE_MIN_VALUE                47
-#define ADC_THROTTLE_MAX_VALUE                176
+#define ADC_THROTTLE_MIN_VALUE                    47
+#define ADC_THROTTLE_MAX_VALUE                    176
 
 
 
@@ -55,7 +55,7 @@
 // measuring with a cheap digital hook scale, we found that each torque sensor unit is equal to 0.52 Nm
 // using the scale, was found that each 0.33kg was measured as 1 torque sensor units
 // Force (Nm) = 1Kg * 9.18 * 0.17 (arm cranks size)
-#define PEDAL_TORQUE_X100                     52
+#define PEDAL_TORQUE_X100                                         52
 
 
 
