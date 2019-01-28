@@ -131,7 +131,7 @@ void uart_data_clock (void)
       p_motor_controller_data->ui8_motor_controller_state_2 = ui8_rx_buffer[8];
       p_motor_controller_data->ui8_braking = p_motor_controller_data->ui8_motor_controller_state_2 & 1;
 
-      if (p_configuration_variables->ui8_temperature_limit_feature_enabled)
+      if (p_configuration_variables->ui8_temperature_limit_feature_enabled == 1)
       {
         p_motor_controller_data->ui8_adc_throttle = ui8_rx_buffer[9];
         p_motor_controller_data->ui8_motor_temperature = ui8_rx_buffer[10];
