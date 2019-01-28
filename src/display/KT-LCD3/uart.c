@@ -116,7 +116,7 @@ void uart_data_clock (void)
 
       // send a variable for each package sent but first verify if the last one was received otherwise, keep repeating
       // keep cycling so all variables are sent
-      #define VARIABLE_ID_MAX_NUMBER 11
+      #define VARIABLE_ID_MAX_NUMBER 10
       if ((ui8_rx_buffer [1]) == ui8_master_comm_package_id) // last package data ID was receipt, so send the next one
       {
         ui8_master_comm_package_id = (ui8_master_comm_package_id + 1) % VARIABLE_ID_MAX_NUMBER;
@@ -213,6 +213,7 @@ void uart_data_clock (void)
       ui8_tx_buffer[4] = ((p_motor_controller_data->ui8_lights & 1) |
                          ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1) |
                          ((p_motor_controller_data->ui8_offroad_mode & 1) << 2));
+                         
       // battery max current in amps
       ui8_tx_buffer[5] = p_configuration_variables->ui8_battery_max_current;
 
@@ -244,7 +245,8 @@ void uart_data_clock (void)
           // enable/disable motor temperature limit function
           ui8_tx_buffer[7] = ((p_configuration_variables->ui8_motor_type & 3) |
                              ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
-                             ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 1) << 3));
+                             ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3));
+                             
           // motor power boost startup state
           ui8_tx_buffer[8] = p_configuration_variables->ui8_startup_motor_power_boost_state;
         break;
@@ -283,19 +285,16 @@ void uart_data_clock (void)
         break;
         
         case 9:
-          // ADC battery current ramp up inverse step
-          ui8_tx_buffer[7] = (uint8_t) (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step & 0xff);
-          ui8_tx_buffer[8] = (uint8_t) (p_configuration_variables->ui16_ADC_battery_current_ramp_up_inverse_step >> 8);
-        break;
-        
-        case 10:
+          // ramp up, amps per second
+          ui8_tx_buffer[7] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+          // cruise target speed
           if (p_configuration_variables->ui8_cruise_function_set_target_speed_enabled)
           {
-            ui8_tx_buffer[7] = p_configuration_variables->ui8_cruise_function_target_speed_kph;
+            ui8_tx_buffer[8] = p_configuration_variables->ui8_cruise_function_target_speed_kph;
           }
           else
           {
-            ui8_tx_buffer[7] = 0;
+            ui8_tx_buffer[8] = 0;
           }
         break;
         

@@ -59,7 +59,7 @@
 #define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 --> 48V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
-#define DEFAULT_VALUE_CONFIG_0                                      0   // ui8_motor_type = 0; ui8_motor_assistance_startup_config = 0
+#define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, assistance without pedal rotation, temperature limit enabled, temperature field state
 
 
 
@@ -151,6 +151,9 @@
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_0                              0
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_1                              0
 
+
+// default values for ramp up
+#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50 // 5.0 amps per second ramp up
 
 
 // default values for ADC battery current ramp up inverse step
