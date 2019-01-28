@@ -1115,7 +1115,7 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
 
   switch (ui8_lcd_menu_config_submenu_state)
-  { 
+  {
     // limit motor temperature or throttle enable/disable 
     case 0:
       lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_limit_feature_enabled;
@@ -1890,6 +1890,11 @@ void walk_assist_state (void)
           lcd_enable_walk_symbol (1);
           motor_controller_data.ui8_walk_assist_level = 1;
         }
+        else
+        {
+          // disable walk assist or cruise function
+          motor_controller_data.ui8_walk_assist_level = 0;
+        }
       }
       else // if wheel speed is more than 8.0 km/h (80), enable cruise function
       {
@@ -1899,6 +1904,11 @@ void walk_assist_state (void)
           // enable cruise function
           lcd_enable_cruise_symbol (1);
           motor_controller_data.ui8_walk_assist_level = 1;
+        }
+        else
+        {
+          // disable walk assist or cruise function
+          motor_controller_data.ui8_walk_assist_level = 0;
         }
       }
     }

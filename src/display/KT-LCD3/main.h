@@ -156,26 +156,6 @@
 #define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50 // 5.0 amps per second ramp up
 
 
-// default values for ADC battery current ramp up inverse step
-#define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_0    161 // 1953, see note below, (161 + (7 << 8)) = 1953
-#define DEFAULT_VALUE_ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP_1    7
-
-/*---------------------------------------------------------
-  NOTE: regarding ADC_BATTERY_CURRENT_RAMP_UP_INVERSE_STEP
-
-  Target: ramp 5 amps per second
-
-  Every second has 15625 PWM cycles interrupts,
-  one ADC battery current step --> 0.625 amps:
-
-  5 / 0.625 = 8 (we need to do 8 steps ramp up per second)
-
-  Therefore:
-
-  15625 / 8 = 1953 (our default value)
----------------------------------------------------------*/
-
-
 
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
