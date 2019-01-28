@@ -12,17 +12,11 @@ if [ ! -d "$RELEASE_FOLDER" ]; then
 	# create folder
 	mkdir -p $RELEASE_FOLDER
 
-	# Throttle version
 	cd src/controller
-    	make -f Makefile_linux THROTTLE=1
+    	make -f Makefile_linux
 	cp main.hex $RELEASE_FOLDER/TSDZ2-throttle-v$VERSION.hex
+	cd ../..
 
-	# Non throttle version
-	cd src/controller
-    	make -f Makefile_linux THROTTLE=0
-	cp main.hex $RELEASE_FOLDER/TSDZ2-v$VERSION.hex
-
-	# Non throttle version
 	cd src/display/KT-LCD3
     	make -f Makefile_linux
 	cp main.hex $RELEASE_FOLDER/KT-LCD3-v$VERSION.hex
