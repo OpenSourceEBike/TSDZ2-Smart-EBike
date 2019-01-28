@@ -9,12 +9,13 @@ read VERSION
 RELEASE_FOLDER=${PWD}/releases/$VERSION
 
 if [ ! -d "$RELEASE_FOLDER" ]; then
-	# create folder
+	
+  # create folder
 	mkdir -p $RELEASE_FOLDER
 
 	cd src/controller
-    	make -f Makefile_linux
-	cp main.hex $RELEASE_FOLDER/TSDZ2-throttle-v$VERSION.hex
+      make -f Makefile_linux
+	cp main.hex $RELEASE_FOLDER/TSDZ2-v$VERSION.hex
 	cd ../..
 
 	cd src/display/KT-LCD3
