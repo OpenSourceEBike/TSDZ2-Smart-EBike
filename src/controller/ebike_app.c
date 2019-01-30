@@ -158,12 +158,7 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
 static void apply_temperature_limiting (uint8_t *ui8_target_current);
 static void apply_walk_assist (uint8_t *ui8_target_current);
 static void apply_cruise (uint8_t *ui8_target_current);
-
-#if THROTTLE
-
 static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current);
-
-#endif
 
 
 // variables for BOOST function
@@ -284,16 +279,12 @@ static void ebike_control_motor (void)
   }
 
 
-#if THROTTLE
-
   /* Apply throttle if this feature is enabled by the user and motor temperature limit function is not enabled */
   if (configuration_variables.ui8_temperature_limit_feature_enabled == 2)
   {
     /* Throttle */
     apply_throttle (ui8_throttle, &ui8_startup_enable, &ui8_adc_battery_target_current);
   }
-
-#endif
 
   
   /* Walk assist / Cruise */
@@ -816,24 +807,20 @@ static void apply_speed_limit (uint16_t ui16_speed_x10, uint8_t ui8_max_speed, u
 }
 
 
-#if THROTTLE
-
-  static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
-  {
-    uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_throttle_value,
-                                       (uint32_t) 0,
-                                       (uint32_t) 255,
-                                       (uint32_t) 0,
-                                       (uint32_t) ui8_adc_battery_current_max));
-                                       
-    // set target current
-    *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
-
-    // enable motor assistance because user is using throttle
-    if (*ui8_target_current) { *ui8_motor_enable = 1; }
-  }
+static void apply_throttle (uint8_t ui8_throttle_value, uint8_t *ui8_motor_enable, uint8_t *ui8_target_current)
+{
+  uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_throttle_value,
+                                     (uint32_t) 0,
+                                     (uint32_t) 255,
+                                     (uint32_t) 0,
+                                     (uint32_t) ui8_adc_battery_current_max));
+                                     
+  // set target current
+  *ui8_target_current = ui8_max (*ui8_target_current, ui8_temp);
   
-#endif
+  // enable motor assistance because user is using throttle
+  if (*ui8_target_current) { *ui8_motor_enable = 1; }
+}
 
 
 static void apply_temperature_limiting (uint8_t *ui8_target_current)
@@ -1149,20 +1136,12 @@ static void torque_sensor_read (void)
 
 static void throttle_read (void)
 {
-#if THROTTLE
-
   // map value from 0 up to 255
-  ui8_throttle =  (uint8_t) (map (  UI8_ADC_THROTTLE,
-                                    (uint8_t) ADC_THROTTLE_MIN_VALUE,
-                                    (uint8_t) ADC_THROTTLE_MAX_VALUE,
-                                    (uint8_t) 0,
-                                    (uint8_t) 255));
-                  
-#else
-  
-  ui8_throttle = 0;
-  
-#endif
+  ui8_throttle =  (uint8_t) (map (UI8_ADC_THROTTLE,
+                                 (uint8_t) ADC_THROTTLE_MIN_VALUE,
+                                 (uint8_t) ADC_THROTTLE_MAX_VALUE,
+                                 (uint8_t) 0,
+                                 (uint8_t) 255));
 }
 
 
