@@ -175,7 +175,6 @@ void lcd_execute_menu_config_submenu_cruise (void);
 void lcd_execute_menu_config_main_screen_setup (void);
 void lcd_execute_menu_config_submenu_motor_startup_power_boost (void);
 void lcd_execute_menu_config_submenu_motor_temperature (void);
-void lcd_execute_menu_config_submenu_lcd ();
 void lcd_execute_menu_config_submenu_offroad_mode (void);
 void lcd_execute_menu_config_submenu_various (void);
 void lcd_execute_menu_config_submenu_technical (void);
@@ -364,7 +363,7 @@ void lcd_execute_menu_config (void)
     }
 
     // advance on submenu if button_onoff_click_event
-    advance_on_submenu (&ui8_lcd_menu_config_submenu_number, 13); // 13 sub menus, case 0 -> case 12
+    advance_on_submenu (&ui8_lcd_menu_config_submenu_number, 12); // 12 sub menus, case 0 -> case 11
 
     // check if we should enter a submenu
     if (buttons_get_up_click_event () || buttons_get_down_click_event ())
@@ -423,18 +422,14 @@ void lcd_execute_menu_config (void)
       break;
 
       case 9:
-        lcd_execute_menu_config_submenu_lcd ();
-      break;
-
-      case 10:
         lcd_execute_menu_config_submenu_offroad_mode ();
       break;
 
-      case 11:
+      case 10:
         lcd_execute_menu_config_submenu_various ();
       break;
 
-      case 12:
+      case 11:
         lcd_execute_menu_config_submenu_technical ();
       break;  
 
@@ -462,9 +457,10 @@ void lcd_execute_menu_config (void)
 void lcd_execute_menu_config_submenu_wheel_config(void)
 {
   var_number_t lcd_var_number;
+  uint32_t ui32_temp;
 
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 3);
+  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 8);
   
   switch(ui8_lcd_menu_config_submenu_state)
   {
@@ -547,6 +543,137 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
       lcd_configurations_print_number(&lcd_var_number);
     
     break;
+    
+    // set odometer
+    case 3:
+
+      if (configuration_variables.ui8_units_type)
+      {
+        // imperial
+        ui32_temp = (uint32_t) (((float) configuration_variables.ui32_odometer_x10) / 1.6);
+
+        lcd_var_number.p_var_number = &ui32_temp;
+        lcd_var_number.ui8_size = 32;
+        lcd_var_number.ui8_decimal_digit = 1;
+        lcd_var_number.ui32_max_value = 4294967295; // needs to be 1.6 times smaller than metric max value
+        lcd_var_number.ui32_min_value = 0;
+        lcd_var_number.ui32_increment_step = 35;
+        lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+        lcd_configurations_print_number(&lcd_var_number);
+        
+        // convert imperial distance back to metric and save
+        configuration_variables.ui32_odometer_x10 = (uint16_t) (((float) ui32_temp) * 1.6);
+        
+        lcd_enable_odo_symbol(1);
+        lcd_enable_mil_symbol(1);
+      }
+      else
+      {
+        // metric
+        lcd_var_number.p_var_number = &configuration_variables.ui32_odometer_x10;
+        lcd_var_number.ui8_size = 32;
+        lcd_var_number.ui8_decimal_digit = 1;
+        lcd_var_number.ui32_max_value = 4294967295;
+        lcd_var_number.ui32_min_value = 0;
+        lcd_var_number.ui32_increment_step = 35;
+        lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+        lcd_configurations_print_number(&lcd_var_number);
+
+        lcd_enable_odo_symbol(1);
+        lcd_enable_km_symbol(1);
+      }
+      
+    break;
+    
+    // backlight off brightness
+    case 4:
+    
+      ui32_temp = configuration_variables.ui8_lcd_backlight_off_brightness * 5;
+      
+      lcd_var_number.p_var_number = &ui32_temp;
+      lcd_var_number.ui8_size = 32;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 100;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 5;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      // convert percentage value
+      configuration_variables.ui8_lcd_backlight_off_brightness = ui32_temp / 5;
+      
+      // show user the chosen backlight brightness, looks nicer this way
+      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness);
+      
+    break;
+
+    // backlight on brightness
+    case 5:
+    
+      ui32_temp = configuration_variables.ui8_lcd_backlight_on_brightness * 5;
+      
+      lcd_var_number.p_var_number = &ui32_temp;
+      lcd_var_number.ui8_size = 32;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 100;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 5;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      // convert percentage value
+      configuration_variables.ui8_lcd_backlight_on_brightness = ui32_temp / 5;
+      
+      // show user the chosen backlight brightness, looks nicer this way
+      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness);
+      
+    break;
+
+    // auto power off
+    case 6:
+    
+      lcd_var_number.p_var_number = &configuration_variables.ui8_lcd_power_off_time_minutes;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 255;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      // set backlight brightness after user has configured settings, looks nicer this way
+      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
+      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
+      
+    break;
+
+    // reset to defaults
+    case 7:
+    
+      lcd_var_number.p_var_number = &ui8_reset_to_defaults_counter;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 10;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+
+      if (ui8_reset_to_defaults_counter > 9)
+      {
+        // erase saved EEPROM values (all values will be set to defaults)
+        eeprom_erase_key_value ();
+
+        // Turn off LCD
+        lcd_power_off (0);
+      }
+      
+    break;
+  }
+  
+  if (ui8_lcd_menu_config_submenu_state > 1)
+  {
+    lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
   }
 }
 
@@ -1126,94 +1253,6 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
 }
 
 
-void lcd_execute_menu_config_submenu_lcd (void)
-{
-  var_number_t lcd_var_number;
-  uint8_t ui8_temp;
-  
-  // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
-
-  switch (ui8_lcd_menu_config_submenu_state)
-  {
-    // backlight off brightness
-    case 0:
-      ui8_temp = configuration_variables.ui8_lcd_backlight_off_brightness * 5;
-      lcd_var_number.p_var_number = &ui8_temp;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 100;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 5;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      configuration_variables.ui8_lcd_backlight_off_brightness = ui8_temp / 5;
-      
-      // show user the chosen backlight brightness, looks nicer this way
-      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness);
-    break;
-
-    // backlight on brightness
-    case 1:
-      ui8_temp = configuration_variables.ui8_lcd_backlight_on_brightness * 5;
-      lcd_var_number.p_var_number = &ui8_temp;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 100;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 5;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      configuration_variables.ui8_lcd_backlight_on_brightness = ui8_temp / 5;
-      
-      // show user the chosen backlight brightness, looks nicer this way
-      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness);
-    break;
-
-    // auto power off
-    case 2:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_lcd_power_off_time_minutes;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 255;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      
-      // set backlight brightness after user has configured settings, looks nicer this way
-      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
-      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
-      
-    break;
-
-    // reset to defaults
-    case 3:
-      lcd_var_number.p_var_number = &ui8_reset_to_defaults_counter;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 10;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-
-      if (ui8_reset_to_defaults_counter > 9)
-      {
-        // erase saved EEPROM values (all values will be set to defaults)
-        eeprom_erase_key_value ();
-
-        // Turn off LCD
-        lcd_power_off (0);
-      }
-      
-    break;
-  }
-
-  lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
-}
-
-
 void lcd_execute_menu_config_submenu_offroad_mode (void)
 {
   var_number_t lcd_var_number;
@@ -1299,11 +1338,10 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
 void lcd_execute_menu_config_submenu_various (void)
 {
   var_number_t lcd_var_number;
-  uint32_t ui32_odometer_x10;
   //uint16_t ui16_temp;                                                                        NO PROGRAM SPACE FOR THIS
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1367,46 +1405,6 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-    break;
-  
-    // set odometer
-    case 3:
-      ui32_odometer_x10 = configuration_variables.ui32_odometer_x10;
-
-      if (configuration_variables.ui8_units_type)
-      {
-        // imperial
-        ui32_odometer_x10 = (uint16_t) (((float) ui32_odometer_x10) / 1.6);
-
-        lcd_var_number.p_var_number = &ui32_odometer_x10;
-        lcd_var_number.ui8_size = 32;
-        lcd_var_number.ui8_decimal_digit = 1;
-        lcd_var_number.ui32_max_value = 4294967295; // needs to be 1.6 times smaller than metric max value
-        lcd_var_number.ui32_min_value = 0;
-        lcd_var_number.ui32_increment_step = 25;
-        lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-        lcd_configurations_print_number(&lcd_var_number);
-        
-        configuration_variables.ui32_odometer_x10 = (uint16_t) (((float) ui32_odometer_x10) * 1.6);
-        lcd_enable_odo_symbol(1);
-        lcd_enable_mil_symbol(1);
-      }
-      else
-      {
-        // metric
-        lcd_var_number.p_var_number = &ui32_odometer_x10;
-        lcd_var_number.ui8_size = 32;
-        lcd_var_number.ui8_decimal_digit = 1;
-        lcd_var_number.ui32_max_value = 4294967295;
-        lcd_var_number.ui32_min_value = 0;
-        lcd_var_number.ui32_increment_step = 25;
-        lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-        lcd_configurations_print_number(&lcd_var_number);
-        
-        configuration_variables.ui32_odometer_x10 = ui32_odometer_x10;
-        lcd_enable_odo_symbol(1);
-        lcd_enable_km_symbol(1);
-      }
     break;
   }
 

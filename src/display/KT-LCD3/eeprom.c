@@ -509,6 +509,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [100] = p_configuration_variables->ui8_show_wheel_speed_odometer_field;
 }
 
+
 static void eeprom_write_array (uint8_t *p_array, uint8_t ui8_len)
 {
   uint8_t ui8_i;
