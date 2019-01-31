@@ -73,45 +73,38 @@ typedef struct _var_number
   uint8_t ui8_odometer_field;
 } var_number_t;
 
-static uint32_t ui32_battery_voltage_accumulated_x10000 = 0;
-static uint16_t ui16_battery_voltage_filtered_x10;
+static uint32_t   ui32_battery_voltage_accumulated_x10000 = 0;
+static uint16_t   ui16_battery_voltage_filtered_x10;
+static uint16_t   ui16_battery_current_accumulated_x5 = 0;
+static uint16_t   ui16_battery_current_filtered_x5;
+static uint16_t   ui16_battery_power_accumulated = 0;
+static uint16_t   ui16_battery_power_filtered_x50;
+static uint16_t   ui16_battery_power_filtered;
+static uint32_t   ui32_wh_sum_x5 = 0;
+static uint32_t   ui32_wh_sum_counter = 0;
+static uint32_t   ui32_wh_x10 = 0;
+static uint8_t    ui8_config_wh_x10_offset;
+static uint16_t   ui16_battery_soc_watts_hour;
+static uint16_t   ui16_battery_voltage_soc_x10;
+static uint32_t   ui32_pedal_torque_accumulated = 0;
+static uint16_t   ui16_pedal_torque_filtered;
+static uint32_t   ui32_pedal_power_accumulated = 0;
+static uint16_t   ui16_pedal_power_filtered;
+static uint16_t   ui16_pedal_cadence_accumulated = 0;
+static uint8_t    ui8_pedal_cadence_filtered;
 
-static uint16_t ui16_battery_current_accumulated_x5 = 0;
-static uint16_t ui16_battery_current_filtered_x5;
+static uint8_t    ui8_motor_controller_init = 1;
+static uint8_t    ui8_lights_state = 0;
 
-static uint16_t ui16_battery_power_accumulated = 0;
-static uint16_t ui16_battery_power_filtered_x50;
-static uint16_t ui16_battery_power_filtered;
-
-static uint32_t ui32_wh_sum_x5 = 0;
-static uint32_t ui32_wh_sum_counter = 0;
-static uint32_t ui32_wh_x10 = 0;
-static uint8_t ui8_config_wh_x10_offset;
-
-static uint32_t ui32_pedal_torque_accumulated = 0;
-static uint16_t ui16_pedal_torque_filtered;
-static uint32_t ui32_pedal_power_accumulated = 0;
-static uint16_t ui16_pedal_power_filtered;
-
-static uint16_t ui16_pedal_cadence_accumulated = 0;
-static uint8_t ui8_pedal_cadence_filtered;
-
-static uint8_t ui8_motor_controller_init = 1;
-
-
-static uint8_t ui8_lights_state = 0;
-static uint8_t lcd_lights_symbol = 0;
-
-
-static uint8_t  ui8_lcd_menu = 0;
-static uint8_t  ui8_lcd_menu_config_submenu_state = 0;
-static uint8_t  ui8_lcd_menu_flash_counter = 0;
-static uint16_t ui16_lcd_menu_flash_counter_temperature = 0;
-static uint8_t  ui8_lcd_menu_flash_state;
-static uint8_t  ui8_lcd_menu_flash_state_temperature;
-static uint8_t  ui8_lcd_menu_config_submenu_number = 0;
-static uint8_t  ui8_lcd_menu_config_submenu_active = 0;
-static uint8_t  ui8_odometer_sub_field_state;
+static uint8_t    ui8_lcd_menu = 0;
+static uint8_t    ui8_lcd_menu_config_submenu_state = 0;
+static uint8_t    ui8_lcd_menu_flash_counter = 0;
+static uint16_t   ui16_lcd_menu_flash_counter_temperature = 0;
+static uint8_t    ui8_lcd_menu_flash_state;
+static uint8_t    ui8_lcd_menu_flash_state_temperature;
+static uint8_t    ui8_lcd_menu_config_submenu_number = 0;
+static uint8_t    ui8_lcd_menu_config_submenu_active = 0;
+static uint8_t    ui8_odometer_sub_field_state;
 
 uint8_t   ui8_start_odometer_show_field_number = 0;
 uint8_t   ui8_odometer_show_field_number_counter_0 = 0;
@@ -121,75 +114,55 @@ uint8_t   ui8_odometer_show_field_number = 0;
 uint16_t  ui16_odometer_reset_distance_counter = 0;
 uint8_t   ui8_odometer_reset_distance_counter_state = 1;
 
-
 static uint8_t  ui8_lcd_menu_counter_100ms = 0;
 static uint8_t  ui8_lcd_menu_counter_100ms_state = 0;
-
 static uint8_t  ui8_lcd_menu_counter_500ms = 0;
 static uint8_t  ui8_lcd_menu_counter_500ms_state = 0;
+uint8_t         ui8_lcd_power_off_time_counter_minutes = 0;
+static uint16_t ui16_lcd_power_off_time_counter = 0;
 
 static struct_motor_controller_data motor_controller_data;
 static struct_configuration_variables configuration_variables;
 
-static uint16_t ui16_battery_soc_watts_hour;
-static uint16_t ui16_battery_voltage_soc_x10;
-
+static uint8_t ui8_long_click_started = 0;
+static uint8_t ui8_long_click_counter = 0;
 static uint8_t ui8_reset_to_defaults_counter;
-
-uint8_t ui8_lcd_power_off_time_counter_minutes = 0;
-static uint16_t ui16_lcd_power_off_time_counter = 0;
+static volatile uint16_t ui16_timer3_counter = 0;
 
 static uint8_t offroad_mode_assist_symbol_state = 0;
 static uint8_t offroad_mode_assist_symbol_state_blink_counter = 0;
 
-static volatile uint16_t ui16_timer3_counter = 0;
-
-
+// time measurement variables
 static uint16_t   ui16_second_counter = 0;
 static uint16_t   ui16_seconds_since_power_on = 0;
 static uint8_t    ui8_second = 0;
 static uint8_t    ui8_second_TM = 0;
 static uint16_t   ui16_minute_TM = 0;
 
+// wheel measurement variables
 static uint8_t    ui8_average_measured_wheel_speed_x10 = 0;
 static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
-
-static uint8_t ui8_long_click_started = 0;
-static uint8_t ui8_long_click_counter = 0;
-
-
 void low_pass_filter_battery_voltage_current_power (void);
-void lcd_enable_motor_symbol (uint8_t ui8_state);
-void lcd_enable_lights_symbol (uint8_t ui8_state);
-void lcd_enable_cruise_symbol (uint8_t ui8_state);
-void lcd_enable_walk_symbol (uint8_t ui8_state);
-void lcd_enable_km_symbol (uint8_t ui8_state);
-void lcd_enable_mil_symbol (uint8_t ui8_state);
-void lcd_enable_wheel_speed_point_symbol (uint8_t ui8_state);
-void lcd_enable_kmh_symbol (uint8_t ui8_state);
-void lcd_enable_mph_symbol (uint8_t ui8_state);
-void lcd_enable_odo_symbol (uint8_t ui8_state);
-void lcd_enable_avs_symbol (uint8_t ui8_state);
-void lcd_enable_mxs_symbol (uint8_t ui8_state);
 void calc_wh (void);
 void assist_level_state (void);
 void brake (void);
 void odometer (void);
-void odometer_increase_field_state (void);
 void wheel_speed (void);
-void power(void);
-void power_off_management (void);
-uint8_t first_time_management (void);
 void temperature (void);
 void battery_soc (void);
+void calc_battery_soc_watts_hour (void);
+void calc_odometer (void);
 void calc_battery_voltage_soc (void);
 void low_pass_filter_pedal_torque_and_power (void);
 static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
-void lcd_set_backlight_intensity (uint8_t ui8_intensity);
 void walk_assist_state (void);
 void offroad_mode (void);
+void time_measurement (void);
+uint8_t first_time_management (void);
+
+// menu functions
 void lcd_execute_main_screen (void);
 void lcd_execute_menu_config (void);
 void lcd_execute_menu_config_power (void);
@@ -208,30 +181,48 @@ void lcd_execute_menu_config_submenu_various (void);
 void lcd_execute_menu_config_submenu_technical (void);
 void update_menu_flashing_state (void);
 void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
-void calc_battery_soc_watts_hour (void);
-void calc_odometer (void);
+void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
+void odometer_increase_field_state (void);
+
+// LCD functions
 static void automatic_power_off_management (void);
 void lcd_power_off (uint8_t updateDistanceOdo);
-void lcd_enable_vol_symbol (uint8_t ui8_state);
+void lcd_update (void);
+void lcd_clear (void);
+void lcd_set_frame_buffer (void);
+void lcd_set_backlight_intensity (uint8_t ui8_intensity);
+void lcd_print (uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options);
+void lcd_configurations_print_number(var_number_t* p_lcd_var_number);
+void power(void);
+void power_off_management (void);
+
+// lcd symbols
 void lcd_enable_w_symbol (uint8_t ui8_state);
-void lcd_enable_odometer_point_symbol (uint8_t ui8_state);
-void lcd_enable_brake_symbol (uint8_t ui8_state);
-void lcd_enable_assist_symbol (uint8_t ui8_state);
-void lcd_enable_battery_power_1_symbol (uint8_t ui8_state);
-void lcd_enable_temperature_1_symbol (uint8_t ui8_state);
+void lcd_enable_vol_symbol (uint8_t ui8_state);
+void lcd_enable_km_symbol (uint8_t ui8_state);
+void lcd_enable_mil_symbol (uint8_t ui8_state);
 void lcd_enable_kmh_symbol (uint8_t ui8_state);
-void lcd_enable_wheel_speed_point_symbol (uint8_t ui8_state);
-void lcd_enable_temperature_degrees_symbol (uint8_t ui8_state);
+void lcd_enable_mph_symbol (uint8_t ui8_state);
+void lcd_enable_odo_symbol (uint8_t ui8_state);
+void lcd_enable_avs_symbol (uint8_t ui8_state);
+void lcd_enable_mxs_symbol (uint8_t ui8_state);
+void lcd_enable_walk_symbol (uint8_t ui8_state);
+void lcd_enable_kmh_symbol (uint8_t ui8_state);
 void lcd_enable_dst_symbol (uint8_t ui8_state);
 void lcd_enable_tm_symbol (uint8_t ui8_state);
 void lcd_enable_ttm_symbol (uint8_t ui8_state);
 void lcd_enable_colon_symbol (uint8_t ui8_state);
-void lcd_update (void);
-void lcd_clear (void);
-void lcd_set_frame_buffer (void);
-void lcd_print (uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options);
-void lcd_configurations_print_number(var_number_t* p_lcd_var_number);
-void time_measurement (void);
+void lcd_enable_motor_symbol (uint8_t ui8_state);
+void lcd_enable_brake_symbol (uint8_t ui8_state);
+void lcd_enable_assist_symbol (uint8_t ui8_state);
+void lcd_enable_lights_symbol (uint8_t ui8_state);
+void lcd_enable_cruise_symbol (uint8_t ui8_state);
+void lcd_enable_temperature_1_symbol (uint8_t ui8_state);
+void lcd_enable_odometer_point_symbol (uint8_t ui8_state);
+void lcd_enable_battery_power_1_symbol (uint8_t ui8_state);
+void lcd_enable_wheel_speed_point_symbol (uint8_t ui8_state);
+void lcd_enable_wheel_speed_point_symbol (uint8_t ui8_state);
+void lcd_enable_temperature_degrees_symbol (uint8_t ui8_state);
 
 
 // happens every 1 ms
@@ -372,7 +363,7 @@ void lcd_execute_menu_config (void)
       return;
     }
 
-    // advance on submenu on button_onoff_click_event
+    // advance on submenu if button_onoff_click_event
     advance_on_submenu (&ui8_lcd_menu_config_submenu_number, 13); // 13 sub menus, case 0 -> case 12
 
     // check if we should enter a submenu
@@ -391,8 +382,7 @@ void lcd_execute_menu_config (void)
       lcd_print(ui8_lcd_menu_config_submenu_number, WHEEL_SPEED_FIELD, 0);
     }
   }
-  // ui8_lcd_menu_config_submenu_active == 1
-  else
+  else // ui8_lcd_menu_config_submenu_active == 1
   {
     switch (ui8_lcd_menu_config_submenu_number)
     {
@@ -472,25 +462,16 @@ void lcd_execute_menu_config (void)
 void lcd_execute_menu_config_submenu_wheel_config(void)
 {
   var_number_t lcd_var_number;
-  uint8_t ui8_units_type;
 
   // advance on submenus on button_onoff_click_event
   advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 3);
-  
-  // if user has chosen imperial units
-  if (configuration_variables.ui8_units_type)
-  {
-    // convert max wheel speed in imperial units to metric units and save to ui8_wheel_max_speed
-    configuration_variables.ui8_wheel_max_speed = (uint8_t) (((float) configuration_variables.ui8_wheel_max_speed_imperial) * 1.6);
-  }
   
   switch(ui8_lcd_menu_config_submenu_state)
   {
     // menu to choose units type
     case 0:
 
-      ui8_units_type = configuration_variables.ui8_units_type;
-      lcd_var_number.p_var_number = &ui8_units_type;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_units_type;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 1;
@@ -498,26 +479,19 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
       // clear previous number written on ODOMETER_FIELD
       ui8_lcd_frame_buffer[ui8_lcd_field_offset[ODOMETER_FIELD] - 1] &= NUMBERS_MASK;
 
-      if(ui8_units_type)
+      if (configuration_variables.ui8_units_type == 1 && ui8_lcd_menu_flash_state)
       {
-        configuration_variables.ui8_units_type |= 1;
-        if(ui8_lcd_menu_flash_state)
-        {
-          lcd_enable_mil_symbol(1);
-          lcd_enable_mph_symbol(1);
-        }
+        lcd_enable_mil_symbol(1);
+        lcd_enable_mph_symbol(1);
       }
-      else
+      else if (configuration_variables.ui8_units_type == 0 && ui8_lcd_menu_flash_state)
       {
-        configuration_variables.ui8_units_type &= ~1;
-        if(ui8_lcd_menu_flash_state)
-        {
-          lcd_enable_km_symbol(1);
-          lcd_enable_kmh_symbol(1);
-        }
+        lcd_enable_km_symbol(1);
+        lcd_enable_kmh_symbol(1);
       }
       
     break;
@@ -539,6 +513,9 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
         lcd_configurations_print_number(&lcd_var_number);
         
         lcd_enable_mph_symbol (1);
+        
+        // convert max wheel speed in imperial units to metric units and save to ui8_wheel_max_speed
+        configuration_variables.ui8_wheel_max_speed = (uint8_t) (((float) configuration_variables.ui8_wheel_max_speed_imperial) * 1.6);
       }
       else
       {
@@ -778,10 +755,6 @@ void lcd_execute_menu_config_submenu_walk_assist (void)
     {
       lcd_enable_walk_symbol (1);
     }
-    else
-    {
-      lcd_enable_walk_symbol (0);
-    }
     
     lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
   }
@@ -828,10 +801,6 @@ void lcd_execute_menu_config_submenu_cruise (void)
       if (configuration_variables.ui8_cruise_function_enabled)
       {
         lcd_enable_cruise_symbol (1);
-      }
-      else
-      {
-        lcd_enable_cruise_symbol (0);
       }
       
       lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
@@ -1541,8 +1510,7 @@ uint8_t first_time_management (void)
   uint8_t ui8_status = 0;
 
   // don't update LCD up to we get first communication package from the motor controller
-  if (ui8_motor_controller_init &&
-      (uart_received_first_package () == 0))
+  if (ui8_motor_controller_init && (uart_received_first_package () == 0))
   {
     ui8_status = 1;
   }
@@ -1558,8 +1526,7 @@ uint8_t first_time_management (void)
       configuration_variables.ui32_wh_x10_offset = 0;
     }
 
-    if (configuration_variables.ui8_offroad_feature_enabled && 
-      configuration_variables.ui8_offroad_enabled_on_startup)
+    if (configuration_variables.ui8_offroad_feature_enabled && configuration_variables.ui8_offroad_enabled_on_startup)
     {
       motor_controller_data.ui8_offroad_mode = 1;
     }
@@ -1700,7 +1667,6 @@ void time_measurement (void)
   if (configuration_variables.ui8_time_measurement_field_state)
   {
     lcd_enable_colon_symbol(1);
-    lcd_enable_ttm_symbol(0);
     lcd_enable_tm_symbol(1);
     lcd_print(ui8_second_TM, TIME_SECOND_FIELD, 0);
     lcd_print(ui16_minute_TM, TIME_MINUTE_FIELD, 0);
@@ -1708,7 +1674,6 @@ void time_measurement (void)
   else
   {
     lcd_enable_colon_symbol(1);
-    lcd_enable_tm_symbol(0);
     lcd_enable_ttm_symbol(1);
     lcd_print(configuration_variables.ui8_total_minute_TTM, TIME_SECOND_FIELD, 0);
     lcd_print(configuration_variables.ui16_total_hour_TTM, TIME_MINUTE_FIELD, 0);
@@ -1968,11 +1933,8 @@ void brake (void)
 
 void odometer_increase_field_state (void)
 {
-  // increment odometer field state
-  configuration_variables.ui8_odometer_field_state++;
-  
-  // check if out of bounds
-  if (configuration_variables.ui8_odometer_field_state >= 8) // 8 field states, case 0 -> case 7
+  // increment odometer field state and check if out of bounds
+  if (++configuration_variables.ui8_odometer_field_state > 7) // case 0 -> case 7, 8 odometer field states
   {
     // reset odometer field state
     configuration_variables.ui8_odometer_field_state = 0;
@@ -2030,21 +1992,8 @@ void odometer (void)
           break;
         }
         
-        if (buttons_get_up_click_long_click_event())
-        {
-          buttons_clear_up_click_long_click_event();
-          
-          // increment menu state with one
-          configuration_variables.ui8_odometer_sub_field_state_0++;
-          
-          // check overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state_0 > 2)
-          {
-            configuration_variables.ui8_odometer_sub_field_state_0 = 0;
-          }
-          
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_0, 3);
         
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_0;
@@ -2074,8 +2023,7 @@ void odometer (void)
                 buttons_clear_down_long_click_event();
 
                 // count time, after limit, reset
-                ui16_odometer_reset_distance_counter++;
-                if (ui16_odometer_reset_distance_counter >= 300)
+                if (++ui16_odometer_reset_distance_counter >= 300)
                 {
                   // reset counter
                   ui16_odometer_reset_distance_counter = 0;
@@ -2154,8 +2102,7 @@ void odometer (void)
                 buttons_clear_down_long_click_event();
 
                 // count time, after limit, reset
-                ui16_odometer_reset_distance_counter++;
-                if (ui16_odometer_reset_distance_counter >= 300)
+                if (++ui16_odometer_reset_distance_counter >= 300)
                 {
                   // reset counter
                   ui16_odometer_reset_distance_counter = 0;
@@ -2241,8 +2188,7 @@ void odometer (void)
                 buttons_clear_down_long_click_event();
 
                 // count time, after limit, reset
-                ui16_odometer_reset_distance_counter++;
-                if (ui16_odometer_reset_distance_counter >= 300)
+                if (++ui16_odometer_reset_distance_counter >= 300)
                 {
                   // reset counter
                   ui16_odometer_reset_distance_counter = 0;
@@ -2321,21 +2267,8 @@ void odometer (void)
           break;
         }
 
-        if (buttons_get_up_click_long_click_event ())
-        {
-          buttons_clear_up_click_long_click_event ();
-          
-          // increment menu state with one
-          configuration_variables.ui8_odometer_sub_field_state_1++;
-          
-          // check if overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state_1 > 1)
-          {
-            configuration_variables.ui8_odometer_sub_field_state_1 = 0;
-          }
-
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_1, 2);
         
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_1;
@@ -2367,21 +2300,8 @@ void odometer (void)
           break;
         }
       
-        if (buttons_get_up_click_long_click_event ())
-        {
-          buttons_clear_up_click_long_click_event ();
-          
-          // increment menu state with one
-          configuration_variables.ui8_odometer_sub_field_state_2++;
-          
-          // check overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state_2 > 1)
-          {
-            configuration_variables.ui8_odometer_sub_field_state_2 = 0;
-          }
-
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_2, 2);
         
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_2;
@@ -2414,21 +2334,8 @@ void odometer (void)
           break;
         }
         
-        if (buttons_get_up_click_long_click_event ())
-        {
-          buttons_clear_up_click_long_click_event ();
-          
-          // increment sub menu state with one
-          configuration_variables.ui8_odometer_sub_field_state_3++;
-          
-          // check if overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state_3 > 2)
-          {
-            configuration_variables.ui8_odometer_sub_field_state_3 = 0;
-          }
-
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_3, 3);
         
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_3;
@@ -2465,12 +2372,8 @@ void odometer (void)
           break;
         }
         
-        if (buttons_get_up_click_long_click_event ())
-        {
-          buttons_clear_up_click_long_click_event ();
-          
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_4, 1);
         
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_4;
@@ -2491,21 +2394,8 @@ void odometer (void)
           break;
         }
         
-        if (buttons_get_up_click_long_click_event ())
-        {
-          buttons_clear_up_click_long_click_event ();
-          
-          // increment menu state with one
-          configuration_variables.ui8_odometer_sub_field_state_5++;
-          
-          // check overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state_5 > 1)
-          {
-            configuration_variables.ui8_odometer_sub_field_state_5 = 0;
-          }
-
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_5, 2);
 
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_5;
@@ -2535,9 +2425,7 @@ void odometer (void)
                 buttons_clear_down_long_click_event();
 
                 // count time, after limit, reset
-                ui16_odometer_reset_distance_counter++;
-                
-                if (ui16_odometer_reset_distance_counter >= 300)
+                if (++ui16_odometer_reset_distance_counter >= 300)
                 {
                   // reset counter
                   ui16_odometer_reset_distance_counter = 0;
@@ -2592,9 +2480,7 @@ void odometer (void)
                 buttons_clear_down_long_click_event();
 
                 // count time, after limit, reset
-                ui16_odometer_reset_distance_counter++;
-                
-                if (ui16_odometer_reset_distance_counter >= 300)
+                if (++ui16_odometer_reset_distance_counter >= 300)
                 {
                   // reset counter
                   ui16_odometer_reset_distance_counter = 0;
@@ -2641,21 +2527,8 @@ void odometer (void)
           break;
         }
         
-        if (buttons_get_up_click_long_click_event ())
-        {
-          buttons_clear_up_click_long_click_event ();
-          
-          // increment menu state with one
-          configuration_variables.ui8_odometer_sub_field_state_6++;
-          
-          // check overflow, if true -> reset to first menu state
-          if (configuration_variables.ui8_odometer_sub_field_state_6 > 2)
-          {
-            configuration_variables.ui8_odometer_sub_field_state_6 = 0;
-          }
-
-          odometer_start_show_field_number ();
-        }
+        // advance sub field on click-up-click-long-up button event
+        advance_on_subfield (&configuration_variables.ui8_odometer_sub_field_state_6, 3);
         
         // set for flashing of sub field state number
         ui8_odometer_sub_field_state = configuration_variables.ui8_odometer_sub_field_state_6;
@@ -2726,9 +2599,7 @@ void odometer (void)
                 buttons_clear_down_long_click_event();
 
                 // count time, after limit, reset
-                ui16_odometer_reset_distance_counter++;
-                
-                if (ui16_odometer_reset_distance_counter >= 300)
+                if (++ui16_odometer_reset_distance_counter >= 300)
                 {
                   // reset counter
                   ui16_odometer_reset_distance_counter = 0;
@@ -2810,14 +2681,12 @@ void odometer (void)
     if (ui8_start_odometer_show_field_number)
     {
       // for flashing
-      ui8_odometer_show_field_number_counter_0++;
-      if (ui8_odometer_show_field_number_counter_0 >= 40)
+      if (++ui8_odometer_show_field_number_counter_0 >= 40)
       {
         ui8_odometer_show_field_number_counter_0 = 0;
 
         // time limit for flashing
-        ui8_odometer_show_field_number_counter_1++;
-        if (ui8_odometer_show_field_number_counter_1 >= 5)
+        if (++ui8_odometer_show_field_number_counter_1 >= 5)
         {
           ui8_odometer_show_field_number_counter_0 = 0;
           ui8_odometer_show_field_number_counter_1 = 0;
@@ -3428,7 +3297,7 @@ void calc_wh (void)
     ui32_wh_sum_counter++;
   }
 
-  // calc at 1s rate
+  // calc at 1 s rate
   if (ui8_1s_timmer_counter++ >= 10)
   {
     ui8_1s_timmer_counter = 0;
@@ -3475,22 +3344,18 @@ static void automatic_power_off_management (void)
     if ((motor_controller_data.ui16_wheel_speed_x10 > 0) ||   // wheel speed > 0
         (motor_controller_data.ui8_battery_current_x5 > 0) || // battery current > 0
         (motor_controller_data.ui8_braking) ||                // braking
-        buttons_get_events ())                                 // any button active
+        buttons_get_events ())                                // any button active
     {
       ui16_lcd_power_off_time_counter = 0;
       ui8_lcd_power_off_time_counter_minutes = 0;
     }
 
-    // increment the automatic power off minutes counter
-    ui16_lcd_power_off_time_counter++;
-
-    // check if we should power off the LCD
-    if (ui16_lcd_power_off_time_counter >= (100 * 60)) // 1 minute passed
+    // increment the automatic power off minutes counter and check if we should power off the LCD
+    if (++ui16_lcd_power_off_time_counter >= (100 * 60)) // 1 minute passed
     {
       ui16_lcd_power_off_time_counter = 0;
 
-      ui8_lcd_power_off_time_counter_minutes++;
-      if (ui8_lcd_power_off_time_counter_minutes >= configuration_variables.ui8_lcd_power_off_time_minutes)
+      if (++ui8_lcd_power_off_time_counter_minutes >= configuration_variables.ui8_lcd_power_off_time_minutes)
       {
         lcd_power_off (1);
       }
@@ -3546,9 +3411,9 @@ void update_menu_flashing_state(void)
   // ***************************************************************************************************
   
   // For flashing on menus
-  if(ui8_lcd_menu_flash_counter == 0)
+  if (ui8_lcd_menu_flash_counter == 0)
   {
-    if(ui8_lcd_menu_flash_state)
+    if (ui8_lcd_menu_flash_state)
     {
       ui8_lcd_menu_flash_state = 0;
       ui8_lcd_menu_flash_counter = 20;
@@ -3641,6 +3506,20 @@ void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 }
 
 
+void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
+{
+  // if click up - click long up event
+  if (buttons_get_up_click_long_click_event ())
+  {
+    // clear button event
+    buttons_clear_up_click_long_click_event ();
+    
+    *ui8_p_state = (*ui8_p_state + 1) % ui8_state_max_number;
+    
+    odometer_start_show_field_number ();
+  }
+}
+
 void calc_battery_soc_watts_hour(void)
 {
   uint32_t ui32_temp;
@@ -3688,7 +3567,7 @@ void lcd_power_off (uint8_t updateDistanceOdo)
     
     // save variables in EEPROM
     eeprom_write_variables ();
-  } 
+  }
 
   // clear LCD so it is clear to user what is happening
   lcd_clear ();
@@ -3729,7 +3608,7 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
     ui8_long_click_started = 1;
   }
 
-  // trigger at ever 100ms if UP/DOWN LONG CLICK
+  // trigger at every 100 ms if UP/DOWN LONG CLICK
   if((ui8_long_click_started == 1) && (buttons_get_up_state() || buttons_get_down_state()))
   {
     ui8_long_click_counter++;
@@ -3800,11 +3679,12 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
   }
 
   // draw only at every ui8_lcd_menu_flash_state -- will flash the number on the LCD
-  if((ui8_lcd_menu_flash_state) || (p_lcd_var_number->ui8_odometer_field == ASSIST_LEVEL_FIELD)) // do not flash on ASSIST_LEVEL_FIELD
+  if(ui8_lcd_menu_flash_state)
   {
     lcd_print(ui32_value, p_lcd_var_number->ui8_odometer_field, p_lcd_var_number->ui8_decimal_digit);
   }
-
+  
+  // clear button events
   buttons_clear_up_click_event();
   buttons_clear_up_click_long_click_event();
   buttons_clear_up_long_click_event();
