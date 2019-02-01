@@ -15,21 +15,20 @@
 #include "lcd.h"
 #include "utils.h"
 
-volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[26];
-volatile uint8_t ui8_rx_counter = 0;
-volatile uint8_t ui8_tx_buffer[11];
-volatile uint8_t ui8_tx_counter = 0;
-volatile uint8_t ui8_i;
-volatile uint8_t ui8_checksum;
-static uint16_t ui16_crc_rx;
-static uint16_t ui16_crc_tx;
-static uint8_t ui8_lcd_variable_id = 0;
-static uint8_t ui8_master_comm_package_id = 0;
-static uint8_t ui8_slave_comm_package_id = 0;
-volatile uint8_t ui8_byte_received;
-volatile uint8_t ui8_state_machine = 0;
-volatile uint8_t ui8_uart_received_first_package = 0;
+volatile uint8_t  ui8_received_package_flag = 0;
+volatile uint8_t  ui8_rx_buffer[26];
+volatile uint8_t  ui8_rx_counter = 0;
+volatile uint8_t  ui8_tx_buffer[11];
+volatile uint8_t  ui8_tx_counter = 0;
+volatile uint8_t  ui8_i;
+static uint16_t   ui16_crc_rx;
+static uint16_t   ui16_crc_tx;
+static uint8_t    ui8_lcd_variable_id = 0;
+static uint8_t    ui8_master_comm_package_id = 0;
+static uint8_t    ui8_slave_comm_package_id = 0;
+volatile uint8_t  ui8_byte_received;
+volatile uint8_t  ui8_state_machine = 0;
+volatile uint8_t  ui8_uart_received_first_package = 0;
 
 void uart2_init (void)
 {
