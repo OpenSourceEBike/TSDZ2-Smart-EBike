@@ -116,7 +116,9 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_SHOW_BATTERY_STATE_ODOMETER_FIELD,                    // 97 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD,                       // 98 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD,                 // 99 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD                       // 100 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD,                      // 100 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD,                      // 101 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD                 // 102 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -350,6 +352,8 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_show_pedal_data_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_PEDAL_DATA_ODOMETER_FIELD);
   p_configuration_variables->ui8_show_time_measurement_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD);
   p_configuration_variables->ui8_show_wheel_speed_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_WHEEL_SPEED_ODOMETER_FIELD);
+  p_configuration_variables->ui8_show_energy_data_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_ENERGY_DATA_ODOMETER_FIELD);
+  p_configuration_variables->ui8_show_motor_temperature_odometer_field = FLASH_ReadByte (ADDRESS_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD);
 }
 
 void eeprom_write_variables (void)
@@ -507,6 +511,8 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [98] = p_configuration_variables->ui8_show_pedal_data_odometer_field;
   ui8_array [99] = p_configuration_variables->ui8_show_time_measurement_odometer_field;
   ui8_array [100] = p_configuration_variables->ui8_show_wheel_speed_odometer_field;
+  ui8_array [101] = p_configuration_variables->ui8_show_energy_data_odometer_field;
+  ui8_array [102] = p_configuration_variables->ui8_show_motor_temperature_odometer_field;
 }
 
 
