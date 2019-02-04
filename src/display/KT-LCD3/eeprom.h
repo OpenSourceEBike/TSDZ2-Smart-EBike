@@ -117,7 +117,9 @@
 #define ADDRESS_SHOW_PEDAL_DATA_ODOMETER_FIELD                              98 + EEPROM_BASE_ADDRESS
 #define ADDRESS_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD                        99 + EEPROM_BASE_ADDRESS
 #define ADDRESS_SHOW_WHEEL_SPEED_ODOMETER_FIELD                             100 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 101
+#define ADDRESS_SHOW_ENERGY_DATA_ODOMETER_FIELD                             101 + EEPROM_BASE_ADDRESS
+#define ADDRESS_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD                       102 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 103
 
 
 

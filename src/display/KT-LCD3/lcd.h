@@ -112,6 +112,8 @@ typedef struct _configuration_variables
   uint8_t ui8_show_pedal_data_odometer_field;
   uint8_t ui8_show_time_measurement_odometer_field;
   uint8_t ui8_show_wheel_speed_odometer_field;
+  uint8_t ui8_show_energy_data_odometer_field;
+  uint8_t ui8_show_motor_temperature_odometer_field;
 } struct_configuration_variables;
 
 

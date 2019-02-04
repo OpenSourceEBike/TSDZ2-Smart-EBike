@@ -192,6 +192,8 @@
 #define DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD                1   // enabled by default
 #define DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD          1   // enabled by default
 #define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               1   // enabled by default
+#define DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD               1   // enabled by default
+#define DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD         1   // enabled by default
 
 
 
