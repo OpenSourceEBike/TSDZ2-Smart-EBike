@@ -131,6 +131,7 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define TIME_SECOND_FIELD      5
 #define TIME_MINUTE_FIELD      6
 
+
 // each digit needs 7 bits to be defined + 1 digit that can be another symbol like a "point"
 #define ASSIST_LEVEL_DIGIT_OFFSET     1 // 8
 #define ODOMETER_DIGIT_OFFSET         6
@@ -139,6 +140,7 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define BATTERY_POWER_DIGIT_OFFSET    10
 #define SECOND_DIGIT_OFFSET           18
 #define MINUTE_DIGIT_OFFSET           20
+
 
 #define NUMBERS_MASK              8
 #define NUMBER_0_MASK             119
@@ -162,7 +164,9 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define NUMBER_8_MASK_INVERTED    247
 #define NUMBER_9_MASK_INVERTED    245
 
+
 // : from timer label ui8_lcd_frame_buffer[23] |= 8
+
 
 void lcd_init (void);
 void lcd_clock (void);
