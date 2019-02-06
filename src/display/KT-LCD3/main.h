@@ -29,7 +29,7 @@
 
 
 // default values for bike wheel parameters
-#define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2   // 26'' wheel: 2050mm perimeter (2 + (8 << 8))
+#define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2   // 26'' wheel: 2050 mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                             8
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50  // 50 kph
 #define DEFAULT_VALUE_MAX_WHEEL_SPEED_IMPERIAL                      20  // 20 mph
@@ -153,7 +153,7 @@
 
 
 // default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50 // 5.0 amps per second ramp up
+#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50  // 5.0 amps per second ramp up
 
 
 
@@ -194,6 +194,11 @@
 #define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               1   // enabled by default
 #define DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD               1   // enabled by default
 #define DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD         1   // enabled by default
+
+
+
+// default value for the main screen power menu
+#define DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                1   // enabled by default
 
 
 

@@ -95,7 +95,7 @@ typedef struct _configuration_variables
   uint8_t ui8_offroad_speed_limit;
   uint8_t ui8_offroad_power_limit_enabled;
   uint8_t ui8_offroad_power_limit_div25;
-  uint16_t ui16_odometer_distance_x10;
+  uint16_t ui16_distance_since_power_on_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
   uint8_t ui8_ramp_up_amps_per_second_x10;
@@ -114,6 +114,7 @@ typedef struct _configuration_variables
   uint8_t ui8_show_wheel_speed_odometer_field;
   uint8_t ui8_show_energy_data_odometer_field;
   uint8_t ui8_show_motor_temperature_odometer_field;
+  uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 
 

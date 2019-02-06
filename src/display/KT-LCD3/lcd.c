@@ -84,7 +84,6 @@ static uint16_t   ui16_battery_power_accumulated = 0;
 static uint16_t   ui16_battery_power_filtered_x50;
 static uint16_t   ui16_battery_power_filtered;
 static uint32_t   ui32_wh_sum_x5 = 0;
-static uint32_t   ui32_wh_sum_counter = 0;
 static uint32_t   ui32_wh_x10 = 0;
 static uint8_t    ui8_config_wh_x10_offset;
 static uint16_t   ui16_battery_soc_watts_hour;
@@ -109,13 +108,13 @@ static uint8_t    ui8_lcd_menu_config_submenu_number = 0;
 static uint8_t    ui8_lcd_menu_config_submenu_active = 0;
 static uint8_t    ui8_odometer_sub_field_state;
 
-uint8_t   ui8_start_odometer_show_field_number = 0;
-uint8_t   ui8_odometer_show_field_number_counter_0 = 0;
-uint8_t   ui8_odometer_show_field_number_counter_1 = 1;
-uint8_t   ui8_odometer_show_field_number_state = 0;
-uint8_t   ui8_odometer_show_field_number = 0;
-uint16_t  ui16_odometer_reset_distance_counter = 0;
-uint8_t   ui8_odometer_reset_distance_counter_state = 1;
+uint8_t           ui8_start_odometer_show_field_number = 0;
+uint8_t           ui8_odometer_show_field_number_counter_0 = 0;
+uint8_t           ui8_odometer_show_field_number_counter_1 = 1;
+uint8_t           ui8_odometer_show_field_number_state = 0;
+uint8_t           ui8_odometer_show_field_number = 0;
+uint16_t          ui16_odometer_reset_distance_counter = 0;
+uint8_t           ui8_odometer_reset_distance_counter_state = 1;
 
 static uint8_t    ui8_lcd_menu_counter_100ms = 0;
 static uint8_t    ui8_lcd_menu_counter_100ms_state = 0;
@@ -162,7 +161,7 @@ void wheel_speed (void);
 void temperature (void);
 void battery_soc (void);
 void calc_battery_soc_watts_hour (void);
-void calc_odometer (void);
+void calc_distance (void);
 void calc_battery_voltage_soc (void);
 void low_pass_filter_pedal_torque_and_power (void);
 static void low_pass_filter_pedal_cadence (void);
@@ -199,7 +198,7 @@ void odometer_increase_field_state (void);
 
 // LCD functions
 static void automatic_power_off_management (void);
-void lcd_power_off (uint8_t updateDistanceOdo);
+void lcd_power_off (uint8_t SaveToEEPROM);
 void lcd_update (void);
 void lcd_clear (void);
 void lcd_set_frame_buffer (void);
@@ -251,7 +250,7 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
   {
     ui8_100ms_timmer_counter = 0;
 
-    // must be called every 100ms
+    // must be called every 100 ms
     calc_wh();
   }
   
@@ -278,10 +277,13 @@ uint16_t get_timer3_counter(void)
 
 void lcd_clock (void)
 {
-  lcd_clear (); // start by clear LCD
+  // clear the screen
+  lcd_clear ();
+  
+  // check if start up
   if (first_time_management ())
     return;
-
+  
   update_menu_flashing_state ();
 
   // enter menu configurations: UP + DOWN click event
@@ -291,11 +293,14 @@ void lcd_clock (void)
     ui8_lcd_menu = 1;
   }
   
-  // enter menu configuration power: ONOFF + UP click event
-  if (!configuration_variables.ui8_offroad_feature_enabled && buttons_get_onoff_state () && buttons_get_up_state ())
+  // enter power menu if enabled: ONOFF + UP click event
+  if (!configuration_variables.ui8_offroad_feature_enabled && configuration_variables.ui8_main_screen_power_menu_enabled)
   {
-    buttons_clear_all_events ();
-    ui8_lcd_menu = 2;
+    if (buttons_get_onoff_state () && buttons_get_up_state ())
+    {
+      buttons_clear_all_events ();
+      ui8_lcd_menu = 2;
+    }
   }
   
   calc_battery_soc_watts_hour ();
@@ -329,7 +334,7 @@ void lcd_clock (void)
   }
 
   calc_battery_voltage_soc ();
-  calc_odometer ();
+  calc_distance ();
   automatic_power_off_management ();
 
   // clear the buttons events
@@ -816,9 +821,8 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
         configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
       }
       
-      // keep reseting this values
+      // keep reseting these values
       ui32_wh_sum_x5 = 0;
-      ui32_wh_sum_counter = 0;
       ui32_wh_x10 = 0;
 
       lcd_var_number.p_var_number = &configuration_variables.ui32_wh_x10_offset;
@@ -1033,7 +1037,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
   var_number_t lcd_var_number;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 9);
+  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 10);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1132,9 +1136,21 @@ void lcd_execute_menu_config_main_screen_setup (void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
     break;
+
+    // enable/disable main screen power menu
+    case 8:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_main_screen_power_menu_enabled;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
     
     // temperature field setup
-    case 8:
+    case 9:
       lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_field_state;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1378,10 +1394,10 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
 void lcd_execute_menu_config_submenu_various (void)
 {
   var_number_t lcd_var_number;
-  //uint16_t ui16_temp;                                                                        NO PROGRAM SPACE FOR THIS
+  uint16_t ui16_temp;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 3);
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1397,12 +1413,12 @@ void lcd_execute_menu_config_submenu_various (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
     
-/*     // motor power limit                                                                     NO PROGRAM SPACE FOR THIS
+    // motor power limit
     case 1:
       ui16_temp = ((uint16_t) configuration_variables.ui8_target_max_battery_power_div25) * 25;
       lcd_var_number.p_var_number = &ui16_temp;
       lcd_var_number.ui8_size = 16;
-      lcd_var_number.ui8_decimal_digit = 1; // need to be for BATTERY_POWER_FIELD
+      lcd_var_number.ui8_decimal_digit = 1; // needs to be for BATTERY_POWER_FIELD
       lcd_var_number.ui32_max_value = 1900;
       lcd_var_number.ui32_min_value = 0;
 
@@ -1421,10 +1437,10 @@ void lcd_execute_menu_config_submenu_various (void)
       
       lcd_enable_w_symbol (1);
       lcd_enable_motor_symbol (1);
-    break; */
+    break;
   
     // ramp up, amps per second
-    case 1:
+    case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_ramp_up_amps_per_second_x10;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 1;
@@ -1436,7 +1452,7 @@ void lcd_execute_menu_config_submenu_various (void)
     break;
     
     // motor assistance startup without pedal rotation
-    case 2:
+    case 3:
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1502,10 +1518,10 @@ void lcd_execute_menu_config_submenu_technical (void)
 
 void lcd_execute_menu_config_power (void)
 {
-  // because this click envent can happen and will block the detection of button_onoff_long_click_event
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
-
+  
+  // because this click envent can happen and will block the detection of button_onoff_long_click_event
   buttons_clear_onoff_click_event ();
 
   // leave this menu with a button_onoff_long_click
@@ -1521,7 +1537,7 @@ void lcd_execute_menu_config_power (void)
   ui16_temp = ((uint16_t) configuration_variables.ui8_target_max_battery_power_div25) * 25;
   lcd_var_number.p_var_number = &ui16_temp;
   lcd_var_number.ui8_size = 16;
-  lcd_var_number.ui8_decimal_digit = 1; // need to be for BATTERY_POWER_FIELD
+  lcd_var_number.ui8_decimal_digit = 1; // needs to be for BATTERY_POWER_FIELD
   lcd_var_number.ui32_max_value = 1900;
   lcd_var_number.ui32_min_value = 0;
 
@@ -1568,7 +1584,7 @@ uint8_t first_time_management (void)
     {
       motor_controller_data.ui8_offroad_mode = 1;
     }
-  }  
+  }
 
   return ui8_status;
 }
@@ -1576,7 +1592,7 @@ uint8_t first_time_management (void)
 
 void power_off_management (void)
 {
-  // turn off
+  // power off system
   if (buttons_get_onoff_long_click_event ()) { lcd_power_off (1); }
 }
 
@@ -1626,7 +1642,7 @@ void temperature (void)
         lcd_print (ui8_pedal_cadence_filtered, TEMPERATURE_FIELD, 1);
       break;
 /*       
-      // average wheel speed                                                                       NO PROGRAM SPACE FOR THIS
+      // average wheel speed since power on                                                                       NO PROGRAM SPACE FOR THIS
       case 6:
         // check in what unit of measurement to display average wheel speed
         if (configuration_variables.ui8_units_type)
@@ -1721,19 +1737,26 @@ void time_measurement (void)
 
 void energy_data (void)
 {
-  // calculate average watt-hour consumption per distance traveled, since power on. Check if distance is zero to avoid zero division
-  if (configuration_variables.ui16_odometer_distance_x10 == 0)
+  // calculate average watt-hour consumption per distance traveled, since power on. Check to avoid zero division
+  if (configuration_variables.ui16_distance_since_power_on_x10 == 0)
   {
     ui16_average_energy_consumption_since_power_on_x10 = 0;
   }
   else
   {
-    // divide watt-hours with distance and save in variable
-    ui16_average_energy_consumption_since_power_on_x10 = (ui32_wh_since_power_on_x10 * 10) / configuration_variables.ui16_odometer_distance_x10; // multiply numerator with 10 to retain decimal 
+    // divide watt-hours with distance since power on and save in variable
+    ui16_average_energy_consumption_since_power_on_x10 = (ui32_wh_since_power_on_x10 * 10) / configuration_variables.ui16_distance_since_power_on_x10; // multiply numerator with 10 to retain decimal 
   }
   
-  // calculate estimated range since power on by dividing average consumption with watt-hours remaining
-  ui16_estimated_range_since_power_on_x10 = (configuration_variables.ui32_wh_x10_100_percent - ui32_wh_x10) / ui16_average_energy_consumption_since_power_on_x10;
+  // calculate estimated range since power on by dividing watt-hours remaining with average consumption. Check to avoid zero division
+  if (ui16_average_energy_consumption_since_power_on_x10 == 0)
+  {
+    ui16_estimated_range_since_power_on_x10 = 10000;
+  }
+  else
+  {
+    ui16_estimated_range_since_power_on_x10 = ((configuration_variables.ui32_wh_x10_100_percent - ui32_wh_x10) * 10) / ui16_average_energy_consumption_since_power_on_x10; // multiply numerator with 10 to retain decimal 
+  }
   
   // limit estimated range depending on unit of measurement, looks nicer this way
   if (configuration_variables.ui8_units_type)
@@ -2031,8 +2054,6 @@ uint8_t reset_variable_check (void)
   {
     if (buttons_get_down_state ())
     {
-      ui8_odometer_reset_distance_counter_state = 1;
-      
       // clear the button events
       buttons_clear_down_click_event();
       buttons_clear_down_long_click_event();
@@ -2075,8 +2096,6 @@ uint8_t reset_variable_check (void)
 
 void odometer (void)
 {
-  uint32_t ui32_temp;
-  
   // if user clicks onoff click event
   if (buttons_get_onoff_click_event ())
   {
@@ -2125,39 +2144,27 @@ void odometer (void)
           // trip distance
           case 0:
           
-            // pre calculation
-            ui32_temp = configuration_variables.ui32_trip_x10 + ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-
             switch (reset_variable_check ())
             {
               // display trip distance
               case 0:
-                // display trip distance in either imperial or metric units
                 if (configuration_variables.ui8_units_type)
                 {
                   // imperial units
-                  lcd_print (((float) ui32_temp / 1.6), ODOMETER_FIELD, 1);
+                  lcd_print (((float) configuration_variables.ui32_trip_x10 / 1.6), ODOMETER_FIELD, 1);
                   lcd_enable_mil_symbol (1);
                 }
                 else
                 {
                   // metric units
-                  lcd_print (ui32_temp, ODOMETER_FIELD, 1);
+                  lcd_print (configuration_variables.ui32_trip_x10, ODOMETER_FIELD, 1);
                   lcd_enable_km_symbol (1);
                 }
               break;
               
               // reset trip distance
               case 1:
-                // reset trip
                 configuration_variables.ui32_trip_x10 = 0;
-            
-                // add and save traveled distance to odometer variable before resetting distance
-                configuration_variables.ui32_odometer_x10 += ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-                eeprom_write_variables ();
-                  
-                // reset distance - set the offset to current value, that is the way to zero our always incrementing value (up to motor controller power reset)
-                motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
               break;
               
               // display nothing
@@ -2170,46 +2177,42 @@ void odometer (void)
           // distance since power on
           case 1:
           
-              // display distance in either imperial or metric units
-              if (configuration_variables.ui8_units_type)
-              {
-                // imperial units
-                lcd_print(((float) configuration_variables.ui16_odometer_distance_x10 / 1.6), ODOMETER_FIELD, 1);
-                // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work when we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
-                lcd_enable_mil_symbol (1);
-              }
-              else
-              {
-                // metric units
-                lcd_print((uint32_t) configuration_variables.ui16_odometer_distance_x10, ODOMETER_FIELD, 1);
-                // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work when we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
-                lcd_enable_km_symbol (1);
-              }
-              
+            // display distance since power on in either imperial or metric units
+            if (configuration_variables.ui8_units_type)
+            {
+              // imperial units
+              lcd_print(((float) configuration_variables.ui16_distance_since_power_on_x10 / 1.6), ODOMETER_FIELD, 1);
+              // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work when we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
+              lcd_enable_mil_symbol (1);
+            }
+            else
+            {
+              // metric units
+              lcd_print((uint32_t) configuration_variables.ui16_distance_since_power_on_x10, ODOMETER_FIELD, 1);
+              // lcd_enable_dst_symbol (1); TODO: this fails, the symbol just work when we set it to 1 AND speed field number is equal or higher than 10.0. Seems the 3rd digit at left is needed.
+              lcd_enable_km_symbol (1);
+            }
+            
           break;
 
           // odometer
           case 2:
           
-            // pre calculation
-            ui32_temp = configuration_variables.ui32_odometer_x10 + ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-            
             switch (reset_variable_check ())
             {
               // display odometer distance
               case 0:
-                // display odometer distance in either imperial or metric units
                 if (configuration_variables.ui8_units_type)
                 {
                   // imperial units
-                  lcd_print(((float) ui32_temp / 1.6), ODOMETER_FIELD, 1);
+                  lcd_print(((float) configuration_variables.ui32_odometer_x10 / 1.6), ODOMETER_FIELD, 1);
                   lcd_enable_odo_symbol (1);
                   lcd_enable_mil_symbol (1);
                 }
                 else
                 {
                   // metric units
-                  lcd_print(ui32_temp, ODOMETER_FIELD, 1);
+                  lcd_print(configuration_variables.ui32_odometer_x10, ODOMETER_FIELD, 1);
                   lcd_enable_odo_symbol (1);
                   lcd_enable_km_symbol (1);
                 }
@@ -2217,15 +2220,7 @@ void odometer (void)
               
               // reset odometer distance
               case 1:
-                // reset odometer
                 configuration_variables.ui32_odometer_x10 = 0;
-                
-                // add and save traveled distance to trip variable before resetting distance
-                configuration_variables.ui32_trip_x10 += ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-                eeprom_write_variables ();
-                
-                // reset distance - set the offset to current value, that is the way to zero our always incrementing value (up to motor controller power reset)
-                motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
               break;
               
               // display nothing
@@ -2293,8 +2288,8 @@ void odometer (void)
         {
           // voltage value
           case 0:
-          lcd_print(ui16_battery_voltage_filtered_x10, ODOMETER_FIELD, 1);
-          lcd_enable_vol_symbol (1);
+            lcd_print(ui16_battery_voltage_filtered_x10, ODOMETER_FIELD, 1);
+            lcd_enable_vol_symbol (1);
           break;
 
           // current value
@@ -2381,7 +2376,7 @@ void odometer (void)
 
           case 1:
             
-            // check if user has disabled function for battery capacity
+            // check if user has disabled battery capacity function
             if (configuration_variables.ui8_show_numeric_battery_soc == 0)
             {
               // function not enabled, go to next sub menu
@@ -2395,11 +2390,13 @@ void odometer (void)
             {
               // imperial units
               lcd_print((float) ui16_estimated_range_since_power_on_x10 / 1.6, ODOMETER_FIELD, 1);
+              lcd_enable_mil_symbol (1);
             }
             else
             {
               // metric units
               lcd_print(ui16_estimated_range_since_power_on_x10, ODOMETER_FIELD, 1);
+              lcd_enable_km_symbol (1);
             }
             
           break;
@@ -2671,7 +2668,7 @@ void wheel_speed (void)
   }
   
   // calculate average wheel speed since power on in km/s
-  float average_measured_wheel_speed_x10_temp = (float) configuration_variables.ui16_odometer_distance_x10 / (float) ui16_seconds_since_power_on;
+  float average_measured_wheel_speed_x10_temp = (float) configuration_variables.ui16_distance_since_power_on_x10 / (float) ui16_seconds_since_power_on;
   
   // convert to km/h
   average_measured_wheel_speed_x10_temp = average_measured_wheel_speed_x10_temp * 3600;
@@ -3234,49 +3231,41 @@ static void low_pass_filter_pedal_cadence (void)
 
 void calc_wh (void)
 {
-  static uint8_t ui8_1s_timmer_counter;
-
   if (ui16_battery_power_filtered_x50 > 0)
   {
     ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
-    ui32_wh_sum_counter++;
   }
-
-  // calc at 1 s rate
-  if (ui8_1s_timmer_counter++ >= 10)
-  {
-    ui8_1s_timmer_counter = 0;
-
-    // avoid  zero divisison
-    if (ui32_wh_sum_counter != 0)
-    {
-      ui32_wh_since_power_on_x10 = ui32_wh_sum_counter / 36;
-      ui32_wh_since_power_on_x10 = (ui32_wh_since_power_on_x10 * (ui32_wh_sum_x5 / ui32_wh_sum_counter)) / 500;
-    }
-
-    ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_wh_since_power_on_x10;
-  }
+  
+  // calculate watt-hours since power on
+  ui32_wh_since_power_on_x10 = ui32_wh_sum_x5 / 18000; //  wh_sum_x5  /  (3600 * 5)
+  
+  // calculate watt-hours since last full charge
+  ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_wh_since_power_on_x10;
 }
 
 
-void calc_odometer (void)
+void calc_distance (void)
 {
   uint32_t uint32_temp;
-  static uint8_t ui8_1s_timmer_counter;
-
-  // calc at 1s rate
-  if (ui8_1s_timmer_counter++ >= 100)
+  
+  uint32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
+  
+  // if traveled distance is more than 100 meters update all distance variables
+  if (uint32_temp > 100000)
   {
-    ui8_1s_timmer_counter = 0;
-
-    uint32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset)
-        * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
-    // avoid division by 0
-    if (uint32_temp > 100000) { uint32_temp /= 100000;}  // milimmeters to 0.1kms
-    else { uint32_temp = 0; }
-
-    // now store the value in a global variable
-    configuration_variables.ui16_odometer_distance_x10 = (uint16_t) uint32_temp;
+    uint32_temp /= 100000; // convert milimmeters to 0.1 km
+    
+    // Update distance since power on
+    configuration_variables.ui16_distance_since_power_on_x10 += (uint16_t) uint32_temp;
+    
+    // Update odometer
+    configuration_variables.ui32_odometer_x10 += uint32_temp;
+    
+    // Update trip distance
+    configuration_variables.ui32_trip_x10 += uint32_temp;
+    
+    // set the offset to current value to reset the always incrementing value (up to motor controller power reset)
+    motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
   }
 }
 
@@ -3497,20 +3486,14 @@ void calc_battery_soc_watts_hour(void)
 }
 
 
-void lcd_power_off (uint8_t updateDistanceOdo)
+void lcd_power_off (uint8_t SaveToEEPROM)
 {
-  if (updateDistanceOdo)
+  if (SaveToEEPROM)
   {
     // add used watt hour to watt hour variable 
     configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
     
-    // add the traveled distance to odometer variable
-    configuration_variables.ui32_odometer_x10 += ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-    
-    // add the traveled distance to trip variable
-    configuration_variables.ui32_trip_x10 += ((uint32_t) configuration_variables.ui16_odometer_distance_x10);
-    
-    // save variables in EEPROM
+    // save variables to EEPROM
     eeprom_write_variables ();
   }
 
