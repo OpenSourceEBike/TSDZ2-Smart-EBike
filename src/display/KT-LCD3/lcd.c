@@ -83,7 +83,7 @@ static uint16_t   ui16_battery_current_filtered_x5;
 static uint16_t   ui16_battery_power_accumulated = 0;
 static uint16_t   ui16_battery_power_filtered_x50;
 static uint16_t   ui16_battery_power_filtered;
-static uint32_t   ui32_wh_sum_x5 = 0;
+static volatile uint32_t ui32_wh_sum_x5 = 0;
 static uint32_t   ui32_wh_x10 = 0;
 static uint8_t    ui8_config_wh_x10_offset;
 static uint16_t   ui16_battery_soc_watts_hour;
@@ -133,9 +133,8 @@ static uint8_t    offroad_mode_assist_symbol_state_blink_counter = 0;
 
 
 // time measurement variables
-static uint16_t   ui16_second_counter = 0;
+static volatile uint8_t ui8_second = 0;
 static uint16_t   ui16_seconds_since_power_on = 0;
-static uint8_t    ui8_second = 0;
 static uint8_t    ui8_second_TM = 0;
 static uint16_t   ui16_minute_TM = 0;
 
@@ -209,7 +208,7 @@ void power(void);
 void power_off_management (void);
 
 
-// lcd symbol functions
+// LCD symbol functions
 void lcd_enable_w_symbol (uint8_t ui8_state);
 void lcd_enable_vol_symbol (uint8_t ui8_state);
 void lcd_enable_km_symbol (uint8_t ui8_state);
@@ -244,10 +243,12 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
   ui16_timer3_counter++;
   
   static uint8_t ui8_100ms_timmer_counter;
+  static uint16_t ui16_second_counter;
   
   // calculate watt-hours every 100 ms
-  if (ui8_100ms_timmer_counter++ >= 100)
+  if (++ui8_100ms_timmer_counter >= 100)
   {
+    // reset counter
     ui8_100ms_timmer_counter = 0;
 
     // must be called every 100 ms
@@ -255,7 +256,7 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
   }
   
   // increment second for time measurement 
-  if (ui16_second_counter++ >= 1000)
+  if (++ui16_second_counter >= 1000)
   {
     // reset counter
     ui16_second_counter = 0;
@@ -1737,6 +1738,12 @@ void time_measurement (void)
 
 void energy_data (void)
 {
+  // calculate watt-hours since power on
+  ui32_wh_since_power_on_x10 = ui32_wh_sum_x5 / 18000; //  wh_sum_x5  /  (3600 * 5)
+  
+  // calculate watt-hours since last full charge
+  ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_wh_since_power_on_x10;
+  
   // calculate average watt-hour consumption per distance traveled, since power on. Check to avoid zero division
   if (configuration_variables.ui16_distance_since_power_on_x10 == 0)
   {
@@ -1778,8 +1785,8 @@ void battery_soc(void)
   static uint8_t ui8_battery_state_of_charge;
   uint8_t ui8_battery_cells_number_x10;
 
-  // update battery level value only at every 100ms / 10 times per second and this helps to visual filter the fast changing values
-  if (ui8_timmer_counter++ >= 10)
+  // update battery level value every 100 ms -> 10 times per second. This helps to filter the fast changing values
+  if (++ui8_timmer_counter >= 10)
   {
     ui8_timmer_counter = 0;
 
@@ -2003,7 +2010,7 @@ void offroad_mode (void)
 
     if (motor_controller_data.ui8_offroad_mode == 1) 
     {
-      if (offroad_mode_assist_symbol_state_blink_counter++ > 50)
+      if (++offroad_mode_assist_symbol_state_blink_counter > 50)
       {
         offroad_mode_assist_symbol_state_blink_counter = 0;
         offroad_mode_assist_symbol_state = !offroad_mode_assist_symbol_state;
@@ -3235,12 +3242,6 @@ void calc_wh (void)
   {
     ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
   }
-  
-  // calculate watt-hours since power on
-  ui32_wh_since_power_on_x10 = ui32_wh_sum_x5 / 18000; //  wh_sum_x5  /  (3600 * 5)
-  
-  // calculate watt-hours since last full charge
-  ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_wh_since_power_on_x10;
 }
 
 
@@ -3251,18 +3252,16 @@ void calc_distance (void)
   uint32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
   
   // if traveled distance is more than 100 meters update all distance variables
-  if (uint32_temp > 100000)
+  if (uint32_temp > 100000) // 100000 -> 100000 mm -> 0.1 km
   {
-    uint32_temp /= 100000; // convert milimmeters to 0.1 km
-    
     // Update distance since power on
-    configuration_variables.ui16_distance_since_power_on_x10 += (uint16_t) uint32_temp;
+    configuration_variables.ui16_distance_since_power_on_x10 += 1;
     
     // Update odometer
-    configuration_variables.ui32_odometer_x10 += uint32_temp;
+    configuration_variables.ui32_odometer_x10 += 1;
     
     // Update trip distance
-    configuration_variables.ui32_trip_x10 += uint32_temp;
+    configuration_variables.ui32_trip_x10 += 1;
     
     // set the offset to current value to reset the always incrementing value (up to motor controller power reset)
     motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
@@ -3363,14 +3362,14 @@ void update_menu_flashing_state(void)
   // ***************************************************************************************************
   
   ui8_lcd_menu_counter_100ms_state = 0;
-  if (ui8_lcd_menu_counter_100ms++ > 10)
+  if (++ui8_lcd_menu_counter_100ms > 10)
   {
     ui8_lcd_menu_counter_100ms = 0;
     ui8_lcd_menu_counter_100ms_state = 1;
   }
 
   ui8_lcd_menu_counter_500ms_state = 0;
-  if (ui8_lcd_menu_counter_500ms++ > 50)
+  if (++ui8_lcd_menu_counter_500ms > 50)
   {
     ui8_lcd_menu_counter_500ms = 0;
     ui8_lcd_menu_counter_500ms_state = 1;
@@ -3539,9 +3538,7 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
   // trigger at every 100 ms if UP/DOWN LONG CLICK
   if((ui8_long_click_started == 1) && (buttons_get_up_state() || buttons_get_down_state()))
   {
-    ui8_long_click_counter++;
-
-    if(ui8_long_click_counter >= 10)
+    if(++ui8_long_click_counter >= 10)
     {
       ui8_long_click_counter = 0;
       ui8_long_click_trigger = 1;
