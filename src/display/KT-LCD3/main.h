@@ -9,16 +9,15 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#define EXTI_PORTA_IRQHANDLER 3
-#define EXTI_PORTC_IRQHANDLER 5
-#define EXTI_PORTD_IRQHANDLER 6
-#define EXTI_PORTE_IRQHANDLER 7
-#define TIM1_CAP_COM_IRQHANDLER 12
-#define TIM2_UPD_OVF_TRG_BRK_IRQHANDLER 13
-#define TIM3_UPD_OVF_BRK_IRQHANDLER 15
-#define UART2_IRQHANDLER 21
-#define ADC1_IRQHANDLER 22
-
+#define EXTI_PORTA_IRQHANDLER                     3
+#define EXTI_PORTC_IRQHANDLER                     5
+#define EXTI_PORTD_IRQHANDLER                     6
+#define EXTI_PORTE_IRQHANDLER                     7
+#define TIM1_CAP_COM_IRQHANDLER                   12
+#define TIM2_UPD_OVF_TRG_BRK_IRQHANDLER           13
+#define TIM3_UPD_OVF_BRK_IRQHANDLER               15
+#define UART2_IRQHANDLER                          21
+#define ADC1_IRQHANDLER                           22
 
 
 
@@ -29,7 +28,7 @@
 
 
 // default values for bike wheel parameters
-#define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2   // 26'' wheel: 2050 mm perimeter (2 + (8 << 8))
+#define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2   // 26 inch wheel: 2050 mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                             8
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50  // 50 kph
 #define DEFAULT_VALUE_MAX_WHEEL_SPEED_IMPERIAL                      20  // 20 mph
@@ -107,7 +106,7 @@
 
 // default values for screen parameters
 #define DEFAULT_VALUE_LCD_POWER_OFF_TIME                            15  // 15 minutes, each unit 1 minute
-#define DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS                   16  // 16 = 80%
+#define DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS                   16  // 16 = 80 %
 #define DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS                  1   // 1 = 5%
 
 

@@ -76,11 +76,9 @@ typedef struct _var_number
 static struct_motor_controller_data motor_controller_data;
 static struct_configuration_variables configuration_variables;
 
-static uint32_t   ui32_battery_voltage_accumulated_x10000 = 0;
+
 static uint16_t   ui16_battery_voltage_filtered_x10;
-static uint16_t   ui16_battery_current_accumulated_x5 = 0;
 static uint16_t   ui16_battery_current_filtered_x5;
-static uint16_t   ui16_battery_power_accumulated = 0;
 static uint16_t   ui16_battery_power_filtered_x50;
 static uint16_t   ui16_battery_power_filtered;
 static volatile uint32_t ui32_wh_sum_x5 = 0;
@@ -88,11 +86,8 @@ static uint32_t   ui32_wh_x10 = 0;
 static uint8_t    ui8_config_wh_x10_offset;
 static uint16_t   ui16_battery_soc_watts_hour;
 static uint16_t   ui16_battery_voltage_soc_x10;
-static uint32_t   ui32_pedal_torque_accumulated = 0;
 static uint16_t   ui16_pedal_torque_filtered;
-static uint32_t   ui32_pedal_power_accumulated = 0;
 static uint16_t   ui16_pedal_power_filtered;
-static uint16_t   ui16_pedal_cadence_accumulated = 0;
 static uint8_t    ui8_pedal_cadence_filtered;
 
 static uint8_t    ui8_motor_controller_init = 1;
@@ -123,11 +118,7 @@ static uint8_t    ui8_lcd_menu_counter_500ms_state = 0;
 
 static uint8_t    ui8_long_click_started = 0;
 static uint8_t    ui8_long_click_counter = 0;
-static uint8_t    ui8_reset_to_defaults_counter;
 static volatile uint16_t ui16_timer3_counter = 0;
-
-static uint8_t    offroad_mode_assist_symbol_state = 0;
-static uint8_t    offroad_mode_assist_symbol_state_blink_counter = 0;
 
 
 // time measurement variables
@@ -156,8 +147,8 @@ void odometer (void);
 void wheel_speed (void);
 void temperature (void);
 void battery_soc (void);
-void calc_battery_soc_watts_hour (void);
 void calc_distance (void);
+void calc_battery_soc_watts_hour (void);
 void calc_battery_voltage_soc (void);
 void low_pass_filter_pedal_torque_and_power (void);
 static void low_pass_filter_pedal_cadence (void);
@@ -302,8 +293,6 @@ void lcd_clock (void)
       ui8_lcd_menu = 2;
     }
   }
-  
-  calc_battery_soc_watts_hour ();
 
   switch (ui8_lcd_menu)
   {
@@ -333,6 +322,7 @@ void lcd_clock (void)
     low_pass_filter_pedal_torque_and_power ();
   }
 
+  calc_battery_soc_watts_hour ();
   calc_battery_voltage_soc ();
   calc_distance ();
   automatic_power_off_management ();
@@ -479,6 +469,7 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
 {
   var_number_t lcd_var_number;
   uint32_t ui32_temp;
+  static uint8_t ui8_reset_to_defaults_counter;
 
   // advance on submenus on button_onoff_click_event
   advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 8);
@@ -1954,47 +1945,47 @@ void lights_state (void)
 
 void walk_assist_state (void)
 {
+  static uint8_t ui8_walk_assist_activated;
+  static uint8_t ui8_cruise_activated;
+  
   if (buttons_get_down_long_click_event ())
   {
     // if down button is still pressed
     if (buttons_get_down_state ())
     {
-      // enable walk assist or cruise function depending on speed
-      if (motor_controller_data.ui16_wheel_speed_x10 < 80) // if wheel speed is less than 8.0 km/h (80), enable walk assist
+      // enable walk assist or cruise function depending on speed and if function is enabled, also check if the other function was activetad first
+      if (motor_controller_data.ui16_wheel_speed_x10 < 80 && configuration_variables.ui8_walk_assist_function_enabled && ui8_cruise_activated == 0)
       {
-        // check if walk assist function is enabled
-        if (configuration_variables.ui8_walk_assist_function_enabled)
-        {
-          // enable walk assist function
-          lcd_enable_walk_symbol (1);
-          motor_controller_data.ui8_walk_assist_level = 1;
-        }
-        else
-        {
-          // disable walk assist or cruise function
-          motor_controller_data.ui8_walk_assist_level = 0;
-        }
+        // enable walk assist function because the wheel speed is less than 8.0 km/h (80), the function is enabled and cruise was not activated first
+        lcd_enable_walk_symbol (1);
+        motor_controller_data.ui8_walk_assist_level = 1;
+        
+        // set flag to indicate that walk assist was activated first during this button event
+        ui8_walk_assist_activated = 1;
       }
-      else // if wheel speed is more than 8.0 km/h (80), enable cruise function
+      else if (motor_controller_data.ui16_wheel_speed_x10 > 80 && configuration_variables.ui8_cruise_function_enabled && ui8_walk_assist_activated == 0)
       {
-        // check if cruise function is enabled
-        if (configuration_variables.ui8_cruise_function_enabled)
-        {
-          // enable cruise function
-          lcd_enable_cruise_symbol (1);
-          motor_controller_data.ui8_walk_assist_level = 1;
-        }
-        else
-        {
-          // disable walk assist or cruise function
-          motor_controller_data.ui8_walk_assist_level = 0;
-        }
+        // enable cruise function because the wheel speed is more than 8.0 km/h (80), the function is enabled and walk assist was not activated first
+        lcd_enable_cruise_symbol (1);
+        motor_controller_data.ui8_walk_assist_level = 1;
+        
+        // set flag to indicate that cruise was activated first during this button event
+        ui8_cruise_activated = 1;
+      }
+      else
+      {
+        // disable walk assist or cruise function
+        motor_controller_data.ui8_walk_assist_level = 0;
       }
     }
     else // button not longer pressed
     {
       // disable walk assist or cruise function
       motor_controller_data.ui8_walk_assist_level = 0;
+      
+      // reset flags for walk assist and cruise activated
+      ui8_walk_assist_activated = 0;
+      ui8_cruise_activated = 0;
       
       // clear button long down click event
       buttons_clear_down_long_click_event ();
@@ -2004,12 +1995,19 @@ void walk_assist_state (void)
   {
     // disable walk assist or cruise function
     motor_controller_data.ui8_walk_assist_level = 0;
+    
+    // reset flags for walk assist and cruise activated
+    ui8_walk_assist_activated = 0;
+    ui8_cruise_activated = 0;
   }
 }
 
 
 void offroad_mode (void)
 {
+  static uint8_t offroad_mode_assist_symbol_state;
+  static uint8_t offroad_mode_assist_symbol_state_blink_counter;
+  
   if (configuration_variables.ui8_offroad_feature_enabled) 
   {
     if (buttons_get_onoff_state () && buttons_get_up_state ())
@@ -3153,6 +3151,9 @@ void lcd_enable_colon_symbol (uint8_t ui8_state)
 
 void low_pass_filter_battery_voltage_current_power (void)
 {
+  static uint32_t ui32_battery_voltage_accumulated_x10000;
+  static uint16_t ui16_battery_current_accumulated_x5;
+  
   // low pass filter battery voltage
   ui32_battery_voltage_accumulated_x10000 -= ui32_battery_voltage_accumulated_x10000 >> BATTERY_VOLTAGE_FILTER_COEFFICIENT;
   ui32_battery_voltage_accumulated_x10000 += (uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000;
@@ -3190,6 +3191,9 @@ void low_pass_filter_battery_voltage_current_power (void)
 
 void low_pass_filter_pedal_torque_and_power (void)
 {
+  static uint32_t ui32_pedal_torque_accumulated;
+  static uint32_t ui32_pedal_power_accumulated;
+  
   // low pass filter for pedal torque display
   ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
   ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
@@ -3239,6 +3243,8 @@ void low_pass_filter_pedal_torque_and_power (void)
 
 static void low_pass_filter_pedal_cadence (void)
 {
+  static uint16_t ui16_pedal_cadence_accumulated;
+  
   // low pass filter
   ui16_pedal_cadence_accumulated -= (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
   ui16_pedal_cadence_accumulated += (uint16_t) motor_controller_data.ui8_pedal_cadence;
