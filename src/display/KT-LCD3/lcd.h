@@ -54,7 +54,7 @@ typedef struct _configuration_variables
   uint8_t ui8_units_type;
   uint32_t ui32_wh_x10_offset;
   uint32_t ui32_wh_x10_100_percent;
-  uint8_t ui8_show_numeric_battery_soc;
+  uint8_t ui8_battery_SOC_function_enabled;
   uint8_t ui8_odometer_field_state;
   uint8_t ui8_time_measurement_field_state;
   uint8_t ui8_total_second_TTM;
@@ -114,6 +114,7 @@ typedef struct _configuration_variables
   uint8_t ui8_show_wheel_speed_odometer_field;
   uint8_t ui8_show_energy_data_odometer_field;
   uint8_t ui8_show_motor_temperature_odometer_field;
+  uint8_t ui8_show_battery_SOC_odometer_field;
   uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 

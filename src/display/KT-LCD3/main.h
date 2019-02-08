@@ -44,7 +44,7 @@
 // default values for battery capacity variables
 #define DEFAULT_VALUE_WH_OFFSET                                     0
 #define DEFAULT_VALUE_HW_X10_100_PERCENT                            0
-#define DEAFULT_VALUE_SHOW_NUMERIC_BATTERY_SOC                      0
+#define DEAFULT_VALUE_BATTERY_SOC_FUNCTION_ENABLED                  0
 
 
 
@@ -194,7 +194,7 @@
 #define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               1   // enabled by default
 #define DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD               1   // enabled by default
 #define DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD         1   // enabled by default
-
+#define DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD               1   // enabled by default
 
 
 // default value for the main screen power menu

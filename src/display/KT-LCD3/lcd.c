@@ -152,7 +152,6 @@ static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
 // system functions
 void low_pass_filter_battery_voltage_current_power (void);
-void calc_wh (void);
 void assist_level_state (void);
 void brake (void);
 void odometer (void);
@@ -250,9 +249,12 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
   {
     // reset counter
     ui8_100ms_timmer_counter = 0;
-
-    // must be called every 100 ms
-    calc_wh();
+    
+    // measure consumed watt-hours
+    if (ui16_battery_power_filtered_x50 > 0)
+    {
+      ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
+    }
   }
   
   // increment second for time measurement 
@@ -779,7 +781,7 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
   {
     // menu to enable/disable show of numeric watt-hour value and type of representation
     case 0:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_show_numeric_battery_soc;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_battery_SOC_function_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 2;
@@ -1038,7 +1040,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
   var_number_t lcd_var_number;
   
   // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 10);
+  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 11);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1052,10 +1054,22 @@ void lcd_execute_menu_config_main_screen_setup (void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-    break;
-
-    // enable/disable show of battery voltage or current in odometer field
+    break; 
+    
+    // enable/disable show of battery SOC data in odometer field
     case 1:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_show_battery_SOC_odometer_field;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    // enable/disable show of battery voltage or current in odometer field
+    case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_battery_state_odometer_field;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1067,7 +1081,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
     
     // enable/disable show of pedal data in odometer field
-    case 2:
+    case 3:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_pedal_data_odometer_field;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1079,7 +1093,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
     
     // enable/disable show of energy data in odometer field
-    case 3:
+    case 4:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_energy_data_odometer_field;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1091,7 +1105,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
     
     // enable/disable show of time measurement in odometer field
-    case 4:
+    case 5:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_time_measurement_odometer_field;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1103,7 +1117,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
     
     // enable/disable show of wheel speed in odometer field
-    case 5:
+    case 6:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_wheel_speed_odometer_field;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1115,7 +1129,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
 
     // enable/disable show of motor temperature in odometer field
-    case 6:
+    case 7:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_motor_temperature_odometer_field;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1127,7 +1141,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
 
     // enable/disable show of cruise function set target speed
-    case 7:
+    case 8:
       lcd_var_number.p_var_number = &configuration_variables.ui8_show_cruise_function_set_target_speed;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1139,7 +1153,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
 
     // enable/disable main screen power menu
-    case 8:
+    case 9:
       lcd_var_number.p_var_number = &configuration_variables.ui8_main_screen_power_menu_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1151,7 +1165,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
     break;
     
     // temperature field setup
-    case 9:
+    case 10:
       lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_field_state;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1760,6 +1774,10 @@ void energy_data (void)
   {
     ui16_estimated_range_since_power_on_x10 = 10000;
   }
+  else if (ui32_wh_x10 > configuration_variables.ui32_wh_x10_100_percent)
+  {
+    ui16_estimated_range_since_power_on_x10 = 0;
+  }
   else
   {
     ui16_estimated_range_since_power_on_x10 = ((configuration_variables.ui32_wh_x10_100_percent - ui32_wh_x10) * 10) / ui16_average_energy_consumption_since_power_on_x10; // multiply numerator with 10 to retain decimal 
@@ -1843,11 +1861,12 @@ void calc_battery_voltage_soc (void)
 {
   uint16_t ui16_fluctuate_battery_voltage_x10;
 
-  // update battery level value only at every 100ms / 10 times per second and this helps to visual filter the fast changing values
+  // update battery level value every 100 ms -> 10 times per second. This helps to filter the fast changing values
   if (ui8_lcd_menu_counter_100ms_state)
   {
-    // calculate flutuate voltage, that depends on the current and battery pack resistance
+    // calculate fluctuate voltage, that depends on the current and battery pack resistance
     ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
+    
     // now add fluctuate voltage value
     ui16_battery_voltage_soc_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
   }
@@ -2244,7 +2263,7 @@ void odometer (void)
       case 1:
       
         // check if user has disabled to show battery state of charge in the odometer field
-        if (configuration_variables.ui8_show_numeric_battery_soc == 0)
+        if (configuration_variables.ui8_battery_SOC_function_enabled == 0 || configuration_variables.ui8_show_battery_SOC_odometer_field == 0)
         {
           // increment odometer field state
           odometer_increase_field_state ();
@@ -2384,7 +2403,7 @@ void odometer (void)
           case 1:
             
             // check if user has disabled battery capacity function
-            if (configuration_variables.ui8_show_numeric_battery_soc == 0)
+            if (configuration_variables.ui8_battery_SOC_function_enabled == 0)
             {
               // function not enabled, go to next sub menu
               configuration_variables.ui8_odometer_sub_field_state_4 = 0;
@@ -3236,15 +3255,6 @@ static void low_pass_filter_pedal_cadence (void)
 }
 
 
-void calc_wh (void)
-{
-  if (ui16_battery_power_filtered_x50 > 0)
-  {
-    ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
-  }
-}
-
-
 void calc_distance (void)
 {
   uint32_t uint32_temp;
@@ -3467,7 +3477,7 @@ void calc_battery_soc_watts_hour(void)
     ui32_temp = 0;
   }
 
-  if (configuration_variables.ui8_show_numeric_battery_soc == 1)
+  if (configuration_variables.ui8_battery_SOC_function_enabled == 1)
   {
     // SOC from 100 to 0 percent (remaining capacity in percent)
     if (ui32_temp > 100)
@@ -3477,7 +3487,7 @@ void calc_battery_soc_watts_hour(void)
     
     ui16_battery_soc_watts_hour = 100 - ui32_temp;
   }
-  else if (configuration_variables.ui8_show_numeric_battery_soc == 2)
+  else if (configuration_variables.ui8_battery_SOC_function_enabled == 2)
   {
     // SOC from 0 to 100 percent (consumed capacity in percent)
     ui16_battery_soc_watts_hour = ui32_temp;
