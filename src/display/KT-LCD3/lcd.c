@@ -120,8 +120,6 @@ static uint8_t    ui8_lcd_menu_counter_100ms = 0;
 static uint8_t    ui8_lcd_menu_counter_100ms_state = 0;
 static uint8_t    ui8_lcd_menu_counter_500ms = 0;
 static uint8_t    ui8_lcd_menu_counter_500ms_state = 0;
-uint8_t           ui8_lcd_power_off_time_counter_minutes = 0;
-static uint16_t   ui16_lcd_power_off_time_counter = 0;
 
 static uint8_t    ui8_long_click_started = 0;
 static uint8_t    ui8_long_click_counter = 0;
@@ -283,9 +281,8 @@ void lcd_clock (void)
   // clear the screen
   lcd_clear ();
   
-  // check if start up
-  if (first_time_management ())
-    return;
+  // check if start up is active
+  if (first_time_management ()) { return; }
   
   update_menu_flashing_state ();
 
@@ -324,13 +321,13 @@ void lcd_clock (void)
   }
 
   low_pass_filter_battery_voltage_current_power ();
-  // filter using only each 500ms values
+  // filter using every 500 ms value
   if (ui8_lcd_menu_counter_500ms_state)
   {
     low_pass_filter_pedal_cadence ();
   }
 
-  // filter using only each 100ms values
+  // filter using every 100 ms value
   if (ui8_lcd_menu_counter_100ms_state)
   {
     low_pass_filter_pedal_torque_and_power ();
@@ -2527,6 +2524,7 @@ void odometer (void)
         {
           // wheel speed
           case 0:
+          
             // set wheel speed field state
             configuration_variables.ui8_wheel_speed_field_state = 0;
             
@@ -2545,6 +2543,7 @@ void odometer (void)
           
           // average wheel speed since power on
           case 1:
+          
             // set wheel speed field state
             configuration_variables.ui8_wheel_speed_field_state = 1;
             
@@ -2566,6 +2565,7 @@ void odometer (void)
           
           // maximum measured wheel speed since power on
           case 2:
+          
             // set wheel speed field state
             configuration_variables.ui8_wheel_speed_field_state = 2;
             
@@ -3257,23 +3257,36 @@ static void low_pass_filter_pedal_cadence (void)
 
 void calc_distance (void)
 {
-  uint32_t uint32_temp;
+  uint32_t ui32_temp;
+  static uint32_t ui32_rest_temp;
   
-  uint32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
+  // calculate how many revolutions since last reset and convert to distance 
+  ui32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
   
-  // if traveled distance is more than 100 meters update all distance variables
-  if (uint32_temp > 100000) // 100000 -> 100000 mm -> 0.1 km
+  // if traveled distance is more than 100 meters update all distance variables and reset
+  if (ui32_temp >= 100000) // 100000 -> 100000 mm -> 0.1 km
   {
-    // Update distance since power on
+    // update all distance variables
     configuration_variables.ui16_distance_since_power_on_x10 += 1;
-    
-    // Update odometer
     configuration_variables.ui32_odometer_x10 += 1;
-    
-    // Update trip distance
     configuration_variables.ui32_trip_x10 += 1;
     
-    // set the offset to current value to reset the always incrementing value (up to motor controller power reset)
+    // calculate and update rest
+    ui32_rest_temp += ui32_temp - 100000;
+    
+    // if rest difference is larger than or equal to 0.1 km, update all distance variables again and reset
+    if (ui32_rest_temp >= 100000)
+    {
+      // update all distance variables again
+      configuration_variables.ui16_distance_since_power_on_x10 += 1;
+      configuration_variables.ui32_odometer_x10 += 1;
+      configuration_variables.ui32_trip_x10 += 1;
+      
+      // reset and update rest
+      ui32_rest_temp -= 100000;
+    }
+   
+    // reset the always incrementing value (up to motor controller power reset) by setting the offset to current value
     motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
   }
 }
@@ -3281,33 +3294,29 @@ void calc_distance (void)
 
 static void automatic_power_off_management (void)
 {
+  static uint16_t ui16_seconds_since_power_on_offset;
+  
+  // check if automatic power off management is configured to any value
   if (configuration_variables.ui8_lcd_power_off_time_minutes != 0)
   {
-    // see if we should reset the automatic power off minutes counter
-    if ((motor_controller_data.ui16_wheel_speed_x10 > 0) ||   // wheel speed > 0
-        (motor_controller_data.ui8_battery_current_x5 > 0) || // battery current > 0
-        (motor_controller_data.ui8_braking) ||                // braking
-        buttons_get_events ())                                // any button active
+    // check if there is system activity
+    if ((motor_controller_data.ui16_wheel_speed_x10 > 0) ||     // wheel speed > 0
+        (motor_controller_data.ui8_battery_current_x5 > 0) ||   // battery current > 0
+        (motor_controller_data.ui8_braking) ||                  // braking
+        (buttons_get_events ()))                                // any button active
     {
-      ui16_lcd_power_off_time_counter = 0;
-      ui8_lcd_power_off_time_counter_minutes = 0;
+      // reset offset
+      ui16_seconds_since_power_on_offset = ui16_seconds_since_power_on;
     }
-
-    // increment the automatic power off minutes counter and check if we should power off the LCD
-    if (++ui16_lcd_power_off_time_counter >= (100 * 60)) // 1 minute passed
+    else 
     {
-      ui16_lcd_power_off_time_counter = 0;
-
-      if (++ui8_lcd_power_off_time_counter_minutes >= configuration_variables.ui8_lcd_power_off_time_minutes)
+      // check if system has been inactive over or equal to the the configured threshold time
+      if (ui16_seconds_since_power_on - ui16_seconds_since_power_on_offset >= (configuration_variables.ui8_lcd_power_off_time_minutes * 60))
       {
+        // power off system and save variables to EEPROM
         lcd_power_off (1);
       }
     }
-  }
-  else
-  {
-    ui16_lcd_power_off_time_counter = 0;
-    ui8_lcd_power_off_time_counter_minutes = 0;
   }
 }
 
@@ -3499,7 +3508,7 @@ void lcd_power_off (uint8_t SaveToEEPROM)
 {
   if (SaveToEEPROM)
   {
-    // add used watt hour to watt hour variable 
+    // add consumed watt-hours to watt-hours variable 
     configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
     
     // save variables to EEPROM
