@@ -144,27 +144,27 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define MINUTE_DIGIT_OFFSET           20
 
 
-#define NUMBERS_MASK              8
-#define NUMBER_0_MASK             119
-#define NUMBER_1_MASK             66  // 2; 7
-#define NUMBER_2_MASK             182 // 3; 2; 8; 6; 5
-#define NUMBER_3_MASK             214
-#define NUMBER_4_MASK             195
-#define NUMBER_5_MASK             213
-#define NUMBER_6_MASK             245
-#define NUMBER_7_MASK             70
-#define NUMBER_8_MASK             247
-#define NUMBER_9_MASK             215
-#define NUMBER_0_MASK_INVERTED    119
-#define NUMBER_1_MASK_INVERTED    33  // 2; 7
-#define NUMBER_2_MASK_INVERTED    182 // 3; 2; 8; 6; 5
-#define NUMBER_3_MASK_INVERTED    181
-#define NUMBER_4_MASK_INVERTED    225
-#define NUMBER_5_MASK_INVERTED    213
-#define NUMBER_6_MASK_INVERTED    215
-#define NUMBER_7_MASK_INVERTED    49
-#define NUMBER_8_MASK_INVERTED    247
-#define NUMBER_9_MASK_INVERTED    245
+#define NUMBERS_MASK                  8
+#define NUMBER_0_MASK                 119
+#define NUMBER_1_MASK                 66  // 2; 7
+#define NUMBER_2_MASK                 182 // 3; 2; 8; 6; 5
+#define NUMBER_3_MASK                 214
+#define NUMBER_4_MASK                 195
+#define NUMBER_5_MASK                 213
+#define NUMBER_6_MASK                 245
+#define NUMBER_7_MASK                 70
+#define NUMBER_8_MASK                 247
+#define NUMBER_9_MASK                 215
+#define NUMBER_0_MASK_INVERTED        119
+#define NUMBER_1_MASK_INVERTED        33  // 2; 7
+#define NUMBER_2_MASK_INVERTED        182 // 3; 2; 8; 6; 5
+#define NUMBER_3_MASK_INVERTED        181
+#define NUMBER_4_MASK_INVERTED        225
+#define NUMBER_5_MASK_INVERTED        213
+#define NUMBER_6_MASK_INVERTED        215
+#define NUMBER_7_MASK_INVERTED        49
+#define NUMBER_8_MASK_INVERTED        247
+#define NUMBER_9_MASK_INVERTED        245
 
 
 // : from timer label ui8_lcd_frame_buffer[23] |= 8

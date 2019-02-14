@@ -148,8 +148,7 @@ void wheel_speed (void);
 void temperature (void);
 void battery_soc (void);
 void calc_distance (void);
-void calc_battery_soc_watts_hour (void);
-void calc_battery_voltage_soc (void);
+void calc_battery_soc (void);
 void low_pass_filter_pedal_torque_and_power (void);
 static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
@@ -322,8 +321,7 @@ void lcd_clock (void)
     low_pass_filter_pedal_torque_and_power ();
   }
 
-  calc_battery_soc_watts_hour ();
-  calc_battery_voltage_soc ();
+  calc_battery_soc ();
   calc_distance ();
   automatic_power_off_management ();
 
@@ -1670,17 +1668,16 @@ void temperature (void)
 
 void time_measurement (void)
 {
-  // increment seconds since power on
-    
-    // increment second
-    ui16_seconds_since_power_on += ui8_second;
+  // update time
+  ui16_seconds_since_power_on += ui8_second;
+  ui8_second_TM += ui8_second;
+  configuration_variables.ui8_total_second_TTM += ui8_second;
   
+  // reset elapsed seconds
+  ui8_second = 0;
   
-  // increment time measurement since power on
+  // time measurement since power on
   
-    // increment second
-    ui8_second_TM += ui8_second;
-    
     // check if overflow
     if (ui8_second_TM >= 60)
     {
@@ -1692,10 +1689,7 @@ void time_measurement (void)
     }
   
   
-  // increment total time measurement since last reset (TTM)
-  
-    // increment second
-    configuration_variables.ui8_total_second_TTM += ui8_second;
+  // total time measurement since last reset (TTM)
     
     // check if overflow
     if (configuration_variables.ui8_total_second_TTM >= 60)
@@ -1717,9 +1711,6 @@ void time_measurement (void)
       }
     }
     
-  // reset elapsed seconds
-  ui8_second = 0;
-  
   // display either TM or TTM
   if (configuration_variables.ui8_time_measurement_field_state)
   {
@@ -1785,7 +1776,7 @@ void energy_data (void)
 }
 
 
-void battery_soc(void)
+void battery_soc (void)
 {
   static uint8_t ui8_timmer_counter;
   static uint8_t ui8_battery_state_of_charge;
@@ -1845,18 +1836,49 @@ void battery_soc(void)
   }
 }
 
-void calc_battery_voltage_soc (void)
+
+void calc_battery_soc (void)
 {
   uint16_t ui16_fluctuate_battery_voltage_x10;
+  uint32_t ui32_temp;
 
   // update battery level value every 100 ms -> 10 times per second. This helps to filter the fast changing values
   if (ui8_lcd_menu_counter_100ms_state)
   {
-    // calculate fluctuate voltage, that depends on the current and battery pack resistance
+    // calculate battery voltage that takes into consideration current and internal battery pack resistance
     ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
     
-    // now add fluctuate voltage value
+    // add voltage value
     ui16_battery_voltage_soc_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
+  }
+
+  // calculate battery SOC percentage
+  ui32_temp = ui32_wh_x10 * 100;
+  
+  if (configuration_variables.ui32_wh_x10_100_percent > 0)
+  {
+    ui32_temp /= configuration_variables.ui32_wh_x10_100_percent;
+  }
+  else
+  {
+    ui32_temp = 0;
+  }
+
+  if (configuration_variables.ui8_battery_SOC_function_enabled == 1) // SOC from 100 to 0 percent (remaining capacity in percent)
+  {
+    // limit percentage to 100
+    if (ui32_temp > 100)
+    {
+      ui32_temp = 100;
+    }
+    
+    // calculate and set remaining percentage
+    ui16_battery_soc_watts_hour = 100 - ui32_temp;
+  }
+  else if (configuration_variables.ui8_battery_SOC_function_enabled == 2) // SOC from 0 to 100 percent (consumed capacity in percent)
+  {
+    // set consumed percentage
+    ui16_battery_soc_watts_hour = ui32_temp;
   }
 }
 
@@ -3264,9 +3286,9 @@ static void low_pass_filter_pedal_cadence (void)
 void calc_distance (void)
 {
   uint32_t ui32_temp;
-  static uint32_t ui32_rest_temp;
+  static uint32_t ui32_temp_rest;
   
-  // calculate how many revolutions since last reset and convert to distance 
+  // calculate how many revolutions since last reset and convert to distance traveled
   ui32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
   
   // if traveled distance is more than 100 meters update all distance variables and reset
@@ -3278,10 +3300,10 @@ void calc_distance (void)
     configuration_variables.ui32_trip_x10 += 1;
     
     // calculate and update rest
-    ui32_rest_temp += ui32_temp - 100000;
+    ui32_temp_rest += ui32_temp - 100000;
     
-    // if rest difference is larger than or equal to 0.1 km, update all distance variables again and reset
-    if (ui32_rest_temp >= 100000)
+    // if rest difference is larger than or equal to 0.1 km, update all distance variables and reset
+    if (ui32_temp_rest >= 100000)
     {
       // update all distance variables again
       configuration_variables.ui16_distance_since_power_on_x10 += 1;
@@ -3289,7 +3311,7 @@ void calc_distance (void)
       configuration_variables.ui32_trip_x10 += 1;
       
       // reset and update rest
-      ui32_rest_temp -= 100000;
+      ui32_temp_rest -= 100000;
     }
    
     // reset the always incrementing value (up to motor controller power reset) by setting the offset to current value
@@ -3316,7 +3338,7 @@ static void automatic_power_off_management (void)
     }
     else 
     {
-      // check if system has been inactive over or equal to the the configured threshold time
+      // check if system has been inactive over or equal to the configured threshold time
       if (ui16_seconds_since_power_on - ui16_seconds_since_power_on_offset >= (configuration_variables.ui8_lcd_power_off_time_minutes * 60))
       {
         // power off system and save variables to EEPROM
@@ -3478,36 +3500,7 @@ void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
   }
 }
 
-void calc_battery_soc_watts_hour(void)
-{
-  uint32_t ui32_temp;
-  ui32_temp = ui32_wh_x10 * 100;
-  
-  if (configuration_variables.ui32_wh_x10_100_percent > 0)
-  {
-    ui32_temp /= configuration_variables.ui32_wh_x10_100_percent;
-  }
-  else
-  {
-    ui32_temp = 0;
-  }
 
-  if (configuration_variables.ui8_battery_SOC_function_enabled == 1)
-  {
-    // SOC from 100 to 0 percent (remaining capacity in percent)
-    if (ui32_temp > 100)
-    {
-      ui32_temp = 100;
-    }
-    
-    ui16_battery_soc_watts_hour = 100 - ui32_temp;
-  }
-  else if (configuration_variables.ui8_battery_SOC_function_enabled == 2)
-  {
-    // SOC from 0 to 100 percent (consumed capacity in percent)
-    ui16_battery_soc_watts_hour = ui32_temp;
-  }
-}
 
 
 void lcd_power_off (uint8_t SaveToEEPROM)

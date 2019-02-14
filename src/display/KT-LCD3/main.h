@@ -47,11 +47,6 @@
 
 
 
-// default value for odometer field
-#define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
-
-
-
 // default values for battery parameters
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                           16  // 16 amps
 #define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      0   // e.g. 20 = 20 * 25 = 500, 0 is disabled
@@ -132,7 +127,8 @@
 
 
 
-// default values for the sub field menus for every odometer field state
+// default values for the odometer field and sub field states
+#define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2                    0
@@ -144,7 +140,7 @@
 
 
 // default values for time measurement
-#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  1   // 1 = display time measurement since last power on (TM)
+#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  1   // 1 = display time measurement since power on (TM)
 #define DEFAULT_VALUE_TOTAL_SECOND_TTM                              0
 #define DEFAULT_VALUE_TOTAL_MINUTE_TTM                              0
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_0                              0
