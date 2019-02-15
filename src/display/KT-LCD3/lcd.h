@@ -54,7 +54,7 @@ typedef struct _configuration_variables
   uint8_t ui8_units_type;
   uint32_t ui32_wh_x10_offset;
   uint32_t ui32_wh_x10_100_percent;
-  uint8_t ui8_show_numeric_battery_soc;
+  uint8_t ui8_battery_SOC_function_enabled;
   uint8_t ui8_odometer_field_state;
   uint8_t ui8_time_measurement_field_state;
   uint8_t ui8_total_second_TTM;
@@ -95,7 +95,7 @@ typedef struct _configuration_variables
   uint8_t ui8_offroad_speed_limit;
   uint8_t ui8_offroad_power_limit_enabled;
   uint8_t ui8_offroad_power_limit_div25;
-  uint16_t ui16_odometer_distance_x10;
+  uint16_t ui16_distance_since_power_on_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
   uint8_t ui8_ramp_up_amps_per_second_x10;
@@ -114,6 +114,8 @@ typedef struct _configuration_variables
   uint8_t ui8_show_wheel_speed_odometer_field;
   uint8_t ui8_show_energy_data_odometer_field;
   uint8_t ui8_show_motor_temperature_odometer_field;
+  uint8_t ui8_show_battery_SOC_odometer_field;
+  uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 
 
@@ -131,6 +133,7 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define TIME_SECOND_FIELD      5
 #define TIME_MINUTE_FIELD      6
 
+
 // each digit needs 7 bits to be defined + 1 digit that can be another symbol like a "point"
 #define ASSIST_LEVEL_DIGIT_OFFSET     1 // 8
 #define ODOMETER_DIGIT_OFFSET         6
@@ -140,35 +143,37 @@ extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 #define SECOND_DIGIT_OFFSET           18
 #define MINUTE_DIGIT_OFFSET           20
 
-#define NUMBERS_MASK              8
-#define NUMBER_0_MASK             119
-#define NUMBER_1_MASK             66  // 2; 7
-#define NUMBER_2_MASK             182 // 3; 2; 8; 6; 5
-#define NUMBER_3_MASK             214
-#define NUMBER_4_MASK             195
-#define NUMBER_5_MASK             213
-#define NUMBER_6_MASK             245
-#define NUMBER_7_MASK             70
-#define NUMBER_8_MASK             247
-#define NUMBER_9_MASK             215
-#define NUMBER_0_MASK_INVERTED    119
-#define NUMBER_1_MASK_INVERTED    33  // 2; 7
-#define NUMBER_2_MASK_INVERTED    182 // 3; 2; 8; 6; 5
-#define NUMBER_3_MASK_INVERTED    181
-#define NUMBER_4_MASK_INVERTED    225
-#define NUMBER_5_MASK_INVERTED    213
-#define NUMBER_6_MASK_INVERTED    215
-#define NUMBER_7_MASK_INVERTED    49
-#define NUMBER_8_MASK_INVERTED    247
-#define NUMBER_9_MASK_INVERTED    245
+
+#define NUMBERS_MASK                  8
+#define NUMBER_0_MASK                 119
+#define NUMBER_1_MASK                 66  // 2; 7
+#define NUMBER_2_MASK                 182 // 3; 2; 8; 6; 5
+#define NUMBER_3_MASK                 214
+#define NUMBER_4_MASK                 195
+#define NUMBER_5_MASK                 213
+#define NUMBER_6_MASK                 245
+#define NUMBER_7_MASK                 70
+#define NUMBER_8_MASK                 247
+#define NUMBER_9_MASK                 215
+#define NUMBER_0_MASK_INVERTED        119
+#define NUMBER_1_MASK_INVERTED        33  // 2; 7
+#define NUMBER_2_MASK_INVERTED        182 // 3; 2; 8; 6; 5
+#define NUMBER_3_MASK_INVERTED        181
+#define NUMBER_4_MASK_INVERTED        225
+#define NUMBER_5_MASK_INVERTED        213
+#define NUMBER_6_MASK_INVERTED        215
+#define NUMBER_7_MASK_INVERTED        49
+#define NUMBER_8_MASK_INVERTED        247
+#define NUMBER_9_MASK_INVERTED        245
+
 
 // : from timer label ui8_lcd_frame_buffer[23] |= 8
+
 
 void lcd_init (void);
 void lcd_clock (void);
 struct_configuration_variables* get_configuration_variables (void);
 struct_motor_controller_data* lcd_get_motor_controller_data (void);
-void automatic_power_off_counter_reset (void);
 uint16_t get_timer3_counter(void);
 
 #endif /* _LCD_H_ */

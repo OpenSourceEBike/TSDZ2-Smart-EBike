@@ -30,7 +30,7 @@
 #define ADDRESS_HW_X10_100_PERCENT_OFFSET_1                                 11 + EEPROM_BASE_ADDRESS
 #define ADDRESS_HW_X10_100_PERCENT_OFFSET_2                                 12 + EEPROM_BASE_ADDRESS
 #define ADDRESS_HW_X10_100_PERCENT_OFFSET_3                                 13 + EEPROM_BASE_ADDRESS
-#define ADDRESS_SHOW_NUMERIC_BATTERY_SOC                                    14 + EEPROM_BASE_ADDRESS
+#define ADDRESS_BATTERY_SOC_FUNCTION_ENABLED                                14 + EEPROM_BASE_ADDRESS
 #define ADDRESS_ODOMETER_FIELD_STATE                                        15 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_MAX_CURRENT                                         16 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TARGET_MAX_BATTERY_POWER                                    17 + EEPROM_BASE_ADDRESS
@@ -119,7 +119,9 @@
 #define ADDRESS_SHOW_WHEEL_SPEED_ODOMETER_FIELD                             100 + EEPROM_BASE_ADDRESS
 #define ADDRESS_SHOW_ENERGY_DATA_ODOMETER_FIELD                             101 + EEPROM_BASE_ADDRESS
 #define ADDRESS_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD                       102 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 103
+#define ADDRESS_SHOW_BATTERY_SOC_ODOMETER_FIELD                             103 + EEPROM_BASE_ADDRESS
+#define ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED                              104 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 105
 
 
 

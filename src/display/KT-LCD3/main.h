@@ -9,16 +9,15 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#define EXTI_PORTA_IRQHANDLER 3
-#define EXTI_PORTC_IRQHANDLER 5
-#define EXTI_PORTD_IRQHANDLER 6
-#define EXTI_PORTE_IRQHANDLER 7
-#define TIM1_CAP_COM_IRQHANDLER 12
-#define TIM2_UPD_OVF_TRG_BRK_IRQHANDLER 13
-#define TIM3_UPD_OVF_BRK_IRQHANDLER 15
-#define UART2_IRQHANDLER 21
-#define ADC1_IRQHANDLER 22
-
+#define EXTI_PORTA_IRQHANDLER                     3
+#define EXTI_PORTC_IRQHANDLER                     5
+#define EXTI_PORTD_IRQHANDLER                     6
+#define EXTI_PORTE_IRQHANDLER                     7
+#define TIM1_CAP_COM_IRQHANDLER                   12
+#define TIM2_UPD_OVF_TRG_BRK_IRQHANDLER           13
+#define TIM3_UPD_OVF_BRK_IRQHANDLER               15
+#define UART2_IRQHANDLER                          21
+#define ADC1_IRQHANDLER                           22
 
 
 
@@ -29,7 +28,7 @@
 
 
 // default values for bike wheel parameters
-#define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2   // 26'' wheel: 2050mm perimeter (2 + (8 << 8))
+#define DEFAULT_VALUE_WHEEL_PERIMETER_0                             2   // 26 inch wheel: 2050 mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                             8
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED                               50  // 50 kph
 #define DEFAULT_VALUE_MAX_WHEEL_SPEED_IMPERIAL                      20  // 20 mph
@@ -44,12 +43,7 @@
 // default values for battery capacity variables
 #define DEFAULT_VALUE_WH_OFFSET                                     0
 #define DEFAULT_VALUE_HW_X10_100_PERCENT                            0
-#define DEAFULT_VALUE_SHOW_NUMERIC_BATTERY_SOC                      0
-
-
-
-// default value for odometer field
-#define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
+#define DEAFULT_VALUE_BATTERY_SOC_FUNCTION_ENABLED                  0
 
 
 
@@ -107,7 +101,7 @@
 
 // default values for screen parameters
 #define DEFAULT_VALUE_LCD_POWER_OFF_TIME                            15  // 15 minutes, each unit 1 minute
-#define DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS                   16  // 16 = 80%
+#define DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS                   16  // 16 = 80 %
 #define DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS                  1   // 1 = 5%
 
 
@@ -133,7 +127,8 @@
 
 
 
-// default values for the sub field menus for every odometer field state
+// default values for the odometer field and sub field states
+#define DEFAULT_VALUE_ODOMETER_FIELD_STATE                          0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1                    0
 #define DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2                    0
@@ -145,7 +140,7 @@
 
 
 // default values for time measurement
-#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  1   // 1 = display time measurement since last power on (TM)
+#define DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE                  1   // 1 = display time measurement since power on (TM)
 #define DEFAULT_VALUE_TOTAL_SECOND_TTM                              0
 #define DEFAULT_VALUE_TOTAL_MINUTE_TTM                              0
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_0                              0
@@ -153,7 +148,7 @@
 
 
 // default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50 // 5.0 amps per second ramp up
+#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50  // 5.0 amps per second ramp up
 
 
 
@@ -194,6 +189,11 @@
 #define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               1   // enabled by default
 #define DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD               1   // enabled by default
 #define DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD         1   // enabled by default
+#define DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD               1   // enabled by default
+
+
+// default value for the main screen power menu
+#define DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                1   // enabled by default
 
 
 
