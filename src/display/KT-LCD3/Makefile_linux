@@ -52,7 +52,7 @@ HEADERS = gpio.h main.h adc.h timers.h lcd.h uart.h eeprom.h ht162.h buttons.h p
 RELS = $(EXTRASRCS:.c=.rel)
 
 INCLUDES = -I$(IDIR) -I. -I../../
-CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
+CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre --opt-code-size
 ELF_FLAGS = --out-fmt-elf --debug
 LIBS     = 
 
