@@ -739,7 +739,21 @@ static void calc_pedal_force_and_torque(void)
   // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
   // formula for angular velocity in degrees: power  =  force  *  rotations per minute  *  2  *  pi / 60
   // (100 * 2 * pi) / 60 = 628
-  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 105);
+//  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 105);
+
+  // NOTE
+  /*
+  Users did report that pedal human power is about 2x more.
+
+  @casainho had the idea to evaluate the torque sensor peak signal (measuring peak signal every pedal rotation) as being a sinewave and so the average would be:
+
+  > [Average value = 0.637 × maximum or peak value, Vpk](https://www.electronics-tutorials.ws/accircuits/average-voltage.html)
+
+  For a quick hack, we can just reduce actual value to 0.637.
+
+  105 * (1/0.637) = 165
+  */
+  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 165);
 }
 
 
