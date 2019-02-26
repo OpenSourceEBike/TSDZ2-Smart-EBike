@@ -3300,7 +3300,7 @@ void calc_distance (void)
     configuration_variables.ui32_trip_x10 += 1;
     
     // calculate and update rest
-    ui32_temp_rest += ui32_temp - 100000;
+    ui32_temp_rest = ui32_temp_rest + (ui32_temp - 100000);
     
     // if rest difference is larger than or equal to 0.1 km, update all distance variables and reset
     if (ui32_temp_rest >= 100000)
@@ -3311,7 +3311,7 @@ void calc_distance (void)
       configuration_variables.ui32_trip_x10 += 1;
       
       // reset and update rest
-      ui32_temp_rest -= 100000;
+      ui32_temp_rest = ui32_temp_rest - 100000;
     }
    
     // reset the always incrementing value (up to motor controller power reset) by setting the offset to current value
