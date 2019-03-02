@@ -46,7 +46,7 @@ void adc_init (void)
   // next code is for "calibrating" the offset value of some ADC channels
 
   // read and discard few samples of ADC, to make sure the next samples are ok
-  for (ui8_i = 0; ui8_i <= 64; ui8_i++)
+  for (ui8_i = 0; ui8_i < 64; ++ui8_i)
   {
     ui16_counter = TIM3_GetCounter () + 10; // delay ~10ms
     while (TIM3_GetCounter () < ui16_counter) ; // delay ~10ms
@@ -56,7 +56,7 @@ void adc_init (void)
 
   // read and average a few values of ADC battery current
   ui16_adc_battery_current_offset = 0;
-  for (ui8_i = 0; ui8_i <= 16; ui8_i++)
+  for (ui8_i = 0; ui8_i < 16; ++ui8_i)
   {
     ui16_counter = TIM3_GetCounter () + 10; // delay ~10ms
     while (TIM3_GetCounter () < ui16_counter) ; // delay ~10ms
@@ -70,7 +70,7 @@ void adc_init (void)
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;
-  for (ui8_i = 0; ui8_i <= 16; ui8_i++)
+  for (ui8_i = 0; ui8_i < 16; ++ui8_i)
   {
     ui16_counter = TIM3_GetCounter () + 10; // delay ~10ms
     while (TIM3_GetCounter () < ui16_counter) ; // delay ~10ms
