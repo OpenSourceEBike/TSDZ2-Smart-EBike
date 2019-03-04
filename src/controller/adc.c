@@ -99,7 +99,19 @@ uint16_t ui16_adc_read_battery_current_10b (void)
   templ = *(uint8_t*)(0x53EB);
   temph = *(uint8_t*)(0x53EA);
 
-  return ((uint16_t) temph) << 2 | ((uint16_t) templ);
+  temph = ((uint16_t) temph) << 2 | ((uint16_t) templ);
+  
+  // we ignore low values temph < 5 to avoid issues with other consumers than the motor
+  // Piecewise linear is better than a step, to avoid limit cycles.
+  // in     --> outr
+  // 0 -  5 --> 0 - 0
+  // 5 - 15 --> 0 - 15
+  if (temph <= 5)
+    return 0;
+  if (temph > 15)
+    return temph;
+  temph -= 5;
+  return temph+(temph>>1);
 }
 
 uint16_t ui16_adc_read_torque_sensor_10b (void)
