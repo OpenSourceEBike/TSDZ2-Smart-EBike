@@ -85,8 +85,8 @@
 // PAS
 #define PAS_NUMBER_MAGNETS                                        20 // see note below
 #define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
-#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  (6250 / PAS_NUMBER_MAGNETS)   // max hard limit to 150RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  (93750 / PAS_NUMBER_MAGNETS)  // min hard limit to 10RPM PAS cadence, see note below
+#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  (6250 / PAS_NUMBER_MAGNETS)   // max hard limit to 150 RPM PAS cadence, see note below
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  (93750 / PAS_NUMBER_MAGNETS)  // min hard limit to 10 RPM PAS cadence, see note below
 
 /*---------------------------------------------------------
   NOTE: regarding PAS
