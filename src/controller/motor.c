@@ -408,6 +408,7 @@ volatile uint8_t ui8_adc_motor_phase_current_offset;
 
 uint8_t ui8_pas_state;
 uint8_t ui8_pas_state_old;
+uint8_t ui8_pas_after_first_pulse = 0;
 uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 
 volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
@@ -816,52 +817,77 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // consider only when PAS signal transition from 0 to 1
     if (ui8_pas_state == 1)
     {
-      // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
-      // also PAS cadence should be zero if rotating backwards
-      if ((ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS)) || (ui8_pas_direction))
+      // keep track of first pulse
+      if(!ui8_pas_after_first_pulse)
       {
+        ui8_pas_after_first_pulse = 1;
         ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
       }
       else
       {
-        ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
-      }
+        // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
+        // also PAS cadence should be zero if rotating backwards
+        if (ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
+        {
+          ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
+        }
+        else
+        {
+          ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
+        }
 
-      ui16_pas_counter = 0;
+        // see the direction
+        if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
+        {
+          ui8_pedaling_forward = 0;
+        }
+        else
+        {
+          ui8_pedaling_forward = 1;
+        }
+      }
     }
     else
     {
-      // PAS cadence should be zero if rotating backwards
-      if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
+      // keep track of first pulse
+      if(ui8_pas_after_first_pulse)
       {
-        ui8_pas_direction = 1;
-        ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-      }
-      else
-      {
-        ui8_pas_direction = 0;
+        // see the direction
+        if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
+        {
+          ui8_pedaling_forward = 0;
+        }
+        else
+        {
+          ui8_pedaling_forward = 1;
+        }
       }
     }
 
-    // filter the torque signal, by saving the max value of each one pedal rotation
-    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
-    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
+    ui16_pas_counter = 0;
 
-    ui8_torque_sensor_pas_signal_change_counter++;
-    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
-    {
-      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
-      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
-      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
-    }
-    else
-    {
-      // store the max value
-      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
-      {
-        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
-      }
-    }
+    // NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
+    // but lets save this because we may want to use it in future
+//    // filter the torque signal, by saving the max value of each one pedal rotation
+//    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
+//    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
+//
+//    ui8_torque_sensor_pas_signal_change_counter++;
+//    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
+//    {
+//      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
+//      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
+//      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
+//    }
+//    else
+//    {
+//      // store the max value
+//      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
+//      {
+//        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
+//      }
+//    }
+
   }
 
   // limit min PAS cadence
@@ -869,7 +895,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
     ui16_pas_counter = 0;
-    ui8_pas_direction = 0;
+    ui8_pas_after_first_pulse = 0;
+    ui8_pedaling_forward = 1;
 
     ui16_torque_sensor_throttle_processed_value = 0;
   }
