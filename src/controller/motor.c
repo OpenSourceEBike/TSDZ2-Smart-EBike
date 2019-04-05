@@ -356,12 +356,12 @@ uint16_t ui16_PWM_cycles_counter_6 = 1;
 uint16_t ui16_PWM_cycles_counter_total = 0xffff;
 
 uint16_t ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
-volatile uint16_t ui16_motor_speed_erps = 0;
+static volatile uint16_t ui16_motor_speed_erps = 0;
 uint8_t ui8_svm_table_index = 0;
 uint8_t ui8_motor_rotor_absolute_angle;
 uint8_t ui8_motor_rotor_angle;
 
-volatile uint8_t ui8_foc_angle = 0;
+volatile uint8_t ui8_g_foc_angle = 0;
 uint8_t ui8_interpolation_angle = 0;
 uint16_t ui16_foc_angle_accumulated = 0;
 
@@ -373,8 +373,8 @@ uint8_t ui8_hall_sensors_state_last = 0;
 
 uint8_t ui8_half_erps_flag = 0;
 
-volatile uint8_t ui8_duty_cycle = 0;
-volatile uint8_t ui8_duty_cycle_target;
+volatile uint8_t ui8_g_duty_cycle = 0;
+static volatile uint8_t ui8_m_duty_cycle_target;
 uint16_t ui16_duty_cycle_ramp_up_inverse_step;
 uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 uint16_t ui16_counter_duty_cycle_ramp_up = 0;
@@ -399,12 +399,12 @@ uint8_t ui8_adc_battery_current_filtered_10b;
 
 
 uint16_t ui16_adc_battery_current_10b;
-volatile uint8_t ui8_adc_battery_current;
-volatile uint8_t ui8_adc_motor_phase_current;
+volatile uint8_t ui8_g_adc_battery_current;
+static volatile uint8_t ui8_adc_motor_phase_current;
 uint8_t ui8_current_controller_counter = 0;
 
 volatile uint8_t ui8_adc_target_motor_phase_max_current;
-volatile uint8_t ui8_adc_motor_phase_current_offset;
+volatile uint8_t ui8_g_adc_motor_phase_current_offset;
 
 uint8_t ui8_pas_state;
 uint8_t ui8_pas_state_old;
@@ -467,12 +467,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ADC1->CR1 |= ADC1_CR1_ADON;
   while (!(ADC1->CSR & ADC1_FLAG_EOC)) ;
   ui16_adc_battery_current_10b = ui16_adc_read_battery_current_10b ();
-  ui8_adc_battery_current = ui16_adc_battery_current_10b >> 2;
+  ui8_g_adc_battery_current = ui16_adc_battery_current_10b >> 2;
 
   // calculate motor phase current ADC value
-  if (ui8_duty_cycle > 0)
+  if (ui8_g_duty_cycle > 0)
   {
-    ui8_adc_motor_phase_current = ((ui16_adc_battery_current_10b << 6) / ((uint16_t) ui8_duty_cycle));
+    ui8_adc_motor_phase_current = ((ui16_adc_battery_current_10b << 6) / ((uint16_t) ui8_g_duty_cycle));
   }
   else
   {
@@ -545,7 +545,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           if (ui8_motor_commutation_type == SINEWAVE_INTERPOLATION_60_DEGREES)
           {
             ui8_motor_commutation_type = BLOCK_COMMUTATION;
-            ui8_foc_angle = 0;
+            ui8_g_foc_angle = 0;
           }
         }
       }
@@ -599,7 +599,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_half_erps_flag = 0;
     ui16_motor_speed_erps = 0;
     ui16_PWM_cycles_counter_total = 0xffff;
-    ui8_foc_angle = 0;
+    ui8_g_foc_angle = 0;
     ui8_motor_commutation_type = BLOCK_COMMUTATION;
     ui8_hall_sensors_state_last = 0; // this way we force execution of hall sensors code next time
 //    if (ui8_ebike_app_state == EBIKE_APP_STATE_MOTOR_RUNNING) { ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP; }
@@ -619,12 +619,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // TODO: verifiy if (ui16_PWM_cycles_counter_6 << 8) do not overflow
     ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations take 4.4us
     ui8_motor_rotor_angle = ui8_motor_rotor_absolute_angle + ui8_interpolation_angle;
-    ui8_svm_table_index = ui8_motor_rotor_angle + ui8_foc_angle;
+    ui8_svm_table_index = ui8_motor_rotor_angle + ui8_g_foc_angle;
   }
   else
 #endif
   {
-    ui8_svm_table_index = ui8_motor_rotor_absolute_angle + ui8_foc_angle;
+    ui8_svm_table_index = ui8_motor_rotor_absolute_angle + ui8_g_foc_angle;
   }
 
   // we need to put phase voltage 90 degrees ahead of rotor position, to get current 90 degrees ahead and have max torque per amp
@@ -651,51 +651,51 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_current_controller_counter = 0;
     
     // if battery max current or phase current is too much, reduce duty cycle
-    if ((ui8_adc_battery_current > ui8_controller_adc_battery_max_current) || (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
+    if ((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) || (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
     {
-      if (ui8_duty_cycle > 0)
+      if (ui8_g_duty_cycle > 0)
       {
         // decrement duty cycle
-        ui8_duty_cycle--;
+        ui8_g_duty_cycle--;
       }
     }
   }
   else if (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
   {
-    if (ui8_duty_cycle > 0)
+    if (ui8_g_duty_cycle > 0)
     {
       // decrement duty cycle
-      ui8_duty_cycle--;
+      ui8_g_duty_cycle--;
     }
   }
   else if ((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
   {
-    if (ui8_duty_cycle > 0)
+    if (ui8_g_duty_cycle > 0)
     {
       // decrement duty cycle
-      ui8_duty_cycle--;
+      ui8_g_duty_cycle--;
     }
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
   {
-    if (ui8_duty_cycle_target > ui8_duty_cycle)
+    if (ui8_m_duty_cycle_target > ui8_g_duty_cycle)
     {
       if (ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_up = 0;
         
         // increment duty cycle
-        ui8_duty_cycle++;
+        ui8_g_duty_cycle++;
       }
     }
-    else if (ui8_duty_cycle_target < ui8_duty_cycle)
+    else if (ui8_m_duty_cycle_target < ui8_g_duty_cycle)
     {
       if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_down = 0;
         
         // decrement duty cycle
-        ui8_duty_cycle--;
+        ui8_g_duty_cycle--;
       }
     }
   }
@@ -713,13 +713,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ui8_temp = ui8_svm_table [(uint8_t) (ui8_svm_table_index + 171 /* 240º */)];
   if (ui8_temp > MIDDLE_PWM_DUTY_CYCLE_MAX)
   {
-    ui16_value = ((uint16_t) (ui8_temp - MIDDLE_PWM_DUTY_CYCLE_MAX)) * ui8_duty_cycle;
+    ui16_value = ((uint16_t) (ui8_temp - MIDDLE_PWM_DUTY_CYCLE_MAX)) * ui8_g_duty_cycle;
     ui8_temp = (uint8_t) (ui16_value >> 8);
     ui8_phase_a_voltage = MIDDLE_PWM_DUTY_CYCLE_MAX + ui8_temp;
   }
   else
   {
-    ui16_value = ((uint16_t) (MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp)) * ui8_duty_cycle;
+    ui16_value = ((uint16_t) (MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp)) * ui8_g_duty_cycle;
     ui8_temp = (uint8_t) (ui16_value >> 8);
     ui8_phase_a_voltage = MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp;
   }
@@ -728,13 +728,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ui8_temp = ui8_svm_table [ui8_svm_table_index];
   if (ui8_temp > MIDDLE_PWM_DUTY_CYCLE_MAX)
   {
-    ui16_value = ((uint16_t) (ui8_temp - MIDDLE_PWM_DUTY_CYCLE_MAX)) * ui8_duty_cycle;
+    ui16_value = ((uint16_t) (ui8_temp - MIDDLE_PWM_DUTY_CYCLE_MAX)) * ui8_g_duty_cycle;
     ui8_temp = (uint8_t) (ui16_value >> 8);
     ui8_phase_b_voltage = MIDDLE_PWM_DUTY_CYCLE_MAX + ui8_temp;
   }
   else
   {
-    ui16_value = ((uint16_t) (MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp)) * ui8_duty_cycle;
+    ui16_value = ((uint16_t) (MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp)) * ui8_g_duty_cycle;
     ui8_temp = (uint8_t) (ui16_value >> 8);
     ui8_phase_b_voltage = MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp;
   }
@@ -743,13 +743,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ui8_temp = ui8_svm_table [(uint8_t) (ui8_svm_table_index + 85 /* 120º */)];
   if (ui8_temp > MIDDLE_PWM_DUTY_CYCLE_MAX)
   {
-    ui16_value = ((uint16_t) (ui8_temp - MIDDLE_PWM_DUTY_CYCLE_MAX)) * ui8_duty_cycle;
+    ui16_value = ((uint16_t) (ui8_temp - MIDDLE_PWM_DUTY_CYCLE_MAX)) * ui8_g_duty_cycle;
     ui8_temp = (uint8_t) (ui16_value >> 8);
     ui8_phase_c_voltage = MIDDLE_PWM_DUTY_CYCLE_MAX + ui8_temp;
   }
   else
   {
-    ui16_value = ((uint16_t) (MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp)) * ui8_duty_cycle;
+    ui16_value = ((uint16_t) (MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp)) * ui8_g_duty_cycle;
     ui8_temp = (uint8_t) (ui16_value >> 8);
     ui8_phase_c_voltage = MIDDLE_PWM_DUTY_CYCLE_MAX - ui8_temp;
   }
@@ -800,7 +800,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ui16_pas_counter++;
 
   // detect PAS signal changes
-  if ((PAS1__PORT->IDR & PAS1__PIN) == 0)
+  if((PAS1__PORT->IDR & PAS1__PIN) == 0)
   {
     ui8_pas_state = 0;
   }
@@ -810,12 +810,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
 
   // PAS signal did change
-  if (ui8_pas_state != ui8_pas_state_old)
+  if(ui8_pas_state != ui8_pas_state_old)
   {
     ui8_pas_state_old = ui8_pas_state;
 
     // consider only when PAS signal transition from 0 to 1
-    if (ui8_pas_state == 1)
+    if(ui8_pas_state == 1)
     {
       // keep track of first pulse
       if(!ui8_pas_after_first_pulse)
@@ -839,11 +839,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         // see the direction
         if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
         {
-          ui8_pedaling_forward = 0;
+          ui8_m_pedaling_direction = 2;
         }
         else
         {
-          ui8_pedaling_forward = 1;
+          ui8_m_pedaling_direction = 1;
         }
       }
     }
@@ -855,11 +855,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         // see the direction
         if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
         {
-          ui8_pedaling_forward = 0;
+          ui8_m_pedaling_direction = 2;
         }
         else
         {
-          ui8_pedaling_forward = 1;
+          ui8_m_pedaling_direction = 1;
         }
       }
     }
@@ -896,9 +896,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
     ui16_pas_counter = 0;
     ui8_pas_after_first_pulse = 0;
-    ui8_pedaling_forward = 1;
+    ui8_m_pedaling_direction = 0;
 
-    ui16_torque_sensor_throttle_processed_value = 0;
+//    ui16_torque_sensor_throttle_processed_value = 0;
   }
 
 
@@ -1021,7 +1021,7 @@ void motor_set_pwm_duty_cycle_target (uint8_t ui8_value)
   // if brake is active, keep duty_cycle target at 0
   if (ui8_motor_controller_state & MOTOR_CONTROLLER_STATE_BRAKE) { ui8_value = 0; }
 
-  ui8_duty_cycle_target = ui8_value;
+  ui8_m_duty_cycle_target = ui8_value;
 }
 
 void motor_set_pwm_duty_cycle_ramp_up_inverse_step (uint16_t ui16_value)
@@ -1036,7 +1036,7 @@ void motor_set_pwm_duty_cycle_ramp_down_inverse_step (uint16_t ui16_value)
 
 void motor_set_phase_current_max (uint8_t ui8_value)
 {
-  ui8_adc_target_motor_phase_max_current = ui8_adc_motor_phase_current_offset + ui8_value;
+  ui8_adc_target_motor_phase_max_current = ui8_g_adc_motor_phase_current_offset + ui8_value;
 }
 
 uint16_t ui16_motor_get_motor_speed_erps (void)
@@ -1085,14 +1085,14 @@ void calc_foc_angle (void)
 
   // calc E phase voltage
   ui16_temp = ui16_adc_battery_voltage_filtered_10b * ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512;
-  ui16_temp = (ui16_temp >> 8) * ui8_duty_cycle;
+  ui16_temp = (ui16_temp >> 8) * ui8_g_duty_cycle;
   ui16_e_phase_voltage = ui16_temp >> 9;
 
   // calc I phase current
-  if (ui8_duty_cycle > 10)
+  if (ui8_g_duty_cycle > 10)
   {
     ui16_temp = ((uint16_t) ui8_adc_battery_current_filtered_10b) * ADC_BATTERY_CURRENT_PER_ADC_STEP_X512;
-    ui32_i_phase_current_x2 = ui16_temp / ui8_duty_cycle;
+    ui32_i_phase_current_x2 = ui16_temp / ui8_g_duty_cycle;
   }
   else
   {
@@ -1156,12 +1156,12 @@ void calc_foc_angle (void)
   ui16_iwl_128 = ui32_temp >> 18;
 
   // calc FOC angle
-  ui8_foc_angle = asin_table (ui16_iwl_128 / ui16_e_phase_voltage);
+  ui8_g_foc_angle = asin_table (ui16_iwl_128 / ui16_e_phase_voltage);
 
   // low pass filter FOC angle
   ui16_foc_angle_accumulated -= ui16_foc_angle_accumulated >> 4;
-  ui16_foc_angle_accumulated += ui8_foc_angle;
-  ui8_foc_angle = ui16_foc_angle_accumulated >> 4;
+  ui16_foc_angle_accumulated += ui8_g_foc_angle;
+  ui8_g_foc_angle = ui16_foc_angle_accumulated >> 4;
 }
 
 // calc asin also converts the final result to degrees
@@ -1196,4 +1196,65 @@ uint16_t motor_get_adc_battery_voltage_filtered_10b (void)
 void motor_set_adc_battery_voltage_cut_off (uint8_t ui8_value)
 {
   ui8_adc_battery_voltage_cut_off = ui8_value;
+}
+
+void motor_enable_pwm(void)
+{
+  TIM1_OC1Init(TIM1_OCMODE_PWM1,
+         TIM1_OUTPUTSTATE_ENABLE,
+         TIM1_OUTPUTNSTATE_ENABLE,
+         255, // initial duty_cycle value
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCIDLESTATE_RESET,
+         TIM1_OCIDLESTATE_SET);
+
+  TIM1_OC2Init(TIM1_OCMODE_PWM1,
+         TIM1_OUTPUTSTATE_ENABLE,
+         TIM1_OUTPUTNSTATE_ENABLE,
+         255, // initial duty_cycle value
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCIDLESTATE_RESET,
+         TIM1_OCIDLESTATE_SET);
+
+  TIM1_OC3Init(TIM1_OCMODE_PWM1,
+         TIM1_OUTPUTSTATE_ENABLE,
+         TIM1_OUTPUTNSTATE_ENABLE,
+         255, // initial duty_cycle value
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCIDLESTATE_RESET,
+         TIM1_OCIDLESTATE_SET);
+}
+
+void motor_disable_pwm(void)
+{
+  TIM1_OC1Init(TIM1_OCMODE_PWM1,
+         TIM1_OUTPUTSTATE_DISABLE,
+         TIM1_OUTPUTNSTATE_DISABLE,
+         255, // initial duty_cycle value
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCIDLESTATE_RESET,
+         TIM1_OCIDLESTATE_SET);
+
+  TIM1_OC2Init(TIM1_OCMODE_PWM1,
+         TIM1_OUTPUTSTATE_DISABLE,
+         TIM1_OUTPUTNSTATE_DISABLE,
+         255, // initial duty_cycle value
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCIDLESTATE_RESET,
+         TIM1_OCIDLESTATE_SET);
+
+  TIM1_OC3Init(TIM1_OCMODE_PWM1,
+         TIM1_OUTPUTSTATE_DISABLE,
+         TIM1_OUTPUTNSTATE_DISABLE,
+         255, // initial duty_cycle value
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCPOLARITY_HIGH,
+         TIM1_OCIDLESTATE_RESET,
+         TIM1_OCIDLESTATE_SET);
+
 }

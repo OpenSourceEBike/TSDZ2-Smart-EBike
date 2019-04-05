@@ -22,16 +22,10 @@
 #define MOTOR_CONTROLLER_STATE_THROTTLE_ERROR		16
 #define MOTOR_CONTROLLER_STATE_MOTOR_BLOCKED		32
 
-extern volatile uint8_t ui8_duty_cycle_target;
-extern volatile uint8_t ui8_duty_cycle;
-extern volatile uint16_t ui16_motor_speed_erps;
-extern volatile uint8_t ui8_adc_motor_phase_current_offset;
-extern volatile uint8_t ui8_adc_motor_phase_current;
-extern volatile uint8_t ui8_pas_1;
-extern volatile uint8_t ui8_pas_2;
-extern volatile uint16_t ui16_torque_sensor_throttle_processed_value;
-extern volatile uint8_t ui8_adc_battery_current;
-extern volatile uint8_t ui8_foc_angle;
+extern volatile uint8_t ui8_g_duty_cycle;
+extern volatile uint8_t ui8_g_adc_motor_phase_current_offset;
+extern volatile uint8_t ui8_g_adc_battery_current;
+extern volatile uint8_t ui8_g_foc_angle;
 
 /***************************************************************************************/
 // Motor interface
@@ -52,6 +46,8 @@ void motor_controller (void);
 uint8_t motor_get_adc_battery_current_filtered_10b (void);
 uint16_t motor_get_adc_battery_voltage_filtered_10b (void);
 void motor_set_adc_battery_voltage_cut_off (uint8_t ui8_value);
+void motor_enable_pwm(void);
+void motor_disable_pwm(void);
 /***************************************************************************************/
 
 #endif /* _MOTOR_H_ */

@@ -40,7 +40,7 @@ void brake_init (void)
 			    EXTI_SENSITIVITY_RISE_FALL);
 }
 
-BitStatus brake_is_set (void)
+BitStatus brake_is_set(void)
 {
   if (GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN) == 0)
     return 1;
