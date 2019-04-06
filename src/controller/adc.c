@@ -80,8 +80,8 @@ void adc_init (void)
   }
   ui16_adc_torque_sensor_offset >>= 4;
 
-  ui8_adc_torque_sensor_min_value = ((uint8_t) ui16_adc_torque_sensor_offset) + ADC_TORQUE_SENSOR_THRESHOLD;
-  ui8_adc_torque_sensor_max_value = ui8_adc_torque_sensor_min_value + 32;
+  ui8_g_adc_torque_sensor_min_value = ((uint8_t) ui16_adc_torque_sensor_offset) + ADC_TORQUE_SENSOR_THRESHOLD;
+  ui8_g_adc_torque_sensor_max_value = ui8_g_adc_torque_sensor_min_value + 32;
 }
 
 static void adc_trigger (void)

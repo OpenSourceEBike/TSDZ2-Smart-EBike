@@ -42,8 +42,8 @@ volatile uint8_t  ui8_throttle = 0;
 volatile uint8_t  ui8_torque_sensor_value1 = 0;
 volatile uint8_t  ui8_torque_sensor = 0;
 volatile uint8_t  ui8_torque_sensor_raw = 0;
-volatile uint8_t  ui8_adc_torque_sensor_min_value;
-volatile uint8_t  ui8_adc_torque_sensor_max_value;
+volatile uint8_t  ui8_g_adc_torque_sensor_min_value;
+volatile uint8_t  ui8_g_adc_torque_sensor_max_value;
 volatile uint8_t  ui8_adc_battery_current_offset;
 volatile uint8_t  ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t  ui8_adc_target_battery_max_current;
@@ -80,7 +80,7 @@ static int16_t    i16_control_output = 0;
 
 // variables for various system functions
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-volatile uint8_t ui8_m_pedaling_direction = 0;
+volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
 uint16_t  ui16_pedal_torque_x10;
 uint16_t  ui16_pedal_power_x10;
@@ -128,7 +128,6 @@ uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 uint16_t ui16_adc_motor_temperatured_accumulated = 0;
 
 uint8_t ui8_m_adc_battery_target_current;
-
 
 // safe tests
 uint8_t safe_tests_state_machine = 0;
@@ -380,7 +379,7 @@ static void ebike_control_motor (void)
     motor_disable_pwm();
   }
 
-  // apply the target current if motor is enable and if not, reset the duty_cycle controller
+  // apply the taapply_walk_assistrget current if motor is enable and if not, reset the duty_cycle controller
   if(ui8_m_motor_enabled)
   {
     // finally set the target battery current to the battery current controller
@@ -397,7 +396,7 @@ static void ebike_control_motor (void)
   If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND 
   wheel speed is below threshold for walk assist function AND brake is not set AND there are no 
   errors detected in function "safe_tests", set the target duty cycle to walk assist target PWM.
-  
+  apply_walk_assist
   If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND 
   wheel speed is above threshold for cruise function AND brake is not set AND there are no 
   errors detected in function "safe_tests", set the target duty cycle to cruise target PWM.
@@ -410,16 +409,10 @@ static void ebike_control_motor (void)
 
   if(ui8_m_adc_battery_target_current == 0 &&
       (!brake_is_set()) &&
-      m_configuration_variables.ui8_walk_assist)
+      m_configuration_variables.ui8_walk_assist &&
+      ui16_wheel_speed_x10 >= 80)
   {
-    if(ui16_wheel_speed_x10 < 80)
-    {
-      motor_set_pwm_duty_cycle_target(ui8_walk_assist_target_PWM);
-    }
-    else
-    {
-      motor_set_pwm_duty_cycle_target(ui8_cruise_target_PWM);
-    }
+    motor_set_pwm_duty_cycle_target(ui8_cruise_target_PWM);
   }
   else if(ui8_m_adc_battery_target_current)
   {
@@ -513,7 +506,7 @@ static void communications_controller (void)
           m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 4) >> 2;
           
           // motor temperature limit function enable/disable
-          m_configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 24) >> 3;
+          m_configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 8) >> 3;
           
           // startup motor boost state
           m_configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [8] & 1);
@@ -615,7 +608,7 @@ static void communications_controller (void)
 #endif
 }
 
-static void uart_send_package (void)
+static void uart_send_package(void)
 {
   uint16_t ui16_temp;
 
@@ -625,20 +618,20 @@ static void uart_send_package (void)
   ui8_tx_buffer[1] = ui8_master_comm_package_id;
   ui8_tx_buffer[2] = ui8_slave_comm_package_id;
 
-  ui16_temp = motor_get_adc_battery_voltage_filtered_10b ();
+  ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
   // adc 10 bits battery voltage
   ui8_tx_buffer[3] = (ui16_temp & 0xff);
   ui8_tx_buffer[4] = ((uint8_t) (ui16_temp >> 4)) & 0x30;
 
   // battery current x5
-  ui8_tx_buffer[5] = (uint8_t) ((float) motor_get_adc_battery_current_filtered_10b () * 0.826);
+  ui8_tx_buffer[5] = (uint8_t) ((float) motor_get_adc_battery_current_filtered_10b() * 0.826);
 
   // wheel speed
   ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
   ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
 
   // brake state
-  if (motor_controller_state_is_set (MOTOR_CONTROLLER_STATE_BRAKE))
+  if(motor_controller_state_is_set(MOTOR_CONTROLLER_STATE_BRAKE))
   {
     ui8_tx_buffer[8] |= 1;
   }
@@ -647,7 +640,7 @@ static void uart_send_package (void)
     ui8_tx_buffer[8] &= ~1;
   }
 
-  if (m_configuration_variables.ui8_temperature_limit_feature_enabled == 1)
+  if(m_configuration_variables.ui8_temperature_limit_feature_enabled == 1)
   {
     ui8_tx_buffer[9] = UI8_ADC_THROTTLE;
     ui8_tx_buffer[10] = m_configuration_variables.ui8_motor_temperature;
@@ -898,25 +891,10 @@ static void apply_temperature_limiting (uint8_t *ui8_target_current)
   }
 }
 
-
-static void apply_walk_assist (uint8_t *ui8_target_current)
+static void apply_walk_assist(uint8_t *ui8_target_current)
 {
-  // set target current to max current
-  *ui8_target_current = ui8_adc_battery_current_max;
-  
-  // check so that walk assist level factor is not too large (too powerful), if it is -> limit walk assist PWM
-  if (m_configuration_variables.ui8_assist_level_factor_x10 > 100)
-  {
-    // limit and set walk assist PWM to some value not too powerful 
-    ui8_walk_assist_target_PWM = 100;
-  }
-  else
-  {
-    // set walk assist PWM from user defined value on display (walk assist level factor)
-    ui8_walk_assist_target_PWM = m_configuration_variables.ui8_assist_level_factor_x10;
-  }
+  *ui8_target_current = m_configuration_variables.ui8_assist_level_factor_x10;
 }
-
 
 static void apply_cruise (uint8_t *ui8_target_current)
 {
@@ -1124,7 +1102,8 @@ static void apply_boost_fade_out (uint8_t *ui8_target_current)
 static void read_pas_cadence (void)
 {
   // cadence in RPM =  60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
-  if (ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS)) 
+  if((ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS)) ||
+      (ui8_g_pedaling_direction != 1)) // if not rotating pedals forward
   { 
     ui8_pas_cadence_rpm = 0; 
   }
@@ -1140,8 +1119,8 @@ static void torque_sensor_read (void)
   // map value from 0 up to 255
   // map value from 0 up to 255
   ui8_torque_sensor_raw = (uint8_t) (map (  UI8_ADC_TORQUE_SENSOR,
-                                            (uint8_t) ui8_adc_torque_sensor_min_value,
-                                            (uint8_t) ui8_adc_torque_sensor_max_value,
+                                            (uint8_t) ui8_g_adc_torque_sensor_min_value,
+                                            (uint8_t) ui8_g_adc_torque_sensor_max_value,
                                             (uint8_t) 0,
                                             (uint8_t) 255));
 
@@ -1252,94 +1231,86 @@ struct_configuration_variables* get_configuration_variables (void)
 static void safe_tests (void)
 {
   // enabe only next state machine if user has startup without pedal rotation
-  if(m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation)
+  if(m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation ||
+      (!brake_is_set()) ||
+      m_configuration_variables.ui8_assist_level_factor_x10 ||
+      !m_configuration_variables.ui8_walk_assist)
   {
-    // the state machine should restart if:
-    if(brake_is_set() || // we hit brakes
-        m_configuration_variables.ui8_assist_level_factor_x10 == 0) // we choose assist power assist level = 0
-    {
-      m_configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enable
-      safe_tests_state_machine = 0;
-    }
-
     switch(safe_tests_state_machine)
     {
       // start when torque sensor or throttle or walk assist / cruise
       case 0:
-      if(ui8_torque_sensor > 12 ||
-          ui8_throttle ||
-          m_configuration_variables.ui8_walk_assist)
-      {
-        safe_tests_state_machine_counter = 0;
-        safe_tests_state_machine = 1;
-        break;
-      }
+        if(ui8_torque_sensor > 12 ||
+            ui8_throttle)
+        {
+          safe_tests_state_machine_counter = 0;
+          safe_tests_state_machine = 1;
+          break;
+        }
       break;
 
       // wait during 5 seconds for bicyle wheel speed > 4km/h, if not we have an error
       case 1:
-      safe_tests_state_machine_counter++;
+        safe_tests_state_machine_counter++;
 
-      // timeout of 5 seconds, not less to be higher than value on torque_sensor_read ()
-      // hopefully, 5 seconds is safe enough value, mosfets may not burn in 5 seconds if ebike wheel is blocked
-      if(safe_tests_state_machine_counter > 50)
-      {
-        m_configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
-        safe_tests_state_machine_counter = 0;
-        safe_tests_state_machine = 2;
-        break;
-      }
+        // timeout of 5 seconds, not less to be higher than value on torque_sensor_read ()
+        // hopefully, 5 seconds is safe enough value, mosfets may not burn in 5 seconds if ebike wheel is blocked
+        if(safe_tests_state_machine_counter > 50)
+        {
+          m_configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+          safe_tests_state_machine_counter = 0;
+          safe_tests_state_machine = 2;
+          break;
+        }
 
-      // bicycle wheel is rotating so we are safe
-      if(ui16_wheel_speed_x10 > 40) // seems that 4 km/h may be the min value we can measure for the bicycle wheel speed
-      {
-        safe_tests_state_machine_counter = 0;
-        safe_tests_state_machine = 3;
-        break;
-      }
+        // bicycle wheel is rotating so we are safe
+        if(ui16_wheel_speed_x10 > 40) // seems that 4 km/h may be the min value we can measure for the bicycle wheel speed
+        {
+          safe_tests_state_machine_counter = 0;
+          safe_tests_state_machine = 3;
+          break;
+        }
 
-      // if release of: torque sensor AND throttle AND walk assist / cruise -> restart
-      if((ui8_torque_sensor < 12) &&
-          (ui8_throttle == 0) &&
-          (m_configuration_variables.ui8_walk_assist == 0))
-      {
-        safe_tests_state_machine = 0;
-      }
+        // if release of: torque sensor AND throttle AND walk assist / cruise -> restart
+        if(ui8_torque_sensor < 12 &&
+            ui8_throttle == 0)
+        {
+          safe_tests_state_machine = 0;
+        }
       break;
 
       // wait 3 consecutive seconds for torque sensor and throttle and walk assist / cruise == 0, then restart
       case 2:
-      if(ui8_torque_sensor < 12 &&
-          ui8_throttle == 0 &&
-          m_configuration_variables.ui8_walk_assist == 0)
-      {
-        safe_tests_state_machine_counter++;
-
-        if(safe_tests_state_machine_counter > 30)
+        if(ui8_torque_sensor < 12 &&
+            ui8_throttle == 0)
         {
-          m_configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
-          safe_tests_state_machine = 0;
-          break;
+          safe_tests_state_machine_counter++;
+
+          if(safe_tests_state_machine_counter > 30)
+          {
+            m_configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+            safe_tests_state_machine = 0;
+            break;
+          }
         }
-      }
-      // keep reseting the counter so we keep on this state
-      else
-      {
-        safe_tests_state_machine_counter = 0;
-      }
+        // keep reseting the counter so we keep on this state
+        else
+        {
+          safe_tests_state_machine_counter = 0;
+        }
       break;
 
       // wait for bicycle wheel to be stopped so we can start again our state machine
       case 3:
-      if(ui16_wheel_speed_x10 == 0)
-      {
-        safe_tests_state_machine = 0;
-        break;
-      }
+        if(ui16_wheel_speed_x10 == 0)
+        {
+          safe_tests_state_machine = 0;
+          break;
+        }
       break;
 
       default:
-      safe_tests_state_machine = 0;
+        safe_tests_state_machine = 0;
       break;
     }
   }

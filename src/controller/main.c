@@ -65,55 +65,55 @@ int main (void)
   uint16_t ui16_temp = 0, ui16_throttle_value_filtered = 0;
 
   //set clock at the max 16MHz
-  CLK_HSIPrescalerConfig (CLK_PRESCALER_HSIDIV1);
+  CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
 
-  brake_init ();
+  brake_init();
   while (brake_is_set()) ; // hold here while brake is pressed -- this is a protection for development
-  eeprom_init ();
-  lights_init ();
-  uart2_init ();
-  timer2_init ();
-  timer3_init ();
-  adc_init ();
-  torque_sensor_init ();
-  pas_init ();
-  wheel_speed_sensor_init ();
-  hall_sensor_init ();
-  pwm_init_bipolar_4q ();
-  motor_init ();
-  ebike_app_init ();
-  enableInterrupts ();
+  eeprom_init();
+  lights_init();
+  uart2_init();
+  timer2_init();
+  timer3_init();
+  adc_init();
+  torque_sensor_init();
+  pas_init();
+  wheel_speed_sensor_init();
+  hall_sensor_init();
+  pwm_init_bipolar_4q();
+  motor_init();
+  ebike_app_init();
+  enableInterrupts();
 
-  while (1)
+  while(1)
   {
     // because of continue; at the end of each if code block that will stop the while (1) loop there,
     // the first if block code will have the higher priority over any others
-    ui16_TIM3_counter = TIM3_GetCounter ();
-    if ((ui16_TIM3_counter - ui16_motor_controller_counter) > 4) // every 4ms
+    ui16_TIM3_counter = TIM3_GetCounter();
+    if((ui16_TIM3_counter - ui16_motor_controller_counter) > 4) // every 4ms
     {
       ui16_motor_controller_counter = ui16_TIM3_counter;
-      motor_controller ();
+      motor_controller();
       continue;
     }
 
-    ui16_TIM3_counter = TIM3_GetCounter ();
-    if ((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 100) // every 100ms
+    ui16_TIM3_counter = TIM3_GetCounter();
+    if((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 100) // every 100ms
     {
       ui16_ebike_app_controller_counter = ui16_TIM3_counter;
-      ebike_app_controller ();
+      ebike_app_controller();
       continue;
     }
 
     #ifdef DEBUG_UART
     
-    ui16_TIM3_counter = TIM3_GetCounter ();
+    ui16_TIM3_counter = TIM3_GetCounter();
     
-    if ((ui16_TIM3_counter - ui16_debug_uart_counter) > 50)
+    if((ui16_TIM3_counter - ui16_debug_uart_counter) > 50)
     {
       ui16_debug_uart_counter = ui16_TIM3_counter;
 
       // sugestion: no more than 6 variables printed (takes about 3ms to printf 6 variables)
-      printf ("%d,%d,%d,%d\n",
+      printf "%d,%d,%d,%d\n",
       ui16_motor_get_motor_speed_erps(),
       ui8_duty_cycle,
       ui8_adc_battery_current,
