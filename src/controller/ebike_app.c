@@ -107,20 +107,21 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 volatile struct_configuration_variables m_configuration_variables;
 
 // variables for UART
-volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[11];
-volatile uint8_t ui8_rx_counter = 0;
-volatile uint8_t ui8_tx_buffer[26];
-volatile uint8_t ui8_tx_counter = 0;
-volatile uint8_t ui8_i;
-volatile uint8_t ui8_checksum;
-volatile uint8_t ui8_byte_received;
-volatile uint8_t ui8_state_machine = 0;
-volatile uint8_t ui8_uart_received_first_package = 0;
-static uint16_t  ui16_crc_rx;
-static uint16_t  ui16_crc_tx;
-static uint8_t   ui8_master_comm_package_id = 0;
-static uint8_t   ui8_slave_comm_package_id = 0;
+volatile uint8_t  ui8_received_package_flag = 0;
+volatile uint8_t  ui8_rx_buffer[11];
+volatile uint8_t  ui8_rx_counter = 0;
+volatile uint8_t  ui8_tx_buffer[26];
+volatile uint8_t  ui8_tx_counter = 0;
+volatile uint8_t  ui8_i;
+volatile uint8_t  ui8_checksum;
+volatile uint8_t  ui8_byte_received;
+volatile uint8_t  ui8_state_machine = 0;
+volatile uint8_t  ui8_uart_received_first_package = 0;
+static uint16_t   ui16_crc_rx;
+static uint16_t   ui16_crc_tx;
+static uint8_t    ui8_master_comm_package_id = 0;
+static uint8_t    ui8_slave_comm_package_id = 0;
+static uint8_t    ui8_message_ID = 0;
 
 
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
@@ -427,9 +428,19 @@ static void ebike_control_motor (void)
 
 static void communications_controller (void)
 {
-  uint32_t ui32_temp;
-
 #ifndef DEBUG_UART
+
+  uart_receive_package();
+
+  uart_send_package ();
+
+#endif
+}
+
+static void uart_receive_package(void)
+{
+  uint32_t ui32_temp;
+  
   if (ui8_received_package_flag)
   {
     // verify crc of the package
@@ -603,9 +614,6 @@ static void communications_controller (void)
     // enable UART2 receive interrupt as we are now ready to receive a new package
     UART2->CR2 |= (1 << 5);
   }
-
-  uart_send_package ();
-#endif
 }
 
 static void uart_send_package(void)
