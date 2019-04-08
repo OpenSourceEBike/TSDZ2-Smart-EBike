@@ -3267,7 +3267,6 @@ static void low_pass_filter_pedal_cadence (void)
 void calc_distance (void)
 {
   uint32_t ui32_temp;
-  static uint32_t ui32_temp_rest;
   
   // calculate how many revolutions since last reset and convert to distance traveled
   ui32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * ((uint32_t) configuration_variables.ui16_wheel_perimeter);
@@ -3279,21 +3278,6 @@ void calc_distance (void)
     configuration_variables.ui16_distance_since_power_on_x10 += 1;
     configuration_variables.ui32_odometer_x10 += 1;
     configuration_variables.ui32_trip_x10 += 1;
-    
-    // calculate and update rest
-    ui32_temp_rest = ui32_temp_rest + (ui32_temp - 100000);
-    
-    // if rest difference is larger than or equal to 0.1 km, update all distance variables and reset
-    if (ui32_temp_rest >= 100000)
-    {
-      // update all distance variables again
-      configuration_variables.ui16_distance_since_power_on_x10 += 1;
-      configuration_variables.ui32_odometer_x10 += 1;
-      configuration_variables.ui32_trip_x10 += 1;
-      
-      // reset and update rest
-      ui32_temp_rest = ui32_temp_rest - 100000;
-    }
    
     // reset the always incrementing value (up to motor controller power reset) by setting the offset to current value
     motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
