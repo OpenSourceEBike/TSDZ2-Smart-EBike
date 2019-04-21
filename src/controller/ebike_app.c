@@ -163,7 +163,7 @@ static void     boost_run_statemachine (void);
 static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
-static void safe_tests (void);
+static void safe_tests(void);
 
 
 void ebike_app_init (void)
@@ -1228,7 +1228,7 @@ struct_configuration_variables* get_configuration_variables (void)
 }
 
 
-static void safe_tests (void)
+static void safe_tests(void)
 {
   // enabe only next state machine if user has startup without pedal rotation
   if(m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation ||
@@ -1253,9 +1253,9 @@ static void safe_tests (void)
       case 1:
         safe_tests_state_machine_counter++;
 
-        // timeout of 5 seconds, not less to be higher than value on torque_sensor_read ()
-        // hopefully, 5 seconds is safe enough value, mosfets may not burn in 5 seconds if ebike wheel is blocked
-        if(safe_tests_state_machine_counter > 50)
+        // timeout of 10 seconds, not less to be higher than value on torque_sensor_read ()
+        // hopefully, 10 seconds is safe enough value, mosfets may not burn in 10 seconds if ebike wheel is blocked
+        if(safe_tests_state_machine_counter > 100)
         {
           m_configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
           safe_tests_state_machine_counter = 0;
