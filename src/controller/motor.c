@@ -827,13 +827,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       {
         // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
         // also PAS cadence should be zero if rotating backwards
-        if (ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
+        if(ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
         {
           ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
         }
         else
         {
           ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
+          ui16_pas_counter = 0;
         }
 
         // see the direction
@@ -863,8 +864,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         }
       }
     }
-
-    ui16_pas_counter = 0;
 
     // NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
     // but lets save this because we may want to use it in future
