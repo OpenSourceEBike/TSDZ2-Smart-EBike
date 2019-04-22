@@ -211,7 +211,7 @@ static void ebike_control_motor (void)
     // 1.6 = 1 / 0.625 (each adc step for current)
     // 25 * 1.6 = 40
     // 40 * 4 = 160
-    if (m_configuration_variables.ui8_startup_motor_power_boost_assist_level > 0)
+    if(m_configuration_variables.ui8_startup_motor_power_boost_assist_level > 0)
     {
       ui32_temp = (uint32_t) ui16_pedal_torque_x10 * (uint32_t) m_configuration_variables.ui8_startup_motor_power_boost_assist_level;
       ui32_temp /= 10;
@@ -223,7 +223,7 @@ static void ebike_control_motor (void)
       ui8_limit_max(&ui8_adc_max_battery_current_boost_state, 255);
     }
 
-    if (m_configuration_variables.ui8_assist_level_factor_x10 > 0)
+    if(m_configuration_variables.ui8_assist_level_factor_x10 > 0)
     {
       if(m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation == 0)
       {
@@ -279,13 +279,12 @@ static void ebike_control_motor (void)
   }
 
   /* Apply throttle if this feature is enabled by the user and motor temperature limit function is not enabled */
-  if (m_configuration_variables.ui8_temperature_limit_feature_enabled == 2)
+  if(m_configuration_variables.ui8_temperature_limit_feature_enabled == 2)
   {
     /* Throttle */
     apply_throttle(ui8_throttle, &ui8_m_adc_battery_target_current);
   }
 
-  
   /* Walk assist / Cruise */
   if(m_configuration_variables.ui8_walk_assist)
   {
@@ -363,10 +362,8 @@ static void ebike_control_motor (void)
       (ui16_motor_get_motor_speed_erps() == 0) && // we can only enable if motor is stopped other way something bad can happen due to high currents/regen or something like that
       ui8_m_adc_battery_target_current)
   {
-    {
-      ui8_m_motor_enabled = 1;
-      motor_enable_pwm();
-    }
+    ui8_m_motor_enabled = 1;
+    motor_enable_pwm();
   }
 
   // check to see if we should disable the motor
@@ -379,7 +376,7 @@ static void ebike_control_motor (void)
     motor_disable_pwm();
   }
 
-  // apply the taapply_walk_assistrget current if motor is enable and if not, reset the duty_cycle controller
+  // apply the target current if motor is enable and if not, reset the duty_cycle controller
   if(ui8_m_motor_enabled)
   {
     // finally set the target battery current to the battery current controller
@@ -758,11 +755,11 @@ static void ebike_app_set_battery_max_current (uint8_t ui8_value)
 
 static void calc_pedal_force_and_torque(void)
 {
-  uint16_t ui16_temp;
+  uint16_t ui16_pedal_torque_x100;
 
   // calculate torque on pedals
-  ui16_temp = (uint16_t) ui8_torque_sensor * (uint16_t) PEDAL_TORQUE_X100;
-  ui16_pedal_torque_x10 = ui16_temp / 10;
+  ui16_pedal_torque_x100 = (uint16_t) ui8_torque_sensor * (uint16_t) PEDAL_TORQUE_X100;
+  ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
 
   // calculate power on pedals
   // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
@@ -780,9 +777,9 @@ static void calc_pedal_force_and_torque(void)
 
   For a quick hack, we can just reduce actual value to 0.637.
 
-  105 * (1/0.637) = 165
+  95.5 * (1/0.637) = 150
   */
-  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 165);
+  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm)) / (uint32_t) 150);
 }
 
 
