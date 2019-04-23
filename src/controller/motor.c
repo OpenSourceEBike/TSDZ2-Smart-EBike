@@ -645,22 +645,23 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
   ui8_current_controller_counter++;
 
-  if (ui8_current_controller_counter > 12)
+  if(ui8_current_controller_counter > 12)
   {
     // reset counter
     ui8_current_controller_counter = 0;
     
     // if battery max current or phase current is too much, reduce duty cycle
-    if ((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) || (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
+    if((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) ||
+        (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
     {
-      if (ui8_g_duty_cycle > 0)
+      if(ui8_g_duty_cycle > 0)
       {
         // decrement duty cycle
         ui8_g_duty_cycle--;
       }
     }
   }
-  else if (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
+  else if(UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
   {
     if (ui8_g_duty_cycle > 0)
     {
@@ -668,7 +669,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_g_duty_cycle--;
     }
   }
-  else if ((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
+  else if((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
   {
     if (ui8_g_duty_cycle > 0)
     {
@@ -678,9 +679,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
   {
-    if (ui8_m_duty_cycle_target > ui8_g_duty_cycle)
+    if(ui8_m_duty_cycle_target > ui8_g_duty_cycle)
     {
-      if (ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
+      if(ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_up = 0;
         
@@ -688,9 +689,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         ui8_g_duty_cycle++;
       }
     }
-    else if (ui8_m_duty_cycle_target < ui8_g_duty_cycle)
+    else if(ui8_m_duty_cycle_target < ui8_g_duty_cycle)
     {
-      if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
+      if(ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_down = 0;
         
@@ -827,13 +828,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       {
         // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
         // also PAS cadence should be zero if rotating backwards
-        if (ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
+        if(ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
         {
           ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
         }
         else
         {
           ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
+          ui16_pas_counter = 0;
         }
 
         // see the direction
@@ -863,8 +865,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         }
       }
     }
-
-    ui16_pas_counter = 0;
 
     // NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
     // but lets save this because we may want to use it in future
