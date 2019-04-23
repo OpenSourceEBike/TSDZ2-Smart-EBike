@@ -99,20 +99,20 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 volatile struct_configuration_variables m_configuration_variables;
 
 // variables for UART
-volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[11];
-volatile uint8_t ui8_rx_counter = 0;
-volatile uint8_t ui8_tx_buffer[26];
-volatile uint8_t ui8_tx_counter = 0;
-volatile uint8_t ui8_i;
-volatile uint8_t ui8_checksum;
-volatile uint8_t ui8_byte_received;
-volatile uint8_t ui8_state_machine = 0;
-volatile uint8_t ui8_uart_received_first_package = 0;
-static uint16_t  ui16_crc_rx;
-static uint16_t  ui16_crc_tx;
-static uint8_t   ui8_master_comm_package_id = 0;
-static uint8_t   ui8_slave_comm_package_id = 0;
+volatile uint8_t  ui8_received_package_flag = 0;
+volatile uint8_t  ui8_rx_buffer[11];
+volatile uint8_t  ui8_rx_counter = 0;
+volatile uint8_t  ui8_tx_buffer[26];
+volatile uint8_t  ui8_tx_counter = 0;
+volatile uint8_t  ui8_i;
+volatile uint8_t  ui8_checksum;
+volatile uint8_t  ui8_byte_received;
+volatile uint8_t  ui8_state_machine = 0;
+volatile uint8_t  ui8_uart_received_first_package = 0;
+static uint16_t   ui16_crc_rx;
+static uint16_t   ui16_crc_tx;
+static uint8_t    ui8_message_ID_TX = 0;
+static uint8_t    ui8_message_ID_RX = 0;
 
 
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
@@ -137,6 +137,7 @@ static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
 
 static void communications_controller (void);
 static void uart_send_package (void);
+static void uart_receive_package (void);
 
 static void throttle_read (void);
 static void read_pas_cadence (void);
@@ -448,132 +449,165 @@ static void ebike_control_motor (void)
 
 static void communications_controller (void)
 {
-  uint32_t ui32_temp;
-
 #ifndef DEBUG_UART
+
+  uart_receive_package();
+
+  uart_send_package ();
+
+#endif
+}
+
+static void uart_receive_package(void)
+{
+  uint32_t ui32_temp;
+  
   if (ui8_received_package_flag)
   {
     // verify crc of the package
     ui16_crc_rx = 0xffff;
-    for (ui8_i = 0; ui8_i < 9; ui8_i++)
+    
+    for (ui8_i = 0; ui8_i <= 5; ui8_i++)
     {
       crc16 (ui8_rx_buffer[ui8_i], &ui16_crc_rx);
     }
 
     // see if CRC is ok...
-    if (((((uint16_t) ui8_rx_buffer [10]) << 8) + ((uint16_t) ui8_rx_buffer [9])) == ui16_crc_rx)
+    if (((((uint16_t) ui8_rx_buffer [7]) << 8) + ((uint16_t) ui8_rx_buffer [6])) == ui16_crc_rx)
     {
-      ui8_master_comm_package_id = ui8_rx_buffer [1];
-
-      // send a variable for each package sent but first verify if the last one was received otherwise, keep repeating
-      // keep cycling so all variables are sent
-      #define VARIABLE_ID_MAX_NUMBER 5
-      if ((ui8_rx_buffer [2]) == ui8_slave_comm_package_id) // last package data ID was receipt, so send the next one
-      {
-        ui8_slave_comm_package_id = (ui8_slave_comm_package_id + 1) % VARIABLE_ID_MAX_NUMBER;
-      }
-
+      // message ID
+      ui8_message_ID_RX = ui8_rx_buffer[1];
+      
       // assist level
-      m_configuration_variables.ui8_assist_level_factor_x10 = ui8_rx_buffer [3];
+      m_configuration_variables.ui8_assist_level_factor_x10 = ui8_rx_buffer [2];
       
       // lights state
-      m_configuration_variables.ui8_lights = (ui8_rx_buffer [4] & (1 << 0)) ? 1: 0;
+      m_configuration_variables.ui8_lights = (ui8_rx_buffer [3] & (1 << 0)) ? 1: 0;
       
       // set lights
       lights_set_state (m_configuration_variables.ui8_lights);
       
       // walk assist / cruise function 
-      m_configuration_variables.ui8_walk_assist = (ui8_rx_buffer [4] & (1 << 1)) ? 1: 0;
+      m_configuration_variables.ui8_walk_assist = (ui8_rx_buffer [3] & (1 << 1)) ? 1: 0;
       
-      // offroad mode
-      m_configuration_variables.ui8_offroad_mode = (ui8_rx_buffer [4]) & (1 << 2) ? 1: 0;
+      // offroad state
+      m_configuration_variables.ui8_offroad_mode = (ui8_rx_buffer [3]) & (1 << 2) ? 1: 0;
 
-      // battery max current
-      m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer [5];
-      
-      // set max current from battery
-      ebike_app_set_battery_max_current (m_configuration_variables.ui8_battery_max_current);
-      
-      // target battery max power
-      m_configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer [6];
-
-      switch (ui8_master_comm_package_id)
+      switch (ui8_message_ID_RX)
       {
         case 0:
-          // battery low voltage cut-off
-          m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
+        
+          // battery max current
+          m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer [4];
+        
+          // set max current from battery
+          ebike_app_set_battery_max_current (m_configuration_variables.ui8_battery_max_current);
           
-          // calc the value in ADC steps and set it up
+          // target battery max power
+          m_configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer [5];
+          
+        break;
+        
+        case 1:
+          
+          // battery low voltage cut-off
+          m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer [5]) << 8) + ((uint16_t) ui8_rx_buffer [4]);
+          
+          // calculate the value in ADC steps and set it up
           ui32_temp = ((uint32_t) m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 << 8) / ((uint32_t) ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP_INVERSE_X256);
           ui32_temp /= 10;
           motor_set_adc_battery_voltage_cut_off ((uint8_t) ui32_temp);
+        
         break;
-
-        case 1:
-          // wheel perimeter
-          m_configuration_variables.ui16_wheel_perimeter = (((uint16_t) ui8_rx_buffer [8]) << 8) + ((uint16_t) ui8_rx_buffer [7]);
-        break;
-
+        
         case 2:
-          // wheel max speed
-          m_configuration_variables.ui8_wheel_max_speed = ui8_rx_buffer [7];
+        
+          // wheel perimeter
+          m_configuration_variables.ui16_wheel_perimeter = (((uint16_t) ui8_rx_buffer [5]) << 8) + ((uint16_t) ui8_rx_buffer [4]);
+        
         break;
-
+        
         case 3:
+        
+          // wheel max speed
+          m_configuration_variables.ui8_wheel_max_speed = ui8_rx_buffer [4];
+          
+          // nothing
+          ui32_temp = ui8_rx_buffer [5];
+          
+        break;
+        
+        case 4:
+        
           // type of motor (36 volt, 48 volt or some experimental type)
-          m_configuration_variables.ui8_motor_type = (ui8_rx_buffer [7] & 3);
+          m_configuration_variables.ui8_motor_type = (ui8_rx_buffer [4] & 3);
           
           // motor assistance without pedal rotation enable/disable when startup 
-          m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [7] & 4) >> 2;
+          m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [4] & 4) >> 2;
           
           // motor temperature limit function enable/disable
-          m_configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [7] & 8) >> 3;
+          m_configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [4] & 8) >> 3;
           
           // startup motor boost state
-          m_configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [8] & 1);
+          m_configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [5] & 1);
           
           // startup power boost max power limit
-          m_configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [8] & 2) >> 1;
+          m_configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [5] & 2) >> 1;
+        
         break;
-
-        case 4:
+        
+        case 5:
+        
           // startup motor power boost
-          m_configuration_variables.ui8_startup_motor_power_boost_assist_level = ui8_rx_buffer [7];
+          m_configuration_variables.ui8_startup_motor_power_boost_assist_level = ui8_rx_buffer [4];
           
           // startup motor power boost time
-          m_configuration_variables.ui8_startup_motor_power_boost_time = ui8_rx_buffer [8];
+          m_configuration_variables.ui8_startup_motor_power_boost_time = ui8_rx_buffer [5];
+        
         break;
-
-        case 5:
-          // startup motor power boost fade time
-          m_configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [7];
-          m_configuration_variables.ui8_startup_motor_power_boost_feature_enabled = (ui8_rx_buffer [8] & 1);
-        break;
-
+        
         case 6:
-          // motor temperature min and max values to limit
-          m_configuration_variables.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer [7];
-          m_configuration_variables.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer [8];
+        
+          // startup motor power boost fade time
+          m_configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [4];
+          
+          // boost feature enabled
+          m_configuration_variables.ui8_startup_motor_power_boost_feature_enabled = (ui8_rx_buffer [5] & 1);
+        
         break;
-
+        
         case 7:
+        
+          // motor temperature min and max values to limit
+          m_configuration_variables.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer [4];
+          m_configuration_variables.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer [5];
+        
+        break;
+        
+        
+        case 8:
+        
           // offroad mode configuration
-          m_configuration_variables.ui8_offroad_feature_enabled = (ui8_rx_buffer [7] & 1);
-          m_configuration_variables.ui8_offroad_enabled_on_startup = (ui8_rx_buffer [7] & 2) >> 1;
+          m_configuration_variables.ui8_offroad_feature_enabled = (ui8_rx_buffer [4] & 1);
+          m_configuration_variables.ui8_offroad_enabled_on_startup = (ui8_rx_buffer [4] & 2) >> 1;
           
           // offroad mode speed limit
-          m_configuration_variables.ui8_offroad_speed_limit = ui8_rx_buffer [8];
-        break;
-
-        case 8:
-          // offroad mode power limit configuration
-          m_configuration_variables.ui8_offroad_power_limit_enabled = (ui8_rx_buffer [7] & 1);
-          m_configuration_variables.ui8_offroad_power_limit_div25 = ui8_rx_buffer [8];
+          m_configuration_variables.ui8_offroad_speed_limit = ui8_rx_buffer [5];
+        
         break;
         
         case 9:
+          
+          // offroad mode power limit configuration
+          m_configuration_variables.ui8_offroad_power_limit_enabled = (ui8_rx_buffer [4] & 1);
+          m_configuration_variables.ui8_offroad_power_limit_div25 = ui8_rx_buffer [5];
+          
+        break;
+        
+        case 10:
+          
           // ramp up, amps per second
-          m_configuration_variables.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer [7];
+          m_configuration_variables.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer [4];
           
           // check that value seems correct
           if (m_configuration_variables.ui8_ramp_up_amps_per_second_x10 < 4 || m_configuration_variables.ui8_ramp_up_amps_per_second_x10 > 100)
@@ -604,18 +638,12 @@ static void communications_controller (void)
           ---------------------------------------------------------*/
           
           // received target speed for cruise
-          ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer [8] * 10);
-        break;
+          ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer [5] * 10);
         
-        default:
-          // nothing
         break;
       }
 
-      // verify if any configuration_variables did change and if so, save all of them in the EEPROM
-      eeprom_write_if_values_changed ();
-
-      // signal that we processed the full package
+      // reset flag indicating that we received the full package
       ui8_received_package_flag = 0;
 
       ui8_uart_received_first_package = 1;
@@ -624,134 +652,180 @@ static void communications_controller (void)
     // enable UART2 receive interrupt as we are now ready to receive a new package
     UART2->CR2 |= (1 << 5);
   }
-
-  uart_send_package ();
-#endif
 }
 
 static void uart_send_package(void)
 {
   uint16_t ui16_temp;
 
-  // send the data to the LCD
-  // start up byte
+  // send the start byte
   ui8_tx_buffer[0] = 0x43;
-  ui8_tx_buffer[1] = ui8_master_comm_package_id;
-  ui8_tx_buffer[2] = ui8_slave_comm_package_id;
-
-  ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
-  // adc 10 bits battery voltage
-  ui8_tx_buffer[3] = (ui16_temp & 0xff);
-  ui8_tx_buffer[4] = ((uint8_t) (ui16_temp >> 4)) & 0x30;
-
-  // battery current x5
-  ui8_tx_buffer[5] = (uint8_t) ((float) motor_get_adc_battery_current_filtered_10b() * 0.826);
-
-  // wheel speed
-  ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
-  ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
-
-  // brake state
-  if(motor_controller_state_is_set(MOTOR_CONTROLLER_STATE_BRAKE))
-  {
-    ui8_tx_buffer[8] |= 1;
-  }
-  else
-  {
-    ui8_tx_buffer[8] &= ~1;
-  }
-
-  if(m_configuration_variables.ui8_temperature_limit_feature_enabled == 1)
-  {
-    ui8_tx_buffer[9] = UI8_ADC_THROTTLE;
-    ui8_tx_buffer[10] = m_configuration_variables.ui8_motor_temperature;
-  }
-  else
-  {
-    // ADC throttle
-    ui8_tx_buffer[9] = UI8_ADC_THROTTLE;
-    // throttle value with offset removed and mapped to 255
-    ui8_tx_buffer[10] = ui8_throttle;
-  }
-
-  // ADC torque_sensor
-  ui8_tx_buffer[11] = UI8_ADC_TORQUE_SENSOR;
   
-  // torque sensor value with offset removed and mapped to 255
-  ui8_tx_buffer[12] = ui8_torque_sensor;
+  // send the message ID
+  ui8_tx_buffer[1] = ui8_message_ID_TX;
   
-  // PAS cadence
-  ui8_tx_buffer[13] = ui8_pas_cadence_rpm;
-  
-  // pedal human power mapped to 255
-  ui8_tx_buffer[14] = ui8_pedal_human_power;
-  
-  // PWM duty_cycle
-  ui8_tx_buffer[15] = ui8_g_duty_cycle;
-  
-  // motor speed in ERPS
-  ui16_temp = ui16_motor_get_motor_speed_erps();
-  ui8_tx_buffer[16] = (uint8_t) (ui16_temp & 0xff);
-  ui8_tx_buffer[17] = (uint8_t) (ui16_temp >> 8);
-  
-  // FOC angle
-  ui8_tx_buffer[18] = ui8_g_foc_angle;
-
-  switch (ui8_slave_comm_package_id)
+  switch (ui8_message_ID_TX)
   {
     case 0:
-      // error states
-      ui8_tx_buffer[19] = m_configuration_variables.ui8_error_states;
-    break;
+      
+      // 10 bits value of battery voltage (ADC)
+      ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
+      
+      ui8_tx_buffer[2] = (ui16_temp & 0xff);
+      ui8_tx_buffer[3] = ((uint8_t) (ui16_temp >> 4)) & 0x30;
 
+      // battery current x5
+      ui8_tx_buffer[4] = (uint8_t) ((float) motor_get_adc_battery_current_filtered_10b() * 0.826);
+    
+    break;
+    
     case 1:
-      // temperature actual limiting value
-      ui8_tx_buffer[19] = m_configuration_variables.ui8_temperature_current_limiting_value;
-    break;
+    
+      // wheel speed
+      ui8_tx_buffer[2] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
+      ui8_tx_buffer[3] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
 
+      // braking state
+      if(motor_controller_state_is_set(MOTOR_CONTROLLER_STATE_BRAKE))
+      {
+        ui8_tx_buffer[4] |= 1;
+      }
+      else
+      {
+        ui8_tx_buffer[4] &= ~1;
+      }
+      
+    break;
+    
     case 2:
-      // wheel_speed_sensor_tick_counter
-      ui8_tx_buffer[19] = (uint8_t) (ui32_wheel_speed_sensor_tick_counter & 0xff);
-    break;
+      
+      // temperature limit function
+      if (m_configuration_variables.ui8_temperature_limit_feature_enabled == 1)
+      {
+        ui8_tx_buffer[2] = UI8_ADC_THROTTLE;
+        ui8_tx_buffer[3] = m_configuration_variables.ui8_motor_temperature;
+      }
+      else
+      {
+        // ADC throttle
+        ui8_tx_buffer[2] = UI8_ADC_THROTTLE;
+        
+        // throttle value with offset removed and mapped to 255
+        ui8_tx_buffer[3] = ui8_throttle;
+      }
 
+      // ADC torque_sensor
+      ui8_tx_buffer[4] = UI8_ADC_TORQUE_SENSOR;
+    
+    break;
+    
     case 3:
-      // wheel_speed_sensor_tick_counter
-      ui8_tx_buffer[19] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 8) & 0xff);
+    
+      // torque sensor value with offset removed and mapped to 255
+      ui8_tx_buffer[2] = ui8_torque_sensor;
+      
+      // PAS cadence
+      ui8_tx_buffer[3] = ui8_pas_cadence_rpm;
+      
+      // pedal human power mapped to 255
+      ui8_tx_buffer[4] = ui8_pedal_human_power;
+    
     break;
-
+    
     case 4:
-      // wheel_speed_sensor_tick_counter
-      ui8_tx_buffer[19] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 16) & 0xff);
+    
+      // PWM duty_cycle
+      ui8_tx_buffer[2] = ui8_g_duty_cycle;
+      
+      // motor speed in ERPS
+      ui16_temp = ui16_motor_get_motor_speed_erps ();
+      
+      ui8_tx_buffer[3] = (uint8_t) (ui16_temp & 0xff);
+      ui8_tx_buffer[4] = (uint8_t) (ui16_temp >> 8);
+  
     break;
-
+    
+    case 5:
+    
+      // wheel_speed_sensor_tick_counter
+      ui8_tx_buffer[2] = (uint8_t) (ui32_wheel_speed_sensor_tick_counter & 0xff);
+      
+      // wheel_speed_sensor_tick_counter
+      ui8_tx_buffer[3] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 8) & 0xff);
+      
+      // wheel_speed_sensor_tick_counter
+      ui8_tx_buffer[4] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 16) & 0xff);
+    
+    break;
+    
+    case 6:
+    
+      // FOC angle
+      ui8_tx_buffer[2] = ui8_g_foc_angle;
+      
+      // error states
+      ui8_tx_buffer[3] = m_configuration_variables.ui8_error_states;
+      
+      // temperature actual limiting value
+      ui8_tx_buffer[4] = m_configuration_variables.ui8_temperature_current_limiting_value;
+    
+    break;
+    
+    case 7:
+    
+      // ui16_pedal_torque_x10
+      ui8_tx_buffer[2] = (uint8_t) (ui16_pedal_torque_x10 & 0xff);
+      ui8_tx_buffer[3] = (uint8_t) (ui16_pedal_torque_x10 >> 8);
+      
+      // send nothing
+      ui8_tx_buffer[4] = 0;
+      
+    break;
+    
+    case 8:
+      
+      // ui16_pedal_power_x10
+      ui8_tx_buffer[2] = (uint8_t) (ui16_pedal_power_x10 & 0xff);
+      ui8_tx_buffer[3] = (uint8_t) (ui16_pedal_power_x10 >> 8);
+      
+      // send nothing
+      ui8_tx_buffer[4] = 0;
+    
+    break;
+    
     default:
-      // keep at 0
-      ui8_tx_buffer[19] = 0;
+      
+      // send nothing
+      ui8_tx_buffer[2] = 0;
+      
+      // send nothing
+      ui8_tx_buffer[3] = 0;
+      
+      // send nothing
+      ui8_tx_buffer[4] = 0;
+      
     break;
   }
-
-  // ui16_pedal_torque_x10
-  ui8_tx_buffer[20] = (uint8_t) (ui16_pedal_torque_x10 & 0xff);
-  ui8_tx_buffer[21] = (uint8_t) (ui16_pedal_torque_x10 >> 8);
-
-  // ui16_pedal_power_x10
-  ui8_tx_buffer[22] = (uint8_t) (ui16_pedal_power_x10 & 0xff);
-  ui8_tx_buffer[23] = (uint8_t) (ui16_pedal_power_x10 >> 8);
-
-  // prepare crc of the package
+  
+  // prepare CRC of the package
   ui16_crc_tx = 0xffff;
-  for (ui8_i = 0; ui8_i <= 23; ui8_i++)
+  
+  for (ui8_i = 0; ui8_i <= 4; ui8_i++)
   {
     crc16 (ui8_tx_buffer[ui8_i], &ui16_crc_tx);
   }
-  ui8_tx_buffer[24] = (uint8_t) (ui16_crc_tx & 0xff);
-  ui8_tx_buffer[25] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
+  
+  ui8_tx_buffer[5] = (uint8_t) (ui16_crc_tx & 0xff);
+  ui8_tx_buffer[6] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
 
   // send the full package to UART
-  for (ui8_i = 0; ui8_i <= 25; ui8_i++)
+  for (ui8_i = 0; ui8_i <= 6; ui8_i++)
   {
     putchar (ui8_tx_buffer[ui8_i]);
   }
+  
+  // increment message ID for next transmission
+  if (++ui8_message_ID_TX > 8) { ui8_message_ID_TX = 0; }
 }
 
 
@@ -1243,7 +1317,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
       ui8_rx_counter++;
 
       // see if is the last byte of the package
-      if (ui8_rx_counter > 12)
+      if (ui8_rx_counter > 9)
       {
         ui8_rx_counter = 0;
         ui8_state_machine = 0;
