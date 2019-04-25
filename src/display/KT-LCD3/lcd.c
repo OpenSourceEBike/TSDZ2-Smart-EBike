@@ -2050,13 +2050,13 @@ void offroad_mode (void)
   
   if (configuration_variables.ui8_offroad_feature_enabled) 
   {
-    if (buttons_get_onoff_state () && buttons_get_up_state ())
+    if (buttons_get_onoff_state () && buttons_get_up_long_click_event ())
     {
       buttons_clear_all_events ();
       motor_controller_data.ui8_offroad_mode = 1;
     }
 
-    if (buttons_get_onoff_state () && buttons_get_down_state ())
+    if (buttons_get_onoff_state () && buttons_get_down_long_click_event ())
     {
       buttons_clear_all_events ();
       motor_controller_data.ui8_offroad_mode = 0;
