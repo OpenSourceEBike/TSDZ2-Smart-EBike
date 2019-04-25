@@ -51,6 +51,15 @@
 
 
 
+// walk assist and cruise
+#define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10    80 // 8.0 km/h
+#define CRUISE_PID_KP                             12
+#define CRUISE_PID_KI                             1
+#define CRUISE_PID_INTEGRAL_LIMIT                 1000
+#define CRUISE_PID_KD                             0
+
+
+
 // throttle ADC values
 #define ADC_THROTTLE_MIN_VALUE                    47
 #define ADC_THROTTLE_MAX_VALUE                    176
@@ -64,7 +73,7 @@
 
 
 
-// Torque sensor
+// torque sensor
 #define PEDAL_TORQUE_X100                         52
 
 /*---------------------------------------------------------

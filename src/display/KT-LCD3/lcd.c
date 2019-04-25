@@ -1950,6 +1950,7 @@ void walk_assist_state (void)
 {
   static uint8_t ui8_walk_assist_activated;
   static uint8_t ui8_cruise_activated;
+  #define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 80 // 8.0 km/h
   
   if (buttons_get_down_long_click_event ())
   {
@@ -1957,18 +1958,18 @@ void walk_assist_state (void)
     if (buttons_get_down_state ())
     {
       // enable walk assist or cruise function depending on speed and if function is enabled, also check if the other function was activetad first
-      if (motor_controller_data.ui16_wheel_speed_x10 < 80 && configuration_variables.ui8_walk_assist_function_enabled && ui8_cruise_activated == 0)
+      if (motor_controller_data.ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 && configuration_variables.ui8_walk_assist_function_enabled && ui8_cruise_activated == 0)
       {
-        // enable walk assist function because the wheel speed is less than 8.0 km/h (80), the function is enabled and cruise was not activated first
+        // enable walk assist function because: the wheel speed is less than threshold speed, the function is enabled and cruise was not activated first
         lcd_enable_walk_symbol (1);
         motor_controller_data.ui8_walk_assist_level = 1;
         
         // set flag to indicate that walk assist was activated first during this button event
         ui8_walk_assist_activated = 1;
       }
-      else if (motor_controller_data.ui16_wheel_speed_x10 > 80 && configuration_variables.ui8_cruise_function_enabled && ui8_walk_assist_activated == 0)
+      else if (motor_controller_data.ui16_wheel_speed_x10 > WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 && configuration_variables.ui8_cruise_function_enabled && ui8_walk_assist_activated == 0)
       {
-        // enable cruise function because the wheel speed is more than 8.0 km/h (80), the function is enabled and walk assist was not activated first
+        // enable cruise function because: the wheel speed is more than threshold speed, the function is enabled and walk assist was not activated first
         lcd_enable_cruise_symbol (1);
         motor_controller_data.ui8_walk_assist_level = 1;
         
@@ -3219,7 +3220,7 @@ void low_pass_filter_pedal_torque_and_power (void)
 
   // low pass filter for pedal power display
   ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
-  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 20; // should be division by 10 but 20 is set for test, HUMAN_POWER_BUG FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX
+  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
   ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
 
   if (ui16_pedal_power_filtered > 500)
