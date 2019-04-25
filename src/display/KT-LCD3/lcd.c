@@ -177,7 +177,9 @@ void lcd_execute_menu_config_submenu_offroad_mode (void);
 void lcd_execute_menu_config_submenu_technical (void);
 void update_menu_flashing_state (void);
 void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
+void recede_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
 void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
+void recede_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
 void odometer_increase_field_state (void);
 
 
@@ -370,14 +372,16 @@ void lcd_execute_menu_config (void)
       return;
     }
 
-    // advance on submenu if button_onoff_click_event
+    // advance on submenu if button_up_click_event
     advance_on_submenu (&ui8_lcd_menu_config_submenu_number, 11); // 11 sub menus, case 0 -> case 10
 
+    // recede on submenu if button_down_click_event
+    recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 11);
+
     // check if we should enter a submenu
-    if (buttons_get_up_click_event () || buttons_get_down_click_event ())
+    if (buttons_get_onoff_click_event ())
     {
-      buttons_clear_up_click_event ();
-      buttons_clear_down_click_event ();
+      buttons_clear_onoff_click_event ();
 
       ui8_lcd_menu_config_submenu_active = 1;
       ui8_config_wh_x10_offset = 1;
@@ -464,8 +468,11 @@ void lcd_execute_menu_config_submenu_wheel_config(void)
   uint32_t ui32_temp;
   static uint8_t ui8_reset_to_defaults_counter;
 
-  // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 8);
+  // advance on submenu on button_up_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 8);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 8);
   
   switch(ui8_lcd_menu_config_submenu_state)
   {
@@ -687,8 +694,11 @@ void lcd_execute_menu_config_submenu_battery (void)
 {
   var_number_t lcd_var_number;
   
-  // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 5);
+  // advance on submenu on button_up_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -755,8 +765,11 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
 {
   var_number_t lcd_var_number;
   
-  // advance on submenus on button_onoff_click_event
+  // advance on submenu on button_up_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 4);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -827,9 +840,12 @@ void lcd_execute_menu_config_submenu_battery_soc (void)
 void lcd_execute_menu_config_submenu_assist_level (void)
 {
   var_number_t lcd_var_number;
-  
-  // advance on submenus on button_onoff_click_event
+
+  // advance on submenu on button_up_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 1));
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, (configuration_variables.ui8_number_of_assist_levels + 1));
 
   // number of assist levels: 1 to 9
   if (ui8_lcd_menu_config_submenu_state == 0)
@@ -866,9 +882,12 @@ void lcd_execute_menu_config_submenu_assist_level (void)
 void lcd_execute_menu_config_submenu_walk_assist (void)
 {
   var_number_t lcd_var_number;
-  
-  // advance on submenus on button_onoff_click_event
-  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, configuration_variables.ui8_number_of_assist_levels + 2);
+
+  // advance on submenu on button_up_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 2));
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, (configuration_variables.ui8_number_of_assist_levels + 2));
 
   // enable/disable walk assist function
   if (ui8_lcd_menu_config_submenu_state == 0)
@@ -912,8 +931,11 @@ void lcd_execute_menu_config_submenu_cruise (void)
 {
   var_number_t lcd_var_number;
   
-  // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 4);
+  // advance on submenu on button_up_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 4);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 4);
   
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1020,8 +1042,11 @@ void lcd_execute_menu_config_main_screen_setup (void)
 {
   var_number_t lcd_var_number;
   
-  // advance on submenus on button_onoff_click_event
-  advance_on_submenu(&ui8_lcd_menu_config_submenu_state, 11);
+  // advance on submenu on button_up_click_event
+  advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 11);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 11);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1166,9 +1191,12 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
 {
   var_number_t lcd_var_number;
   uint8_t ui8_temp;
-  
-  // advance on submenus on button_onoff_click_event
+
+  // advance on submenu on button_up_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, (configuration_variables.ui8_number_of_assist_levels + 5));
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, (configuration_variables.ui8_number_of_assist_levels + 5));
 
   // feature enable or disable
   if (ui8_lcd_menu_config_submenu_state == 0)
@@ -1259,9 +1287,12 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
 {
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
-  
-  // advance on submenus on button_onoff_click_event
+
+  // advance on submenu on button_up_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 7);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 7);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1373,8 +1404,11 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
   
-  // advance on submenus on button_onoff_click_event
+  // advance on submenu on button_up_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 5);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 5);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1452,8 +1486,11 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
 
 void lcd_execute_menu_config_submenu_technical (void)
 {
-  // advance on submenus on button_onoff_click_event
+  // advance on submenu on button_up_click_event
   advance_on_submenu (&ui8_lcd_menu_config_submenu_state, 9);
+
+  // recede on submenu if button_down_click_event
+  recede_on_submenu (&ui8_lcd_menu_config_submenu_number, 9);
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1503,7 +1540,7 @@ void lcd_execute_menu_config_power (void)
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
   
-  // because this click envent can happen and will block the detection of button_onoff_long_click_event
+  // because this click event can happen and will block the detection of button_onoff_long_click_event
   buttons_clear_onoff_click_event ();
 
   // leave this menu with a button_onoff_long_click
@@ -3441,12 +3478,24 @@ void update_menu_flashing_state(void)
 
 void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 {
-  // advance on submenus on button_onoff_click_event
-  if (buttons_get_onoff_click_event ())
+  // advance on submenus on button_up_click_event
+  if (buttons_get_up_click_event ())
   {
-    buttons_clear_onoff_click_event ();
+    buttons_clear_up_click_event ();
 
     *ui8_p_state = (*ui8_p_state + 1) % ui8_state_max_number;
+  }
+}
+
+
+void recede_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
+{
+  // recede on submenus on button_down_click_event
+  if (buttons_get_down_click_event ())
+  {
+    buttons_clear_down_click_event ();
+
+    *ui8_p_state = (*ui8_p_state - 1) % ui8_state_max_number;
   }
 }
 
@@ -3465,7 +3514,19 @@ void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
   }
 }
 
-
+void recede_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
+{
+  // if click down - click long down event
+  if (buttons_get_down_click_long_click_event ())
+  {
+    // clear button event
+    buttons_clear_down_click_long_click_event ();
+    
+    *ui8_p_state = (*ui8_p_state - 1) % ui8_state_max_number;
+    
+    odometer_start_show_field_number ();
+  }
+}
 
 
 void lcd_power_off (uint8_t SaveToEEPROM)
