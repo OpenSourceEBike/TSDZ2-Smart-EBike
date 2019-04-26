@@ -905,15 +905,15 @@ static void apply_walk_assist(uint8_t *ui8_p_adc_target_current)
   *ui8_p_adc_target_current = ui8_adc_battery_current_max;
 
   // check so that walk assist level factor is not too large (too powerful), if it is -> limit the value
-  if(configuration_variables.ui8_assist_level_factor_x10 > 100)
+  if(m_configuration_variables.ui8_assist_level_factor_x10 > 100)
   {
     // limit and set walk assist PWM to some safe value, not too powerful 
-    ui8_walk_assist_target_PWM = 100;
+    ui8_m_walk_assist_target_duty_cycle = 100;
   }
   else
   {
     // set walk assist PWM to the target duty cycle from user defined value on display (walk assist level factor)
-    ui8_walk_assist_target_PWM = configuration_variables.ui8_assist_level_factor_x10;
+    ui8_m_walk_assist_target_duty_cycle = m_configuration_variables.ui8_assist_level_factor_x10;
   }
 }
 
