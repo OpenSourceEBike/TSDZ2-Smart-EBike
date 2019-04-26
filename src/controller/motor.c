@@ -643,16 +643,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // do not execute all, otherwise ui8_duty_cycle would be decremented more than onece on each PWM cycle
 
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
-  ui8_current_controller_counter++;
-
-  if(ui8_current_controller_counter > 12)
+  if(++ui8_current_controller_counter > 12)
   {
     // reset counter
     ui8_current_controller_counter = 0;
     
     // if battery max current or phase current is too much, reduce duty cycle
     if((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) ||
-        (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
+       (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
     {
       if(ui8_g_duty_cycle > 0)
       {
