@@ -158,7 +158,7 @@ void buttons_clear_all_events (void)
 void buttons_clock (void)
 {
   // needed if the event is not cleared anywhere else
-  buttons_clear_onoff_click_long_click_event();
+  //buttons_clear_onoff_click_long_click_event();
 
   switch (ui8_onoff_button_state)
   {
@@ -177,7 +177,7 @@ void buttons_clock (void)
       ui8_onoff_button_state_counter++;
 
       // event long click
-      if (ui8_onoff_button_state_counter > 200) // 2 seconds
+      if (ui8_onoff_button_state_counter > 120) // 1.2 seconds
       {
         buttons_set_events(ONOFF_LONG_CLICK);
         ui8_onoff_button_state = 2;
