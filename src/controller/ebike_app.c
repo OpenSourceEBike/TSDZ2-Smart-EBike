@@ -87,11 +87,13 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 volatile struct_configuration_variables m_configuration_variables;
 
 // variables for UART
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   9   // change this value depending on how many data bytes there is to receive
+#define UART_NUMBER_DATA_BYTES_TO_SEND      23  // change this value depending on how many data bytes there is to send
+
 volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[11];
+volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
 volatile uint8_t ui8_rx_counter = 0;
-volatile uint8_t ui8_tx_buffer[26];
-volatile uint8_t ui8_tx_counter = 0;
+volatile uint8_t ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 3];
 volatile uint8_t ui8_i;
 volatile uint8_t ui8_checksum;
 volatile uint8_t ui8_byte_received;
@@ -124,6 +126,7 @@ static void ebike_app_set_battery_max_current (uint8_t ui8_value);
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
 
 static void communications_controller (void);
+static void uart_receive_package (void);
 static void uart_send_package (void);
 
 static void throttle_read (void);
@@ -390,23 +393,7 @@ static void ebike_control_motor (void)
     ui8_g_duty_cycle = 0;
   }
 
-  /*************************************************************************************************************
-  NOTE:
-  
-  If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND 
-  wheel speed is below threshold for walk assist function AND brake is not set AND there are no 
-  errors detected in function "safe_tests", set the target duty cycle to walk assist target PWM.
-  apply_walk_assist
-  If the battery_target_current == 0 AND configuration_variables.ui8_walk_assist == 1 AND 
-  wheel speed is above threshold for cruise function AND brake is not set AND there are no 
-  errors detected in function "safe_tests", set the target duty cycle to cruise target PWM.
-  
-  If the battery_target_current == 0 AND ui8_startup_enable == 0 AND brake is not set AND there are no 
-  errors detected in function "safe_tests", set the target duty cycle to max (255) and the current will be 
-  controlled by the battery current controller. Else set the target duty cycle to 0.
-  
-  *************************************************************************************************************/
-
+  // set target motor PWM
   if(m_configuration_variables.ui8_walk_assist && ui8_m_brake_is_set == 0 && ui8_m_motor_enabled)
   {
     if(ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
@@ -431,20 +418,32 @@ static void ebike_control_motor (void)
 
 static void communications_controller (void)
 {
-  uint32_t ui32_temp;
-
 #ifndef DEBUG_UART
+
+  uart_receive_package ();
+
+  uart_send_package ();
+
+#endif
+}
+
+
+static void uart_receive_package(void)
+{ 
+  uint32_t ui32_temp;
+  
   if (ui8_received_package_flag)
   {
     // verify crc of the package
     ui16_crc_rx = 0xffff;
-    for (ui8_i = 0; ui8_i < 9; ui8_i++)
+    
+    for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_RECEIVE; ui8_i++)
     {
       crc16 (ui8_rx_buffer[ui8_i], &ui16_crc_rx);
     }
 
-    // see if CRC is ok...
-    if (((((uint16_t) ui8_rx_buffer [10]) << 8) + ((uint16_t) ui8_rx_buffer [9])) == ui16_crc_rx)
+    // if CRC is ok read the package
+    if (((((uint16_t) ui8_rx_buffer [UART_NUMBER_DATA_BYTES_TO_RECEIVE + 2]) << 8) + ((uint16_t) ui8_rx_buffer [UART_NUMBER_DATA_BYTES_TO_RECEIVE + 1])) == ui16_crc_rx)
     {
       ui8_master_comm_package_id = ui8_rx_buffer [1];
 
@@ -607,13 +606,10 @@ static void communications_controller (void)
     // enable UART2 receive interrupt as we are now ready to receive a new package
     UART2->CR2 |= (1 << 5);
   }
-
-  uart_send_package ();
-#endif
 }
 
 static void uart_send_package(void)
-{
+{  
   uint16_t ui16_temp;
 
   // send the data to the LCD
@@ -723,15 +719,17 @@ static void uart_send_package(void)
 
   // prepare crc of the package
   ui16_crc_tx = 0xffff;
-  for (ui8_i = 0; ui8_i <= 23; ui8_i++)
+  
+  for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_SEND; ui8_i++)
   {
     crc16 (ui8_tx_buffer[ui8_i], &ui16_crc_tx);
   }
-  ui8_tx_buffer[24] = (uint8_t) (ui16_crc_tx & 0xff);
-  ui8_tx_buffer[25] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
+  
+  ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 1] = (uint8_t) (ui16_crc_tx & 0xff);
+  ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 2] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
 
   // send the full package to UART
-  for (ui8_i = 0; ui8_i <= 25; ui8_i++)
+  for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_SEND + 2; ui8_i++)
   {
     putchar (ui8_tx_buffer[ui8_i]);
   }

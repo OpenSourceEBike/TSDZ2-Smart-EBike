@@ -178,7 +178,6 @@ void lcd_execute_menu_config_submenu_technical (void);
 void update_menu_flashing_state (void);
 void submenu_state_controller(uint8_t ui8_state_max_number);
 void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
-void recede_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
 void odometer_increase_field_state (void);
 
 
@@ -1164,7 +1163,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
       lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_field_state;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 5;
+      lcd_var_number.ui32_max_value = 6;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -1672,8 +1671,8 @@ void temperature (void)
       case 5:
         lcd_print (ui8_pedal_cadence_filtered, TEMPERATURE_FIELD, 1);
       break;
-/*       
-      // average wheel speed since power on                                                                       NO PROGRAM SPACE FOR THIS
+      
+      // average wheel speed since power on
       case 6:
         // check in what unit of measurement to display average wheel speed
         if (configuration_variables.ui8_units_type)
@@ -1687,7 +1686,7 @@ void temperature (void)
           lcd_print (ui8_average_measured_wheel_speed_x10/10, TEMPERATURE_FIELD, 1);
         }
       break;
-       */
+      
       // show nothing
       default:
       break;
@@ -3551,33 +3550,6 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
   }
 }
 
-void advance_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
-{
-  // advance on submenus on button_up_click_event
-  if (buttons_get_up_click_event ())
-  {
-    // clear button event
-    buttons_clear_up_click_event ();
-    
-    if (*ui8_p_state < ui8_state_max_number) { ++*ui8_p_state; } 
-    else { *ui8_p_state = 0; }
-  }
-}
-
-
-void recede_on_submenu (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
-{
-  // recede on submenus on button_down_click_event
-  if (buttons_get_down_click_event ())
-  {
-    // clear button event
-    buttons_clear_down_click_event ();
-
-    if (*ui8_p_state > 0) { --*ui8_p_state; } 
-    else { *ui8_p_state = ui8_state_max_number; }
-  }
-}
-
 
 void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 {
@@ -3589,21 +3561,6 @@ void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
     
     if (*ui8_p_state < ui8_state_max_number) { ++*ui8_p_state; } 
     else { *ui8_p_state = 0; }
-    
-    odometer_start_show_field_number ();
-  }
-}
-
-void recede_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
-{
-  // if click down - click long down event
-  if (buttons_get_down_click_long_click_event ())
-  {
-    // clear button event
-    buttons_clear_down_click_long_click_event ();
-    
-    if (*ui8_p_state > 0) { --*ui8_p_state; } 
-    else { *ui8_p_state = ui8_state_max_number; }
     
     odometer_start_show_field_number ();
   }

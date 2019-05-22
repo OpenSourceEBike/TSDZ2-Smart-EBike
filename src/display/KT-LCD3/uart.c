@@ -15,15 +15,16 @@
 #include "lcd.h"
 #include "utils.h"
 
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   23  // change this value depending on how many data bytes there is to receive
+#define UART_NUMBER_DATA_BYTES_TO_SEND      9   // change this value depending on how many data bytes there is to send
+
 volatile uint8_t  ui8_received_package_flag = 0;
-volatile uint8_t  ui8_rx_buffer[26];
+volatile uint8_t  ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
 volatile uint8_t  ui8_rx_counter = 0;
-volatile uint8_t  ui8_tx_buffer[11];
-volatile uint8_t  ui8_tx_counter = 0;
+volatile uint8_t  ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 3];
 volatile uint8_t  ui8_i;
 static uint16_t   ui16_crc_rx;
 static uint16_t   ui16_crc_tx;
-static uint8_t    ui8_lcd_variable_id = 0;
 static uint8_t    ui8_master_comm_package_id = 0;
 static uint8_t    ui8_slave_comm_package_id = 0;
 volatile uint8_t  ui8_byte_received;
@@ -75,7 +76,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
       ui8_rx_counter++;
 
       // see if is the last byte of the package
-      if (ui8_rx_counter > 27)
+      if (ui8_rx_counter > UART_NUMBER_DATA_BYTES_TO_RECEIVE + 4)
       {
         ui8_rx_counter = 0;
         ui8_state_machine = 0;
@@ -103,12 +104,14 @@ void uart_data_clock (void)
     // validation of the package data
     // last byte is the checksum
     ui16_crc_rx = 0xffff;
-    for (ui8_i = 0; ui8_i <= 23; ui8_i++)
+    
+    for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_RECEIVE; ui8_i++)
     {
       crc16 (ui8_rx_buffer[ui8_i], &ui16_crc_rx);
     }
-
-    if (((((uint16_t) ui8_rx_buffer [25]) << 8) + ((uint16_t) ui8_rx_buffer [24])) == ui16_crc_rx)
+    
+    // if CRC is ok read the package
+    if (((((uint16_t) ui8_rx_buffer [UART_NUMBER_DATA_BYTES_TO_RECEIVE + 2]) << 8) + ((uint16_t) ui8_rx_buffer [UART_NUMBER_DATA_BYTES_TO_RECEIVE + 1])) == ui16_crc_rx)
     {
       p_motor_controller_data = lcd_get_motor_controller_data ();
       p_configuration_variables = get_configuration_variables ();
@@ -298,21 +301,23 @@ void uart_data_clock (void)
         break;
         
         default:
-          ui8_lcd_variable_id = 0;
+          // nothing
         break;
       }
 
       // prepare crc of the package
       ui16_crc_tx = 0xffff;
-      for (ui8_i = 0; ui8_i <= 8; ui8_i++)
+      
+      for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_SEND; ui8_i++)
       {
         crc16 (ui8_tx_buffer[ui8_i], &ui16_crc_tx);
       }
-      ui8_tx_buffer[9] = (uint8_t) (ui16_crc_tx & 0xff);
-      ui8_tx_buffer[10] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
+      
+      ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 1] = (uint8_t) (ui16_crc_tx & 0xff);
+      ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 2] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
 
       // send the full package to UART
-      for (ui8_i = 0; ui8_i <= 10; ui8_i++)
+      for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_SEND + 2; ui8_i++)
       {
         putchar (ui8_tx_buffer[ui8_i]);
       }
