@@ -87,15 +87,14 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 volatile struct_configuration_variables m_configuration_variables;
 
 // variables for UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   9   // change this value depending on how many data bytes there is to receive
-#define UART_NUMBER_DATA_BYTES_TO_SEND      23  // change this value depending on how many data bytes there is to send
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   8   // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_NUMBER_DATA_BYTES_TO_SEND      23  // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
 volatile uint8_t ui8_rx_counter = 0;
 volatile uint8_t ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 3];
 volatile uint8_t ui8_i;
-volatile uint8_t ui8_checksum;
 volatile uint8_t ui8_byte_received;
 volatile uint8_t ui8_state_machine = 0;
 volatile uint8_t ui8_uart_received_first_package = 0;
@@ -111,11 +110,6 @@ uint16_t ui16_adc_motor_temperatured_accumulated = 0;
 
 uint8_t ui8_m_adc_battery_target_current;
 
-
-
-// safe tests
-uint8_t safe_tests_state_machine = 0;
-uint8_t safe_tests_state_machine_counter = 0;
 
 static uint8_t ui8_m_motor_enabled = 1;
 
@@ -150,8 +144,7 @@ static void     boost_run_statemachine (void);
 static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
-static void safe_tests(void);
-
+static void     check_system(void);
 
 void ebike_app_init (void)
 {
@@ -171,6 +164,7 @@ void ebike_app_controller (void)
   calc_motor_temperature();
   ebike_control_motor();
   communications_controller();
+  check_system();
 }
 
 
@@ -352,11 +346,10 @@ static void ebike_control_motor (void)
   }
 
   // execute some safe tests
-  safe_tests();
+  //safe_tests();
 
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set ||
-     m_configuration_variables.ui8_error_states != ERROR_STATE_NO_ERRORS)
+  if(ui8_m_brake_is_set || m_configuration_variables.ui8_system_state != NO_ERROR)
   {
     ui8_m_adc_battery_target_current = 0;
   }
@@ -429,12 +422,12 @@ static void communications_controller (void)
 
 
 static void uart_receive_package(void)
-{ 
+{
   uint32_t ui32_temp;
   
   if (ui8_received_package_flag)
   {
-    // verify crc of the package
+    // validation of the package data
     ui16_crc_rx = 0xffff;
     
     for (ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_RECEIVE; ui8_i++)
@@ -442,7 +435,7 @@ static void uart_receive_package(void)
       crc16 (ui8_rx_buffer[ui8_i], &ui16_crc_rx);
     }
 
-    // if CRC is ok read the package
+    // if CRC is correct read the package (16 bit value and therefore last two bytes)
     if (((((uint16_t) ui8_rx_buffer [UART_NUMBER_DATA_BYTES_TO_RECEIVE + 2]) << 8) + ((uint16_t) ui8_rx_buffer [UART_NUMBER_DATA_BYTES_TO_RECEIVE + 1])) == ui16_crc_rx)
     {
       ui8_master_comm_package_id = ui8_rx_buffer [1];
@@ -609,17 +602,18 @@ static void uart_receive_package(void)
 }
 
 static void uart_send_package(void)
-{  
+{
   uint16_t ui16_temp;
 
-  // send the data to the LCD
   // start up byte
   ui8_tx_buffer[0] = 0x43;
+  
+  // message ID
   ui8_tx_buffer[1] = ui8_master_comm_package_id;
   ui8_tx_buffer[2] = ui8_slave_comm_package_id;
 
-  ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
   // adc 10 bits battery voltage
+  ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
   ui8_tx_buffer[3] = (ui16_temp & 0xff);
   ui8_tx_buffer[4] = ((uint8_t) (ui16_temp >> 4)) & 0x30;
 
@@ -680,7 +674,7 @@ static void uart_send_package(void)
   {
     case 0:
       // error states
-      ui8_tx_buffer[19] = m_configuration_variables.ui8_error_states;
+      ui8_tx_buffer[19] = m_configuration_variables.ui8_system_state;
     break;
 
     case 1:
@@ -1228,10 +1222,12 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
 
       case 1:
       ui8_rx_buffer [ui8_rx_counter] = ui8_byte_received;
+      
+      // increment index for next byte
       ui8_rx_counter++;
 
-      // see if is the last byte of the package
-      if (ui8_rx_counter > 12)
+      // reset if it is the last byte of the package and index is out of bounds
+      if (ui8_rx_counter >= UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3)
       {
         ui8_rx_counter = 0;
         ui8_state_machine = 0;
@@ -1253,68 +1249,136 @@ struct_configuration_variables* get_configuration_variables (void)
 }
 
 
+void check_system()
+{
+  #define MOTOR_BLOCKED_COUNTER_THRESHOLD           50  // 50  =>  5 seconds
+  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD   1   // 1  =>  1 * 0.826 ampere
+  #define MOTOR_BLOCKED_ERPS_THRESHOLD              20  // 20 ERPS
+  #define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD     100 // 100  =>  10 seconds
+  
+  static uint8_t ui8_motor_blocked_counter;
+  static uint8_t ui8_motor_blocked_reset_counter = 20;
+
+  // if the motor blocked error is enabled start resetting it
+  if (m_configuration_variables.ui8_system_state == ERROR_MOTOR_BLOCKED)
+  {
+    // increment motor blocked reset counter with 100 milliseconds
+    ui8_motor_blocked_reset_counter++;
+    
+    // check if the counter has counted to the set threshold for reset
+    if (ui8_motor_blocked_reset_counter > MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD)
+    {
+      // reset motor blocked error code
+      //m_configuration_variables.ui8_system_state == NO_ERROR;
+    }
+  }
+  else
+  {
+    // if battery current is over the current threshold and the motor ERPS is below threshold start setting motor blocked error code
+    if ((motor_get_adc_battery_current_filtered_10b() > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
+    {
+      // increment motor blocked counter with 100 milliseconds
+      ui8_motor_blocked_counter++;
+      
+      // check if motor is blocked more than some safe time threshold
+      if (ui8_motor_blocked_counter > MOTOR_BLOCKED_COUNTER_THRESHOLD)
+      {
+        // set motor blocked error code
+        m_configuration_variables.ui8_system_state = ERROR_MOTOR_BLOCKED;
+        
+        // reset the counter that clears the motor blocked error
+        ui8_motor_blocked_reset_counter = 0;
+      }
+    }
+    else
+    {
+      // current is below the threshold and/or motor ERPS is above the threshold so reset the counter
+      ui8_motor_blocked_counter = 0;
+    }
+  }
+}
+
+/*
 static void safe_tests(void)
 {
-  // enabe only next state machine if user has startup without pedal rotation
+  #define SAFE_TEST_THROTTLE_THRESHOLD        0
+  #define SAFE_TEST_TORQUE_SENSOR_THRESHOLD   12
+
+  static uint8_t safe_tests_state_machine = 0;            // added
+  static uint8_t safe_tests_state_machine_counter = 0;    // added
+  
+  // enable only next state machine if user has startup without pedal rotation
   if(m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation ||
-      (ui8_m_brake_is_set == 0) ||
-      m_configuration_variables.ui8_assist_level_factor_x10 ||
-      !m_configuration_variables.ui8_walk_assist)
+    (ui8_m_brake_is_set == 0) ||
+     m_configuration_variables.ui8_assist_level_factor_x10 ||
+     !m_configuration_variables.ui8_walk_assist)
   {
     switch(safe_tests_state_machine)
     {
-      // start when torque sensor or throttle or walk assist / cruise
       case 0:
-        if(ui8_torque_sensor > 12 ||
-            ui8_throttle)
+      
+        // start when torque sensor or throttle is above threshold
+        if(ui8_torque_sensor > SAFE_TEST_TORQUE_SENSOR_THRESHOLD || ui8_throttle > SAFE_TEST_THROTTLE_THRESHOLD)
         {
+          // reset counter and go to next state
           safe_tests_state_machine_counter = 0;
           safe_tests_state_machine = 1;
+          
           break;
         }
+        
       break;
 
-      // wait during 5 seconds for bicyle wheel speed > 4km/h, if not we have an error
+      
       case 1:
+      
+        // increment state machine timer with 100 milliseconds 
         safe_tests_state_machine_counter++;
-
-        // timeout of 10 seconds, not less to be higher than value on torque_sensor_read ()
-        // hopefully, 10 seconds is safe enough value, mosfets may not burn in 10 seconds if ebike wheel is blocked
-        if(safe_tests_state_machine_counter > 100)
+        
+        // if some time has passed without any wheel rotation return an error state 
+        if(safe_tests_state_machine_counter > 100) // hopefully, 10 seconds is safe enough value, mosfets may not burn in 10 seconds if ebike wheel is blocked
         {
-          m_configuration_variables.ui8_error_states |= ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+          // set error code
+          m_configuration_variables.ui8_system_state = ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+          
+          // reset counter and go to next state
           safe_tests_state_machine_counter = 0;
           safe_tests_state_machine = 2;
+          
           break;
         }
 
-        // bicycle wheel is rotating so we are safe
-        if(ui16_wheel_speed_x10 > 40) // seems that 4 km/h may be the min value we can measure for the bicycle wheel speed
+        // if wheel speed is over some value everything is safe
+        if(ui16_wheel_speed_x10 > 40) // seems that 4 km/h may be the minimum value possible to measure for the bicycle wheel speed
         {
+          // reset counter and go to next state
           safe_tests_state_machine_counter = 0;
           safe_tests_state_machine = 3;
+          
           break;
         }
 
-        // if release of: torque sensor AND throttle AND walk assist / cruise -> restart
-        if(ui8_torque_sensor < 12 &&
-            ui8_throttle == 0)
+        // if torque sensor or throttle is below threshold reset state machine
+        if(ui8_torque_sensor <= SAFE_TEST_TORQUE_SENSOR_THRESHOLD && ui8_throttle <= SAFE_TEST_THROTTLE_THRESHOLD)
         {
           safe_tests_state_machine = 0;
         }
+        
       break;
 
-      // wait 3 consecutive seconds for torque sensor and throttle and walk assist / cruise == 0, then restart
       case 2:
-        if(ui8_torque_sensor < 12 &&
-            ui8_throttle == 0)
+        
+        // wait 3 consecutive seconds for torque sensor and throttle and walk assist / cruise == 0, then restart
+        if(ui8_torque_sensor <= SAFE_TEST_TORQUE_SENSOR_THRESHOLD && ui8_throttle <= SAFE_TEST_THROTTLE_THRESHOLD)
         {
           safe_tests_state_machine_counter++;
 
           if(safe_tests_state_machine_counter > 30)
           {
-            m_configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED;
+            // reset error code and go to next state
+            m_configuration_variables.ui8_system_state = ERROR_STATE_NO_ERRORS;
             safe_tests_state_machine = 0;
+            
             break;
           }
         }
@@ -1323,26 +1387,33 @@ static void safe_tests(void)
         {
           safe_tests_state_machine_counter = 0;
         }
+        
       break;
 
-      // wait for bicycle wheel to be stopped so we can start again our state machine
       case 3:
+      
+        // if bicycle wheel has stopped restart state machine
         if(ui16_wheel_speed_x10 == 0)
         {
           safe_tests_state_machine = 0;
+          
           break;
         }
+        
       break;
 
       default:
+      
         safe_tests_state_machine = 0;
+        
       break;
     }
   }
   else
   {
-    // keep reseting state machine
-    m_configuration_variables.ui8_error_states &= ~ERROR_STATE_EBIKE_WHEEL_BLOCKED; // disable error state in case it was enabled
+    // keep reseting state machine and reset all error codes
     safe_tests_state_machine = 0;
+    m_configuration_variables.ui8_system_state = ERROR_STATE_NO_ERRORS; 
   }
 }
+*/

@@ -24,8 +24,8 @@
 #include "watchdog.h"
 #include "math.h"
 
-#define SVM_TABLE_LEN 256
-#define SIN_TABLE_LEN 60
+#define SVM_TABLE_LEN   256
+#define SIN_TABLE_LEN   60
 
 uint8_t ui8_svm_table [SVM_TABLE_LEN] =
 {
@@ -287,7 +287,7 @@ uint8_t ui8_svm_table [SVM_TABLE_LEN] =
     238 ,
 };
 
-uint8_t ui8_sin_table [SVM_TABLE_LEN] =
+uint8_t ui8_sin_table [SIN_TABLE_LEN] =
 {
     0 ,
     3 ,

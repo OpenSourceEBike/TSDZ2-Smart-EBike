@@ -2180,7 +2180,7 @@ void odometer (void)
   }
 
   // if there are errors, show the error number on odometer field instead of any other information
-  if (motor_controller_data.ui8_error_states != ERROR_STATE_NO_ERRORS)
+  if (motor_controller_data.ui8_error_states != NO_ERROR)
   {
     if (ui8_lcd_menu_flash_state)
     {
