@@ -138,13 +138,13 @@ static void apply_walk_assist(uint8_t *ui8_p_adc_target_current);
 static void apply_cruise (uint8_t *ui8_target_current);
 static void apply_throttle(uint8_t ui8_throttle_value, uint8_t *ui8_target_current);
 
+static void check_system(void);
 
 // variables for BOOST function
 static void     boost_run_statemachine (void);
 static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
-static void     check_system(void);
 
 void ebike_app_init (void)
 {
@@ -1248,13 +1248,13 @@ struct_configuration_variables* get_configuration_variables (void)
 
 void check_system()
 {
-  #define MOTOR_BLOCKED_COUNTER_THRESHOLD           50  // 50  =>  5 seconds
-  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD   1   // 1  =>  1 * 0.826 ampere
-  #define MOTOR_BLOCKED_ERPS_THRESHOLD              20  // 20 ERPS
-  #define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD     100 // 100  =>  10 seconds
+  #define MOTOR_BLOCKED_COUNTER_THRESHOLD             50    // 50  =>  5 seconds
+  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5  8     // 8  =>  (8 * 0.826) / 5 = 1.3216 ampere  =>  (X) units = ((X * 0.826) / 5) ampere
+  #define MOTOR_BLOCKED_ERPS_THRESHOLD                10    // 10 ERPS
+  #define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD       100   // 100  =>  10 seconds
   
   static uint8_t ui8_motor_blocked_counter;
-  static uint8_t ui8_motor_blocked_reset_counter = 20;
+  static uint8_t ui8_motor_blocked_reset_counter;
 
   // if the motor blocked error is enabled start resetting it
   if (ui8_system_state == ERROR_MOTOR_BLOCKED)
@@ -1266,25 +1266,28 @@ void check_system()
     if (ui8_motor_blocked_reset_counter > MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD)
     {
       // reset motor blocked error code
-      ui8_system_state == NO_ERROR;
+      ui8_system_state = NO_ERROR;
+      
+      // reset the counter that clears the motor blocked error
+      ui8_motor_blocked_reset_counter = 0;
     }
   }
   else
   {
-    // if battery current is over the current threshold and the motor ERPS is below threshold start setting motor blocked error code
-    if ((motor_get_adc_battery_current_filtered_10b() > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
+    // if battery current (x5) is over the current threshold (x5) and the motor ERPS is below threshold start setting motor blocked error code
+    if ((motor_get_adc_battery_current_filtered_10b() > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
     {
       // increment motor blocked counter with 100 milliseconds
       ui8_motor_blocked_counter++;
       
-      // check if motor is blocked more than some safe time threshold
+      // check if motor is blocked for more than some safe threshold
       if (ui8_motor_blocked_counter > MOTOR_BLOCKED_COUNTER_THRESHOLD)
       {
         // set motor blocked error code
         ui8_system_state = ERROR_MOTOR_BLOCKED;
         
-        // reset the counter that clears the motor blocked error
-        ui8_motor_blocked_reset_counter = 0;
+        // reset motor blocked counter as the error code is set
+        ui8_motor_blocked_counter = 0;
       }
     }
     else
@@ -1294,123 +1297,3 @@ void check_system()
     }
   }
 }
-
-/*
-static void safe_tests(void)
-{
-  #define SAFE_TEST_THROTTLE_THRESHOLD        0
-  #define SAFE_TEST_TORQUE_SENSOR_THRESHOLD   12
-
-  static uint8_t safe_tests_state_machine = 0;            // added
-  static uint8_t safe_tests_state_machine_counter = 0;    // added
-  
-  // enable only next state machine if user has startup without pedal rotation
-  if(m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation ||
-    (ui8_m_brake_is_set == 0) ||
-     m_configuration_variables.ui8_assist_level_factor_x10 ||
-     !m_configuration_variables.ui8_walk_assist)
-  {
-    switch(safe_tests_state_machine)
-    {
-      case 0:
-      
-        // start when torque sensor or throttle is above threshold
-        if(ui8_torque_sensor > SAFE_TEST_TORQUE_SENSOR_THRESHOLD || ui8_throttle > SAFE_TEST_THROTTLE_THRESHOLD)
-        {
-          // reset counter and go to next state
-          safe_tests_state_machine_counter = 0;
-          safe_tests_state_machine = 1;
-          
-          break;
-        }
-        
-      break;
-
-      
-      case 1:
-      
-        // increment state machine timer with 100 milliseconds 
-        safe_tests_state_machine_counter++;
-        
-        // if some time has passed without any wheel rotation return an error state 
-        if(safe_tests_state_machine_counter > 100) // hopefully, 10 seconds is safe enough value, mosfets may not burn in 10 seconds if ebike wheel is blocked
-        {
-          // set error code
-          m_configuration_variables.ui8_system_state = ERROR_STATE_EBIKE_WHEEL_BLOCKED;
-          
-          // reset counter and go to next state
-          safe_tests_state_machine_counter = 0;
-          safe_tests_state_machine = 2;
-          
-          break;
-        }
-
-        // if wheel speed is over some value everything is safe
-        if(ui16_wheel_speed_x10 > 40) // seems that 4 km/h may be the minimum value possible to measure for the bicycle wheel speed
-        {
-          // reset counter and go to next state
-          safe_tests_state_machine_counter = 0;
-          safe_tests_state_machine = 3;
-          
-          break;
-        }
-
-        // if torque sensor or throttle is below threshold reset state machine
-        if(ui8_torque_sensor <= SAFE_TEST_TORQUE_SENSOR_THRESHOLD && ui8_throttle <= SAFE_TEST_THROTTLE_THRESHOLD)
-        {
-          safe_tests_state_machine = 0;
-        }
-        
-      break;
-
-      case 2:
-        
-        // wait 3 consecutive seconds for torque sensor and throttle and walk assist / cruise == 0, then restart
-        if(ui8_torque_sensor <= SAFE_TEST_TORQUE_SENSOR_THRESHOLD && ui8_throttle <= SAFE_TEST_THROTTLE_THRESHOLD)
-        {
-          safe_tests_state_machine_counter++;
-
-          if(safe_tests_state_machine_counter > 30)
-          {
-            // reset error code and go to next state
-            m_configuration_variables.ui8_system_state = ERROR_STATE_NO_ERRORS;
-            safe_tests_state_machine = 0;
-            
-            break;
-          }
-        }
-        // keep reseting the counter so we keep on this state
-        else
-        {
-          safe_tests_state_machine_counter = 0;
-        }
-        
-      break;
-
-      case 3:
-      
-        // if bicycle wheel has stopped restart state machine
-        if(ui16_wheel_speed_x10 == 0)
-        {
-          safe_tests_state_machine = 0;
-          
-          break;
-        }
-        
-      break;
-
-      default:
-      
-        safe_tests_state_machine = 0;
-        
-      break;
-    }
-  }
-  else
-  {
-    // keep reseting state machine and reset all error codes
-    safe_tests_state_machine = 0;
-    m_configuration_variables.ui8_system_state = ERROR_STATE_NO_ERRORS; 
-  }
-}
-*/

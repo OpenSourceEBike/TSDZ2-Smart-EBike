@@ -53,8 +53,8 @@
 
 // walk assist and cruise
 #define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10    80    // 8.0 km/h
-#define CRUISE_PID_KP                             12
-#define CRUISE_PID_KI                             0.8   // 48 volt motor: 1, 36 volt motor: 0.9
+#define CRUISE_PID_KP                             14    // 48 volt motor: 12, 36 volt motor: 14
+#define CRUISE_PID_KI                             0.7   // 48 volt motor: 1, 36 volt motor: 0.7
 #define CRUISE_PID_INTEGRAL_LIMIT                 1000
 #define CRUISE_PID_KD                             0
 
