@@ -59,6 +59,7 @@ static uint16_t   ui16_received_target_wheel_speed_x10 = 0;
 static uint16_t   ui16_target_wheel_speed_x10 = 0;
 
 // variables for various system functions
+volatile uint8_t ui8_system_state = NO_ERROR;
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
@@ -73,7 +74,6 @@ uint8_t   ui8_startup_boost_timer = 0;
 uint8_t   ui8_startup_boost_fade_steps = 0;
 uint16_t  ui16_startup_boost_fade_variable_x256;
 uint16_t  ui16_startup_boost_fade_variable_step_amount_x256;
-
 
 
 // variables for wheel speed
@@ -345,11 +345,8 @@ static void ebike_control_motor (void)
     m_configuration_variables.ui8_temperature_current_limiting_value = 255;
   }
 
-  // execute some safe tests
-  //safe_tests();
-
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set || m_configuration_variables.ui8_system_state != NO_ERROR)
+  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR)
   {
     ui8_m_adc_battery_target_current = 0;
   }
@@ -674,7 +671,7 @@ static void uart_send_package(void)
   {
     case 0:
       // error states
-      ui8_tx_buffer[19] = m_configuration_variables.ui8_system_state;
+      ui8_tx_buffer[19] = ui8_system_state;
     break;
 
     case 1:
@@ -1260,7 +1257,7 @@ void check_system()
   static uint8_t ui8_motor_blocked_reset_counter = 20;
 
   // if the motor blocked error is enabled start resetting it
-  if (m_configuration_variables.ui8_system_state == ERROR_MOTOR_BLOCKED)
+  if (ui8_system_state == ERROR_MOTOR_BLOCKED)
   {
     // increment motor blocked reset counter with 100 milliseconds
     ui8_motor_blocked_reset_counter++;
@@ -1269,7 +1266,7 @@ void check_system()
     if (ui8_motor_blocked_reset_counter > MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD)
     {
       // reset motor blocked error code
-      //m_configuration_variables.ui8_system_state == NO_ERROR;
+      ui8_system_state == NO_ERROR;
     }
   }
   else
@@ -1284,7 +1281,7 @@ void check_system()
       if (ui8_motor_blocked_counter > MOTOR_BLOCKED_COUNTER_THRESHOLD)
       {
         // set motor blocked error code
-        m_configuration_variables.ui8_system_state = ERROR_MOTOR_BLOCKED;
+        ui8_system_state = ERROR_MOTOR_BLOCKED;
         
         // reset the counter that clears the motor blocked error
         ui8_motor_blocked_reset_counter = 0;
