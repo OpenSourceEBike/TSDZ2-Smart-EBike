@@ -1437,7 +1437,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // offroad speed limit (when offroad mode is off)
+    // offroad speed limit
     case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_speed_limit;
       lcd_var_number.ui8_size = 8;
@@ -1463,7 +1463,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // power limit (W)
+    // offroad power limit (W)
     case 4:
       ui16_temp = ((uint16_t) configuration_variables.ui8_offroad_power_limit_div25) * 25;
       
@@ -1550,19 +1550,6 @@ void lcd_execute_menu_config_power (void)
 {
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
-  
-  // because this click event can happen and will block the detection of button_onoff_long_click_event
-  buttons_clear_onoff_click_event ();
-
-  // leave this menu with a button_onoff_long_click
-  if (buttons_get_onoff_long_click_event ())
-  {
-    buttons_clear_all_events ();
-    ui8_lcd_menu = 0;
-
-    // save the updated variables on EEPROM
-    eeprom_write_variables ();
-  }
 
   ui16_temp = ((uint16_t) configuration_variables.ui8_target_max_battery_power_div25) * 25;
   lcd_var_number.p_var_number = &ui16_temp;
@@ -1586,6 +1573,17 @@ void lcd_execute_menu_config_power (void)
   
   lcd_enable_w_symbol (1);
   lcd_enable_motor_symbol (1);
+  
+  // leave this power menu with a button_onoff_long_click
+  if (buttons_get_onoff_long_click_event ())
+  {
+    buttons_clear_onoff_long_click_event ();
+    
+    ui8_lcd_menu = 0;
+
+    // save the updated variables on EEPROM
+    eeprom_write_variables ();
+  }
 }
 
 
