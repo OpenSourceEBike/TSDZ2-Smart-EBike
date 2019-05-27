@@ -51,7 +51,6 @@ typedef struct _configuration_variables
   uint8_t ui8_offroad_speed_limit;
   uint8_t ui8_offroad_power_limit_enabled;
   uint8_t ui8_offroad_power_limit_div25;
-  uint8_t ui8_error_states;
   uint8_t ui8_ramp_up_amps_per_second_x10;
 } struct_configuration_variables;
 
