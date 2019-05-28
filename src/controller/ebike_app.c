@@ -35,27 +35,7 @@
 uint8_t ui8_adc_battery_max_current       = ADC_BATTERY_CURRENT_MAX;
 uint8_t ui8_target_battery_max_power_x10  = ADC_BATTERY_CURRENT_MAX;
 
-
-volatile uint8_t  ui8_throttle = 0;
-volatile uint8_t  ui8_torque_sensor = 0;
-volatile uint8_t  ui8_torque_sensor_raw = 0;
-volatile uint8_t  ui8_g_adc_torque_sensor_min_value;
-volatile uint8_t  ui8_g_adc_torque_sensor_max_value;
-volatile uint8_t  ui8_adc_battery_current_offset;
-volatile uint8_t  ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
-volatile uint8_t  ui8_adc_target_battery_max_current;
-uint8_t           ui8_adc_battery_current_max;
-
-volatile uint16_t ui16_current_ramp_up_inverse_step;
-
-// variables for walk assist
-uint8_t ui8_m_walk_assist_target_duty_cycle = 0;
-
-// variables for cruise function
-static uint8_t    ui8_cruise_target_PWM = 0;
-static uint8_t    ui8_initialize_cruise_PID = 1;
-static uint16_t   ui16_received_target_wheel_speed_x10 = 0;
-static uint16_t   ui16_target_wheel_speed_x10 = 0;
+volatile struct_configuration_variables m_configuration_variables;
 
 // variables for various system functions
 volatile uint8_t ui8_system_state = NO_ERROR;
@@ -65,14 +45,31 @@ uint8_t   ui8_pas_cadence_rpm = 0;
 uint16_t  ui16_pedal_torque_x10;
 uint16_t  ui16_pedal_power_x10;
 uint8_t   ui8_pedal_human_power = 0;
-uint8_t   ui8_startup_boost_enable = 0;
-uint8_t   ui8_startup_boost_fade_enable = 0;
-uint8_t   ui8_m_startup_boost_state_machine = 0;
-uint8_t   ui8_startup_boost_no_torque = 0;
-uint8_t   ui8_startup_boost_timer = 0;
-uint8_t   ui8_startup_boost_fade_steps = 0;
-uint16_t  ui16_startup_boost_fade_variable_x256;
-uint16_t  ui16_startup_boost_fade_variable_step_amount_x256;
+uint16_t  ui16_adc_motor_temperatured_accumulated = 0;
+uint8_t   ui8_m_adc_battery_target_current;
+static uint8_t ui8_m_motor_enabled = 1;
+static uint8_t ui8_m_brake_is_set = 0;
+volatile uint8_t  ui8_throttle = 0;
+volatile uint8_t  ui8_torque_sensor = 0;
+volatile uint8_t  ui8_torque_sensor_raw = 0;
+volatile uint8_t  ui8_g_adc_torque_sensor_min_value;
+volatile uint8_t  ui8_g_adc_torque_sensor_max_value;
+volatile uint8_t  ui8_adc_battery_current_offset;
+volatile uint8_t  ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
+volatile uint8_t  ui8_adc_target_battery_max_current;
+uint8_t           ui8_adc_battery_current_max;
+volatile uint16_t ui16_current_ramp_up_inverse_step;
+
+
+// variables for walk assist
+uint8_t ui8_m_walk_assist_target_duty_cycle = 0;
+
+
+// variables for cruise function
+static uint8_t    ui8_cruise_target_PWM = 0;
+static uint8_t    ui8_initialize_cruise_PID = 1;
+static uint16_t   ui16_received_target_wheel_speed_x10 = 0;
+static uint16_t   ui16_target_wheel_speed_x10 = 0;
 
 
 // variables for wheel speed
@@ -82,8 +79,6 @@ float               f_wheel_speed_x10;
 static uint16_t     ui16_wheel_speed_x10;
 volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
-
-volatile struct_configuration_variables m_configuration_variables;
 
 // UART
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   6   // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
@@ -104,23 +99,12 @@ static void communications_controller (void);
 static void uart_receive_package (void);
 static void uart_send_package (void);
 
-
-uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
-
-uint16_t ui16_adc_motor_temperatured_accumulated = 0;
-
-uint8_t ui8_m_adc_battery_target_current;
-
-
-static uint8_t ui8_m_motor_enabled = 1;
-
-static uint8_t ui8_m_brake_is_set = 0;
-
+// system functions
 static void ebike_control_motor (void);
 static void ebike_app_set_battery_max_current (uint8_t ui8_value);
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
 
-
+static void check_system(void);
 static void throttle_read (void);
 static void read_pas_cadence (void);
 static void torque_sensor_read (void);
@@ -135,12 +119,20 @@ static void apply_walk_assist(uint8_t *ui8_p_adc_target_current);
 static void apply_cruise (uint8_t *ui8_target_current);
 static void apply_throttle(uint8_t ui8_throttle_value, uint8_t *ui8_target_current);
 
-static void check_system(void);
 
-// variables for BOOST function
+// BOOST
+uint8_t   ui8_startup_boost_enable = 0;
+uint8_t   ui8_startup_boost_fade_enable = 0;
+uint8_t   ui8_m_startup_boost_state_machine = 0;
+uint8_t   ui8_startup_boost_no_torque = 0;
+uint8_t   ui8_startup_boost_timer = 0;
+uint8_t   ui8_startup_boost_fade_steps = 0;
+uint16_t  ui16_startup_boost_fade_variable_x256;
+uint16_t  ui16_startup_boost_fade_variable_step_amount_x256;
 static void     boost_run_statemachine (void);
 static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
+
 
 
 void ebike_app_init (void)
@@ -272,7 +264,7 @@ static void ebike_control_motor (void)
   }
 
 
-  // apply throttle if enabled
+  // throttle
   apply_throttle(ui8_throttle, &ui8_m_adc_battery_target_current);
 
 
@@ -301,7 +293,7 @@ static void ebike_control_motor (void)
   apply_speed_limit(ui16_wheel_speed_x10, m_configuration_variables.ui8_wheel_max_speed, &ui8_m_adc_battery_target_current);
 
 
-  /* User configured max power on display */
+  // max power
   if(m_configuration_variables.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
   {
     // limit the current to max value defined by user on LCD max power, if:
@@ -315,15 +307,12 @@ static void ebike_control_motor (void)
   }
 
 
-  // limit current if motor temperature is too high and this feature is enabled by the user
+  // motor over temperature protection
   apply_temperature_limiting(&ui8_m_adc_battery_target_current);
 
 
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR)
-  {
-    ui8_m_adc_battery_target_current = 0;
-  }
+  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR) { ui8_m_adc_battery_target_current = 0; }
 
   // check to see if we should enable the motor
   if(ui8_m_motor_enabled == 0 &&
@@ -357,7 +346,7 @@ static void ebike_control_motor (void)
     ui8_g_duty_cycle = 0;
   }
 
-  // set target motor PWM
+  // set motor PWM target
   if(m_configuration_variables.ui8_walk_assist && ui8_m_brake_is_set == 0 && ui8_m_motor_enabled)
   {
     if(ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
@@ -657,8 +646,7 @@ static void uart_send_package(void)
 static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value)
 {
   // limit max number of amps
-  if (ui8_value > ui8_adc_battery_current_max)
-    ui8_value = ui8_adc_battery_current_max;
+  if (ui8_value > ui8_adc_battery_current_max) { ui8_value = ui8_adc_battery_current_max; }
 
   ui8_adc_target_battery_max_current = ui8_adc_battery_current_offset + ui8_value;
 }
@@ -670,8 +658,7 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   // each 1 unit = 0.625 amps (0.625 * 256 = 160)
   ui8_adc_battery_current_max = ((((uint16_t) ui8_value) << 8) / 160);
 
-  if (ui8_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX)
-    ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX;
+  if (ui8_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX) { ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX; }
 }
 
 
@@ -1055,6 +1042,8 @@ static void read_pas_cadence(void)
 
 static void torque_sensor_read(void)
 {
+  static uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
+  
   // map value from 0 up to 255
   // map value from 0 up to 255
   ui8_torque_sensor_raw = (uint8_t) (map (  UI8_ADC_TORQUE_SENSOR,
@@ -1069,8 +1058,7 @@ static void torque_sensor_read(void)
   {
     // ebike is stopped
     case STATE_NO_PEDALLING:
-    if(ui8_torque_sensor_raw > 0 &&
-        ui16_wheel_speed_x10)
+    if(ui8_torque_sensor_raw > 0 && ui16_wheel_speed_x10)
     {
       ui8_tstr_state_machine = STATE_PEDALLING;
     }
@@ -1078,8 +1066,7 @@ static void torque_sensor_read(void)
 
     // wait on this state and reset when ebike stops
     case STATE_PEDALLING:
-    if(ui16_wheel_speed_x10 == 0 &&
-        ui8_torque_sensor_raw == 0)
+    if(ui16_wheel_speed_x10 == 0 && ui8_torque_sensor_raw == 0)
     {
       ui8_tstr_state_machine = STATE_NO_PEDALLING;
     }
@@ -1090,8 +1077,7 @@ static void torque_sensor_read(void)
   }
 
   // bike is moving but user doesn't pedal, disable torque sensor signal because user can be resting the feet on the pedals
-  if(ui8_tstr_state_machine == STATE_PEDALLING &&
-      ui8_pas_cadence_rpm == 0)
+  if(ui8_tstr_state_machine == STATE_PEDALLING && ui8_pas_cadence_rpm == 0)
   {
     ui8_torque_sensor = 0;
   }

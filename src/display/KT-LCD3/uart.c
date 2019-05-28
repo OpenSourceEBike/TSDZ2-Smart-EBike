@@ -97,8 +97,6 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
 
 void uart_data_clock (void)
 {
-  static uint32_t ui32_wss_tick_temp;
-  
   struct_motor_controller_data *p_motor_controller_data;
   struct_configuration_variables *p_configuration_variables;
 
@@ -119,14 +117,13 @@ void uart_data_clock (void)
       p_configuration_variables = get_configuration_variables ();
       
       // ADC 10 bits battery voltage
-      p_motor_controller_data->ui16_adc_battery_voltage = ui8_rx_buffer[1];
-      p_motor_controller_data->ui16_adc_battery_voltage |= ((uint16_t) (ui8_rx_buffer[2] & 0x30)) << 4;
+      p_motor_controller_data->ui16_adc_battery_voltage = (((uint16_t) (ui8_rx_buffer[2] & 0x30)) << 4) + ui8_rx_buffer[1];
       
       // battery current x5
       p_motor_controller_data->ui8_battery_current_x5 = ui8_rx_buffer[3];
       
       // wheel speed
-      p_motor_controller_data->ui16_wheel_speed_x10 = (((uint16_t) ui8_rx_buffer [4]) << 8) + ((uint16_t) ui8_rx_buffer [5]);
+      p_motor_controller_data->ui16_wheel_speed_x10 = (((uint16_t) ui8_rx_buffer [5]) << 8) + ((uint16_t) ui8_rx_buffer [4]);
       
       // brake state
       p_motor_controller_data->ui8_motor_controller_state_2 = ui8_rx_buffer[6];
@@ -177,10 +174,7 @@ void uart_data_clock (void)
       p_motor_controller_data->ui8_temperature_current_limiting_value = ui8_rx_buffer[18];
       
       // wheel_speed_sensor_tick_counter
-      ui32_wss_tick_temp = ((uint32_t) ui8_rx_buffer[19]);
-      ui32_wss_tick_temp |= (((uint32_t) ui8_rx_buffer[20]) << 8);
-      ui32_wss_tick_temp |= (((uint32_t) ui8_rx_buffer[21]) << 16);
-      p_motor_controller_data->ui32_wheel_speed_sensor_tick_counter = ui32_wss_tick_temp;
+      p_motor_controller_data->ui32_wheel_speed_sensor_tick_counter = (((uint32_t) ui8_rx_buffer[21]) << 16) + (((uint32_t) ui8_rx_buffer[20]) << 8) + ((uint32_t) ui8_rx_buffer[19]);
 
       // ui16_pedal_torque_x10
       p_motor_controller_data->ui16_pedal_torque_x10 = (((uint16_t) ui8_rx_buffer [23]) << 8) + ((uint16_t) ui8_rx_buffer [22]);
@@ -221,7 +215,7 @@ void uart_data_clock (void)
                          ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1));
       
       // battery power limit
-      if (p_configuration_variables->ui8_offroad_feature_enabled && p_configuration_variables->ui8_offroad_power_limit_enabled)
+      if (p_motor_controller_data->ui8_offroad_state && p_configuration_variables->ui8_offroad_power_limit_enabled)
       {
         ui8_tx_buffer[4] = p_configuration_variables->ui8_offroad_power_limit_div25;
       }
@@ -246,7 +240,7 @@ void uart_data_clock (void)
 
         case 2:
           // wheel max speed
-          if (p_configuration_variables->ui8_offroad_feature_enabled)
+          if (p_motor_controller_data->ui8_offroad_state)
           {
             ui8_tx_buffer[5] = p_configuration_variables->ui8_offroad_speed_limit;
           }
@@ -311,7 +305,7 @@ void uart_data_clock (void)
         break;
         
         default:
-          // nothing
+          ui8_message_ID = 0;
         break;
       }
 
