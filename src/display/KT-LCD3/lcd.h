@@ -13,8 +13,6 @@
 #include "stm8s_gpio.h"
 #include "common/common.h"
 
-//ui8_rx_buffer[2] == 8 if torque sensor
-//ui8_rx_buffer[2] == 4 if motor running
 typedef struct _motor_controller_data
 {
   uint16_t ui16_adc_battery_voltage;
@@ -32,8 +30,8 @@ typedef struct _motor_controller_data
   uint8_t ui8_braking;
   uint8_t ui8_pedal_cadence;
   uint8_t ui8_lights;
+  uint8_t ui8_offroad_state;
   uint8_t ui8_walk_assist_level;
-  uint8_t ui8_offroad_mode;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
   uint8_t ui8_temperature_current_limiting_value;

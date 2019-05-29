@@ -90,8 +90,8 @@ static uint16_t   ui16_pedal_torque_filtered;
 static uint16_t   ui16_pedal_power_filtered;
 static uint8_t    ui8_pedal_cadence_filtered;
 
-static uint8_t    ui8_motor_controller_init = 1;
 static uint8_t    ui8_lights_state = 0;
+static uint8_t    ui8_offroad_state = 0;
 
 static uint8_t    ui8_lcd_menu = 0;
 static uint8_t    ui8_lcd_menu_config_submenu_state = 0;
@@ -157,7 +157,6 @@ void walk_assist_state (void);
 void offroad_mode (void);
 void time_measurement (void);
 void energy_data (void);
-uint8_t first_time_management (void);
 uint8_t reset_variable_check (void);
 
 
@@ -270,28 +269,26 @@ void lcd_clock (void)
 {
   // clear the screen
   lcd_clear ();
-  
-  // check if start up is active
-  if (first_time_management ()) { return; }
+
+  // update LCD when the first communication package is received from the motor controller
+  if (uart_received_first_package () == 0) { return; }
   
   update_menu_flashing_state ();
 
-  // enter menu configurations: UP + DOWN click event
-  if (buttons_get_up_down_click_event () && ui8_lcd_menu != 1)
+  // enter configuration menu: UP + DOWN click event
+  if (buttons_get_up_down_click_event () && ui8_lcd_menu == 0)
   {
-    buttons_clear_up_down_click_event ();
+    buttons_clear_all_events ();
     
     ui8_lcd_menu = 1;
   }
   
   // enter power menu if enabled: ONOFF + UP click event
-  if (!configuration_variables.ui8_offroad_feature_enabled && configuration_variables.ui8_main_screen_power_menu_enabled)
+  if (configuration_variables.ui8_main_screen_power_menu_enabled && buttons_get_onoff_state () && buttons_get_up_state ())
   {
-    if (buttons_get_onoff_state () && buttons_get_up_state ())
-    {
-      buttons_clear_all_events ();
-      ui8_lcd_menu = 2;
-    }
+    buttons_clear_all_events ();
+    
+    ui8_lcd_menu = 2;
   }
 
   switch (ui8_lcd_menu)
@@ -306,6 +303,10 @@ void lcd_clock (void)
     
     case 2:
       lcd_execute_menu_config_power ();
+    break;
+    
+    default:
+      ui8_lcd_menu = 0;
     break;
   }
 
@@ -429,6 +430,7 @@ void lcd_execute_menu_config (void)
       buttons_clear_onoff_click_event ();
 
       ui8_lcd_menu_config_submenu_active = 1;
+      
       ui8_config_wh_x10_offset = 1;
     }
     
@@ -437,11 +439,11 @@ void lcd_execute_menu_config (void)
     {
       buttons_clear_onoff_long_click_event ();
       
-      // switch to main screen
-      ui8_lcd_menu = 0;
-
       // save the updated variables on EEPROM
       eeprom_write_variables ();
+      
+      // switch to main screen
+      ui8_lcd_menu = 0;
 
       return;
     }
@@ -1413,7 +1415,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
-    // enable/disable offroad functionality
+    // enable/disable offroad mode
     case 0:
       lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_feature_enabled;
       lcd_var_number.ui8_size = 8;
@@ -1437,7 +1439,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // offroad speed limit (when offroad mode is off)
+    // offroad speed limit
     case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_speed_limit;
       lcd_var_number.ui8_size = 8;
@@ -1463,14 +1465,14 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // power limit (W)
+    // offroad power limit
     case 4:
       ui16_temp = ((uint16_t) configuration_variables.ui8_offroad_power_limit_div25) * 25;
       
       lcd_var_number.p_var_number = &ui16_temp;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1000;
+      lcd_var_number.ui32_max_value = 1900;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 25;
       lcd_var_number.ui8_odometer_field = BATTERY_POWER_FIELD;
@@ -1551,18 +1553,8 @@ void lcd_execute_menu_config_power (void)
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
   
-  // because this click event can happen and will block the detection of button_onoff_long_click_event
-  buttons_clear_onoff_click_event ();
-
-  // leave this menu with a button_onoff_long_click
-  if (buttons_get_onoff_long_click_event ())
-  {
-    buttons_clear_all_events ();
-    ui8_lcd_menu = 0;
-
-    // save the updated variables on EEPROM
-    eeprom_write_variables ();
-  }
+  // enable change of variables
+  ui8_lcd_menu_config_submenu_change_variable_enabled = 1;
 
   ui16_temp = ((uint16_t) configuration_variables.ui8_target_max_battery_power_div25) * 25;
   lcd_var_number.p_var_number = &ui16_temp;
@@ -1586,37 +1578,23 @@ void lcd_execute_menu_config_power (void)
   
   lcd_enable_w_symbol (1);
   lcd_enable_motor_symbol (1);
-}
-
-
-uint8_t first_time_management (void)
-{
-  uint8_t ui8_status = 0;
-
-  // don't update LCD up to we get first communication package from the motor controller
-  if (ui8_motor_controller_init && (uart_received_first_package () == 0))
+  
+  // leave config power menu with a long onoff click
+  if (buttons_get_onoff_long_click_event ())
   {
-    ui8_status = 1;
+    buttons_clear_all_events ();
+    
+    // disable change of variables
+    ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
+
+    // save the updated variables on EEPROM
+    eeprom_write_variables ();
+    
+    // change to main screen
+    ui8_lcd_menu = 0;
+    
+    return;
   }
-  // this will be executed only 1 time at startup
-  else if (ui8_motor_controller_init)
-  {
-    ui8_motor_controller_init = 0;
-
-    // reset Wh value if battery voltage is over ui16_battery_voltage_reset_wh_counter_x10 (value configured by user)
-    if (((uint32_t) motor_controller_data.ui16_adc_battery_voltage *
-        ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000) > ((uint32_t) configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 1000))
-    {
-      configuration_variables.ui32_wh_x10_offset = 0;
-    }
-
-    if (configuration_variables.ui8_offroad_feature_enabled && configuration_variables.ui8_offroad_enabled_on_startup)
-    {
-      motor_controller_data.ui8_offroad_mode = 1;
-    }
-  }
-
-  return ui8_status;
 }
 
 
@@ -1760,6 +1738,18 @@ void time_measurement (void)
 
 void energy_data (void)
 {
+  static uint8_t ui8_execute_on_startup = 1;
+  
+  // reset watt-hour value if battery voltage is over threshold set from user, only executed once during startup
+  if (ui8_execute_on_startup)
+  {
+    ui8_execute_on_startup = 0;
+    if (((uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000) > ((uint32_t) configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 1000))
+    {
+      configuration_variables.ui32_wh_x10_offset = 0;
+    }
+  }
+
   // calculate watt-hours since power on
   ui32_wh_since_power_on_x10 = ui32_wh_sum_x5 / 18000; //  wh_sum_x5  /  (3600 * 5)
   
@@ -1954,7 +1944,7 @@ void assist_level_state (void)
   lcd_print (configuration_variables.ui8_assist_level, ASSIST_LEVEL_FIELD, 1);
 
   // if offroad mode is disabled also display "assist" symbol
-  if (motor_controller_data.ui8_offroad_mode == 0)
+  if (ui8_offroad_state == 0)
   {
     lcd_enable_assist_symbol (1);
   }
@@ -2056,22 +2046,39 @@ void offroad_mode (void)
 {
   static uint8_t offroad_mode_assist_symbol_state;
   static uint8_t offroad_mode_assist_symbol_state_blink_counter;
+  static uint8_t ui8_execute_on_startup = 1;
   
   if (configuration_variables.ui8_offroad_feature_enabled) 
   {
-    if (buttons_get_onoff_state () && buttons_get_up_long_click_event ())
+    // enable offroad mode if user has enabled offroad mode on startup
+    if (ui8_execute_on_startup)
     {
-      buttons_clear_all_events ();
-      motor_controller_data.ui8_offroad_mode = 1;
+      ui8_execute_on_startup = 0;
+      
+      if (configuration_variables.ui8_offroad_enabled_on_startup) 
+      {
+        ui8_offroad_state = 1;
+        motor_controller_data.ui8_offroad_state = 1;
+      }
     }
-
+    
     if (buttons_get_onoff_state () && buttons_get_down_long_click_event ())
     {
       buttons_clear_all_events ();
-      motor_controller_data.ui8_offroad_mode = 0;
+      
+      if (ui8_offroad_state == 0) 
+      {
+        ui8_offroad_state = 1;
+        motor_controller_data.ui8_offroad_state = 1;
+      }
+      else 
+      {
+        ui8_offroad_state = 0;
+        motor_controller_data.ui8_offroad_state = 0;
+      }
     }
 
-    if (motor_controller_data.ui8_offroad_mode == 1) 
+    if (ui8_offroad_state == 1) 
     {
       if (++offroad_mode_assist_symbol_state_blink_counter > 50)
       {
@@ -2825,9 +2832,187 @@ void lcd_update (void)
 
 void lcd_print(uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options)
 {
-  uint8_t ui8_digit;
-  uint8_t ui8_counter;
+/*   #define DECIMAL   1
 
+  switch (ui8_lcd_field)
+  {
+    case ASSIST_LEVEL_FIELD:
+    
+      // first delete the field
+      ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field]] &= NUMBERS_MASK;
+      
+      // extract first digit
+      uint8_t ui8_digit = ui32_number % 10;
+      
+      // print digit in field
+      ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field]] &= ui8_lcd_digit_mask[NUMBERS_MASK];   
+
+    break;
+    
+    case ODOMETER_FIELD:
+    
+      // first delete the old number in the field and then print the new number, digit by digit
+      for (uint8_t ui8_counter = 0; ui8_counter < 5; ui8_counter++)
+      {
+        ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= NUMBERS_MASK;
+
+        uint8_t ui8_digit = ui32_number % 10;
+
+        if ((ui8_options == DECIMAL) && (ui8_counter == 0))
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else if (ui8_counter > 1 && ui32_number == 0) // print empty (NUMBERS_MASK) if digit is zero
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] |= ui8_lcd_digit_mask[ui8_digit];
+        }
+        
+        // shift number so next digit is prepared to be printed
+        ui32_number >> 1;
+      }
+      
+      // enable decimal point
+      if (ui8_options == DECIMAL) { lcd_enable_odometer_point_symbol(1); }
+      else { lcd_enable_odometer_point_symbol(0); }
+      
+    break;
+    
+    case TEMPERATURE_FIELD:
+    
+      for (uint8_t ui8_counter = 0; ui8_counter < 2; ui8_counter++)
+      {
+        ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= NUMBERS_MASK;
+
+        uint8_t ui8_digit = ui32_number % 10;
+
+        if ((ui8_options == DECIMAL) && (ui8_counter == 0))
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else if ((ui8_counter > 0) && (ui32_number == 0))
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] - ui8_counter] |= ui8_lcd_digit_mask[ui8_digit];
+        }
+
+        ui32_number >> 1;
+      }
+  
+      // enable only the "1 symbol" if temperature is > 99
+      if (ui32_number > 99) { lcd_enable_temperature_1_symbol(1); }
+      else { lcd_enable_temperature_1_symbol(0); }
+    
+    break;
+    
+    case WHEEL_SPEED_FIELD:
+  
+      for (uint8_t ui8_counter = 0; ui8_counter < 3; ui8_counter++)
+      {
+        ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= NUMBERS_MASK;
+
+        uint8_t ui8_digit = ui32_number % 10;
+
+        if ((ui8_options == DECIMAL) && (ui8_counter == 0))
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else if (ui8_counter > 1 && ui32_number == 0) // print only first 2 zeros
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] |= ui8_lcd_digit_mask_inverted[ui8_digit];
+        }
+        
+        ui32_number >> 1;
+      }
+      
+      // enable decimal point
+      if (ui8_options == DECIMAL) { lcd_enable_wheel_speed_point_symbol(1); }
+      else { lcd_enable_wheel_speed_point_symbol(0); }
+      
+    break;
+    
+    case BATTERY_POWER_FIELD:
+    
+      for (uint8_t ui8_counter = 0; ui8_counter < 3; ui8_counter++)
+      {
+        ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= NUMBERS_MASK;
+
+        uint8_t ui8_digit = ui32_number % 10;
+
+        if (ui8_counter > 0 && ui32_number == 0) // print only first zero
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else
+        {
+          ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] |= ui8_lcd_digit_mask_inverted[ui8_digit];
+        }
+
+        ui32_number >> 1;
+      }
+      
+      // enable the "1 symbol" if power is > 999
+      if (ui32_number >= 1000) { lcd_enable_battery_power_1_symbol(1); }
+      else { lcd_enable_battery_power_1_symbol(0); }
+    
+    break;
+    
+    case TIME_SECOND_FIELD:
+    
+      for (uint8_t ui8_counter = 0; ui8_counter < 2; ui8_counter++)
+      {
+        ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= NUMBERS_MASK;
+
+        uint8_t ui8_digit = ui32_number % 10;
+        
+        ui8_lcd_frame_buffer[SECOND_DIGIT_OFFSET + ui8_counter] |= ui8_lcd_digit_mask_inverted[ui8_digit];
+
+        ui32_number >> 1;
+      }
+      
+    break;
+    
+    case TIME_MINUTE_FIELD:
+    
+      // first delete the old number in the field and then print the new number, digit by digit
+      for (uint8_t ui8_counter = 0; ui8_counter < 3; ui8_counter++)
+      {
+        ui8_lcd_frame_buffer[ui8_lcd_field_offset[ui8_lcd_field] + ui8_counter] &= NUMBERS_MASK;
+
+        uint8_t ui8_digit = ui32_number % 10;
+        
+        if (ui8_counter > 0 && ui32_number == 0)
+        {
+          ui8_lcd_frame_buffer[MINUTE_DIGIT_OFFSET + ui8_counter] &= ui8_lcd_digit_mask[NUMBERS_MASK];
+        }
+        else
+        {
+          ui8_lcd_frame_buffer[MINUTE_DIGIT_OFFSET + ui8_counter] |= ui8_lcd_digit_mask_inverted[ui8_digit];
+        }
+        
+        ui32_number >> 1;
+      }
+    
+    break;
+    
+    default:
+      // out of bounds
+    break;
+  } */
+  
+  uint8_t ui8_counter;
+  uint8_t ui8_digit;
+  
   // multiply the value by 10 to not show decimal digit if ...
   if( (ui8_options == 0) && (ui8_lcd_field != ASSIST_LEVEL_FIELD) && (ui8_lcd_field != BATTERY_POWER_FIELD) && (ui8_lcd_field != TIME_SECOND_FIELD) && (ui8_lcd_field != TIME_MINUTE_FIELD) )
   {
