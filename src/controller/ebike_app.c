@@ -47,6 +47,7 @@ uint16_t  ui16_pedal_power_x10;
 uint8_t   ui8_pedal_human_power = 0;
 uint16_t  ui16_adc_motor_temperatured_accumulated = 0;
 uint8_t   ui8_m_adc_battery_target_current;
+uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 static uint8_t ui8_m_motor_enabled = 1;
 static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
@@ -1042,8 +1043,6 @@ static void read_pas_cadence(void)
 
 static void torque_sensor_read(void)
 {
-  static uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
-  
   // map value from 0 up to 255
   // map value from 0 up to 255
   ui8_torque_sensor_raw = (uint8_t) (map (  UI8_ADC_TORQUE_SENSOR,
