@@ -1553,6 +1553,9 @@ void lcd_execute_menu_config_power (void)
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
   
+  // because this click event can happen and will block the detection of button_onoff_long_click_event
+  buttons_clear_onoff_click_event ();
+  
   // enable change of variables
   ui8_lcd_menu_config_submenu_change_variable_enabled = 1;
 
@@ -1587,7 +1590,7 @@ void lcd_execute_menu_config_power (void)
     // disable change of variables
     ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
 
-    // save the updated variables on EEPROM
+    // save the updated variables to EEPROM
     eeprom_write_variables ();
     
     // change to main screen
@@ -1738,12 +1741,13 @@ void time_measurement (void)
 
 void energy_data (void)
 {
-  static uint8_t ui8_execute_on_startup = 1;
+  static uint8_t ui8_executed_on_startup;
   
   // reset watt-hour value if battery voltage is over threshold set from user, only executed once during startup
-  if (ui8_execute_on_startup)
+  if (!ui8_executed_on_startup)
   {
-    ui8_execute_on_startup = 0;
+    ui8_executed_on_startup = 1;
+    
     if (((uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000) > ((uint32_t) configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 1000))
     {
       configuration_variables.ui32_wh_x10_offset = 0;
@@ -2046,14 +2050,14 @@ void offroad_mode (void)
 {
   static uint8_t offroad_mode_assist_symbol_state;
   static uint8_t offroad_mode_assist_symbol_state_blink_counter;
-  static uint8_t ui8_execute_on_startup = 1;
+  static uint8_t ui8_executed_on_startup;
   
   if (configuration_variables.ui8_offroad_feature_enabled) 
   {
     // enable offroad mode if user has enabled offroad mode on startup
-    if (ui8_execute_on_startup)
+    if (!ui8_executed_on_startup)
     {
-      ui8_execute_on_startup = 0;
+      ui8_executed_on_startup = 1;
       
       if (configuration_variables.ui8_offroad_enabled_on_startup) 
       {
