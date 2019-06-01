@@ -446,18 +446,12 @@ static void uart_receive_package(void)
 
         case 3:
           // type of motor (36 volt, 48 volt or some experimental type)
-          m_configuration_variables.ui8_motor_type = (ui8_rx_buffer [5] & 3);
+          m_configuration_variables.ui8_motor_type = ui8_rx_buffer [5];
           
-          // motor assistance without pedal rotation enable/disable when startup 
-          m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer [5] & 4) >> 2;
-          
-          // motor temperature limit function enable/disable
-          m_configuration_variables.ui8_temperature_limit_feature_enabled = (ui8_rx_buffer [5] & 8) >> 3;
-          
-          // startup motor boost state
+          // startup motor power boost state
           m_configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [6] & 1);
           
-          // startup power boost max power limit
+          // startup power boost max power limit enabled
           m_configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [6] & 2) >> 1;
         break;
 
@@ -474,7 +468,7 @@ static void uart_receive_package(void)
           m_configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [5];
           
           // startup motor boost enabled
-          m_configuration_variables.ui8_startup_motor_power_boost_feature_enabled = (ui8_rx_buffer [6] & 1);
+          m_configuration_variables.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer [6];
         break;
 
         case 6:
@@ -519,6 +513,14 @@ static void uart_receive_package(void)
           
           // received target speed for cruise
           ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer [6] * 10);
+        break;
+        
+        case 8:
+          // motor temperature limit function or throttle
+          m_configuration_variables.ui8_temperature_limit_feature_enabled = ui8_rx_buffer [5];
+          
+          // motor assistance without pedal rotation enable/disable when startup 
+          m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = ui8_rx_buffer [6];
         break;
         
         default:

@@ -91,7 +91,7 @@ static uint16_t   ui16_pedal_power_filtered;
 static uint8_t    ui8_pedal_cadence_filtered;
 
 static uint8_t    ui8_lights_state = 0;
-static uint8_t    ui8_offroad_state = 0;
+static uint8_t    ui8_street_mode_enabled = 0;
 
 static uint8_t    ui8_lcd_menu = 0;
 static uint8_t    ui8_lcd_menu_config_submenu_state = 0;
@@ -154,7 +154,7 @@ void low_pass_filter_pedal_torque_and_power (void);
 static void low_pass_filter_pedal_cadence (void);
 void lights_state (void);
 void walk_assist_state (void);
-void offroad_mode (void);
+void street_mode (void);
 void time_measurement (void);
 void energy_data (void);
 uint8_t reset_variable_check (void);
@@ -172,7 +172,7 @@ void lcd_execute_menu_config_submenu_cruise (void);
 void lcd_execute_menu_config_main_screen_setup (void);
 void lcd_execute_menu_config_submenu_motor_startup_power_boost (void);
 void lcd_execute_menu_config_submenu_motor_temperature (void);
-void lcd_execute_menu_config_submenu_offroad_mode (void);
+void lcd_execute_menu_config_submenu_street_mode (void);
 void lcd_execute_menu_config_submenu_technical (void);
 void update_menu_flashing_state (void);
 void submenu_state_controller(uint8_t ui8_state_max_number);
@@ -283,8 +283,8 @@ void lcd_clock (void)
     ui8_lcd_menu = 1;
   }
   
-  // enter power menu if enabled: ONOFF + UP click event
-  if (configuration_variables.ui8_main_screen_power_menu_enabled && buttons_get_onoff_state () && buttons_get_up_state ())
+  // enter power menu if enabled and not in street mode: ONOFF + UP click event
+  if (buttons_get_onoff_state () && buttons_get_up_state () && configuration_variables.ui8_main_screen_power_menu_enabled && !ui8_street_mode_enabled)
   {
     buttons_clear_all_events ();
     
@@ -340,7 +340,7 @@ void lcd_execute_main_screen (void)
   odometer ();
   wheel_speed ();
   walk_assist_state ();
-  offroad_mode ();
+  street_mode ();
   power ();
   battery_soc ();
   lights_state ();
@@ -390,7 +390,7 @@ void lcd_execute_menu_config (void)
       break;
 
       case 8:
-        lcd_execute_menu_config_submenu_offroad_mode ();
+        lcd_execute_menu_config_submenu_street_mode ();
       break;
 
       case 9:
@@ -1199,7 +1199,7 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
     lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
     lcd_configurations_print_number(&lcd_var_number);
   }
-  // enabled on startup when wheel speed is zero or always when cadence was zero
+  // enabled on startup when wheel speed is zero or always when cadence is zero
   else if (ui8_lcd_menu_config_submenu_state == 1)
   {
     ui8_temp = configuration_variables.ui8_startup_motor_power_boost_state & 1;
@@ -1408,16 +1408,16 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
 }
 
 
-void lcd_execute_menu_config_submenu_offroad_mode (void)
+void lcd_execute_menu_config_submenu_street_mode (void)
 {
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
-    // enable/disable offroad mode
+    // enable/disable street mode
     case 0:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_feature_enabled;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_function_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 1;
@@ -1427,9 +1427,9 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // enable offroad mode on system startup
+    // enable street mode on system startup
     case 1:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_enabled_on_startup;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_enabled_on_startup;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 1;
@@ -1439,9 +1439,9 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // offroad speed limit
+    // street mode speed limit
     case 2:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_speed_limit;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_speed_limit;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 99;
@@ -1453,9 +1453,9 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_enable_kmh_symbol (1);
     break;
 
-    // enable/disable power limit
+    // enable/disable street mode power limit
     case 3:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_offroad_power_limit_enabled;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_power_limit_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 1;
@@ -1465,9 +1465,9 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // offroad power limit
+    // street mode power limit
     case 4:
-      ui16_temp = ((uint16_t) configuration_variables.ui8_offroad_power_limit_div25) * 25;
+      ui16_temp = ((uint16_t) configuration_variables.ui8_street_mode_power_limit_div25) * 25;
       
       lcd_var_number.p_var_number = &ui16_temp;
       lcd_var_number.ui8_size = 16;
@@ -1477,7 +1477,7 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       lcd_var_number.ui32_increment_step = 25;
       lcd_var_number.ui8_odometer_field = BATTERY_POWER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-      configuration_variables.ui8_offroad_power_limit_div25 = (uint8_t) (ui16_temp / 25);
+      configuration_variables.ui8_street_mode_power_limit_div25 = (uint8_t) (ui16_temp / 25);
       
       
       if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -1487,9 +1487,21 @@ void lcd_execute_menu_config_submenu_offroad_mode (void)
       }
       
     break;
+    
+    // enable/disable throttle during street mode
+    case 5:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_throttle_enabled;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
   }
   
-  submenu_state_controller(4);
+  submenu_state_controller(5);
 
   if (ui8_lcd_menu_config_submenu_state != 2 && (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled))
   {
@@ -1947,8 +1959,8 @@ void assist_level_state (void)
   // display assist level
   lcd_print (configuration_variables.ui8_assist_level, ASSIST_LEVEL_FIELD, 1);
 
-  // if offroad mode is disabled also display "assist" symbol
-  if (ui8_offroad_state == 0)
+  // if street mode is disabled display "assist" symbol
+  if (!ui8_street_mode_enabled)
   {
     lcd_enable_assist_symbol (1);
   }
@@ -2046,51 +2058,52 @@ void walk_assist_state (void)
 }
 
 
-void offroad_mode (void)
+void street_mode (void)
 {
-  static uint8_t offroad_mode_assist_symbol_state;
-  static uint8_t offroad_mode_assist_symbol_state_blink_counter;
+  static uint8_t ui8_street_mode_assist_symbol_state;
+  static uint8_t ui8_street_mode_assist_symbol_state_counter;
   static uint8_t ui8_executed_on_startup;
   
-  if (configuration_variables.ui8_offroad_feature_enabled) 
+  if (configuration_variables.ui8_street_mode_function_enabled) 
   {
-    // enable offroad mode if user has enabled offroad mode on startup
+    // enable street mode if user has enabled street mode on startup
     if (!ui8_executed_on_startup)
     {
       ui8_executed_on_startup = 1;
       
-      if (configuration_variables.ui8_offroad_enabled_on_startup) 
+      if (configuration_variables.ui8_street_mode_enabled_on_startup) 
       {
-        ui8_offroad_state = 1;
-        motor_controller_data.ui8_offroad_state = 1;
+        ui8_street_mode_enabled = 1;
+        motor_controller_data.ui8_street_mode_enabled = 1;
       }
     }
     
-    if (buttons_get_onoff_state () && buttons_get_down_long_click_event ())
+    if (buttons_get_onoff_state () && buttons_get_down_state ())
     {
       buttons_clear_all_events ();
       
-      if (ui8_offroad_state == 0) 
+      if (ui8_street_mode_enabled)
       {
-        ui8_offroad_state = 1;
-        motor_controller_data.ui8_offroad_state = 1;
+        ui8_street_mode_enabled = 0;
+        motor_controller_data.ui8_street_mode_enabled = 0;
       }
       else 
       {
-        ui8_offroad_state = 0;
-        motor_controller_data.ui8_offroad_state = 0;
+        ui8_street_mode_enabled = 1;
+        motor_controller_data.ui8_street_mode_enabled = 1;
       }
     }
-
-    if (ui8_offroad_state == 1) 
+    
+    if (ui8_street_mode_enabled) 
     {
-      if (++offroad_mode_assist_symbol_state_blink_counter > 50)
+      if (++ui8_street_mode_assist_symbol_state_counter > 50)
       {
-        offroad_mode_assist_symbol_state_blink_counter = 0;
-        offroad_mode_assist_symbol_state = !offroad_mode_assist_symbol_state;
+        ui8_street_mode_assist_symbol_state_counter = 0;
+        
+        ui8_street_mode_assist_symbol_state = !ui8_street_mode_assist_symbol_state;
       }
 
-      lcd_enable_assist_symbol (offroad_mode_assist_symbol_state);
+      lcd_enable_assist_symbol (ui8_street_mode_assist_symbol_state);
     }
   }
 }

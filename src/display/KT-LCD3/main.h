@@ -113,12 +113,13 @@
 
 
 
-// default values for offroad function
-#define DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED                       0
-#define DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP               0
-#define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT                           25
-#define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED                   0
-#define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25                     10  // 10 * 25 = 250 W
+// default values for street mode function
+#define DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED                  0
+#define DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP                0
+#define DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT                       25
+#define DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED               0
+#define DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25                 10  // 10 * 25 = 250 W
+#define DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED                  0   // throttle is disabled in street mode by default
 
 
 

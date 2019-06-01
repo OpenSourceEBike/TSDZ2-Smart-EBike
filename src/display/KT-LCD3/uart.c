@@ -17,7 +17,7 @@
 
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   25  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_NUMBER_DATA_BYTES_TO_SEND      6   // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
-#define UART_MAX_NUMBER_MESSAGE_ID          7
+#define UART_MAX_NUMBER_MESSAGE_ID          8   // change this value depending on how many different packages there is to send
 
 volatile uint8_t  ui8_received_package_flag = 0;
 volatile uint8_t  ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
@@ -215,9 +215,9 @@ void uart_data_clock (void)
                          ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1));
       
       // battery power limit
-      if (p_motor_controller_data->ui8_offroad_state && p_configuration_variables->ui8_offroad_power_limit_enabled)
+      if (p_motor_controller_data->ui8_street_mode_enabled && p_configuration_variables->ui8_street_mode_power_limit_enabled)
       {
-        ui8_tx_buffer[4] = p_configuration_variables->ui8_offroad_power_limit_div25;
+        ui8_tx_buffer[4] = p_configuration_variables->ui8_street_mode_power_limit_div25;
       }
       else
       {
@@ -240,9 +240,9 @@ void uart_data_clock (void)
 
         case 2:
           // wheel max speed
-          if (p_motor_controller_data->ui8_offroad_state)
+          if (p_motor_controller_data->ui8_street_mode_enabled)
           {
-            ui8_tx_buffer[5] = p_configuration_variables->ui8_offroad_speed_limit;
+            ui8_tx_buffer[5] = p_configuration_variables->ui8_street_mode_speed_limit;
           }
           else
           {
@@ -255,18 +255,14 @@ void uart_data_clock (void)
 
         case 3:
           // set motor type
-          // enable/disable motor assistance without pedal rotation
-          // enable/disable motor temperature limit function
-          ui8_tx_buffer[5] = ((p_configuration_variables->ui8_motor_type & 3) |
-                             ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
-                             ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3));
-                             
-          // motor power boost startup state
+          ui8_tx_buffer[5] = p_configuration_variables->ui8_motor_type;
+          
+          // motor power boost startup state and limit to max
           ui8_tx_buffer[6] = p_configuration_variables->ui8_startup_motor_power_boost_state;
         break;
 
         case 4:
-          // startup motor power boost
+          // startup motor power boost factor 
           ui8_tx_buffer[5] = p_configuration_variables->ui8_startup_motor_power_boost_factor [((p_configuration_variables->ui8_assist_level) - 1)];
           
           // startup motor power boost time
@@ -278,7 +274,7 @@ void uart_data_clock (void)
           ui8_tx_buffer[5] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
           
           // boost feature enabled
-          ui8_tx_buffer[6] = (p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled & 1) ? 1 : 0;
+          ui8_tx_buffer[6] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
         break;
 
         case 6:
@@ -302,6 +298,21 @@ void uart_data_clock (void)
           {
             ui8_tx_buffer[6] = 0;
           }
+        break;
+        
+        case 8:
+          // enable/disable motor temperature limit function or throttle
+          if (p_motor_controller_data->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_temperature_limit_feature_enabled == 2)
+          {
+            ui8_tx_buffer[5] = 0;
+          }
+          else
+          {
+            ui8_tx_buffer[5] = p_configuration_variables->ui8_temperature_limit_feature_enabled;
+          }
+          
+          // enable/disable motor assistance without pedal rotation
+          ui8_tx_buffer[6] = p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation;
         break;
         
         default:
