@@ -95,8 +95,6 @@ static uint8_t    ui8_street_mode_enabled = 0;
 
 static uint8_t    ui8_lcd_menu = 0;
 static uint8_t    ui8_lcd_menu_config_submenu_state = 0;
-static uint8_t    ui8_lcd_menu_flash_counter = 0;
-static uint16_t   ui16_lcd_menu_flash_counter_temperature = 0;
 static uint8_t    ui8_lcd_menu_flash_state;
 static uint8_t    ui8_lcd_menu_flash_state_temperature;
 static uint8_t    ui8_lcd_menu_config_submenu_number = 0;
@@ -157,7 +155,6 @@ void walk_assist_state (void);
 void street_mode (void);
 void time_measurement (void);
 void energy_data (void);
-uint8_t reset_variable_check (void);
 
 
 // menu functions
@@ -178,10 +175,10 @@ void update_menu_flashing_state (void);
 void submenu_state_controller(uint8_t ui8_state_max_number);
 void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
 void odometer_increase_field_state (void);
+uint8_t reset_variable_check (void);
 
 
 // LCD functions
-static void automatic_power_off_management (void);
 void lcd_power_off (uint8_t SaveToEEPROM);
 void lcd_update (void);
 void lcd_clear (void);
@@ -275,7 +272,7 @@ void lcd_clock (void)
   
   update_menu_flashing_state ();
 
-  // enter configuration menu: UP + DOWN click event
+  // enter configuration menu if...
   if (buttons_get_up_down_click_event () && ui8_lcd_menu == 0)
   {
     buttons_clear_all_events ();
@@ -283,8 +280,8 @@ void lcd_clock (void)
     ui8_lcd_menu = 1;
   }
   
-  // enter power menu if enabled and not in street mode: ONOFF + UP click event
-  if (buttons_get_onoff_state () && buttons_get_up_state () && configuration_variables.ui8_main_screen_power_menu_enabled && !ui8_street_mode_enabled)
+  // enter quick configure power menu if... 
+  if (buttons_get_onoff_up_click_event () && configuration_variables.ui8_main_screen_power_menu_enabled && !ui8_street_mode_enabled && ui8_lcd_menu == 0)
   {
     buttons_clear_all_events ();
     
@@ -311,25 +308,11 @@ void lcd_clock (void)
   }
 
   low_pass_filter_battery_voltage_current_power ();
-  
-  // filter using every 500 ms value
-  if (ui8_lcd_menu_counter_500ms_state)
-  {
-    low_pass_filter_pedal_cadence ();
-  }
-
-  // filter using every 100 ms value
-  if (ui8_lcd_menu_counter_100ms_state)
-  {
-    low_pass_filter_pedal_torque_and_power ();
-  }
-
+  low_pass_filter_pedal_cadence ();
+  low_pass_filter_pedal_torque_and_power ();
   calc_battery_soc ();
   calc_distance ();
-  automatic_power_off_management ();
   lcd_update ();
-
-  // power off system: ONOFF long click event
   power_off_management ();
 }
 
@@ -437,15 +420,13 @@ void lcd_execute_menu_config (void)
     // leave config menu if button_onoff_long_click
     if (buttons_get_onoff_long_click_event ())
     {
-      buttons_clear_onoff_long_click_event ();
+      buttons_clear_all_events ();
       
       // save the updated variables on EEPROM
       eeprom_write_variables ();
       
       // switch to main screen
       ui8_lcd_menu = 0;
-
-      return;
     }
     
     // print submenu number only half of the time
@@ -1565,9 +1546,6 @@ void lcd_execute_menu_config_power (void)
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
   
-  // because this click event can happen and will block the detection of button_onoff_long_click_event
-  buttons_clear_onoff_click_event ();
-  
   // enable change of variables
   ui8_lcd_menu_config_submenu_change_variable_enabled = 1;
 
@@ -1607,16 +1585,39 @@ void lcd_execute_menu_config_power (void)
     
     // change to main screen
     ui8_lcd_menu = 0;
-    
-    return;
   }
 }
 
 
 void power_off_management (void)
 {
-  // power off system
+  static uint16_t ui16_seconds_since_power_on_offset;
+  
+  // power off system if ONOFF long click
   if (buttons_get_onoff_long_click_event ()) { lcd_power_off (1); }
+  
+  // check if automatic power off management is configured to any value
+  if (configuration_variables.ui8_lcd_power_off_time_minutes != 0)
+  {
+    // check if there is system activity
+    if ((motor_controller_data.ui16_wheel_speed_x10 > 0) ||     // wheel speed > 0
+        (motor_controller_data.ui8_battery_current_x5 > 0) ||   // battery current > 0
+        (motor_controller_data.ui8_braking) ||                  // braking
+        (buttons_get_events ()))                                // any button active
+    {
+      // reset offset
+      ui16_seconds_since_power_on_offset = ui16_seconds_since_power_on;
+    }
+    else 
+    {
+      // check if system has been inactive over or equal to the configured threshold time
+      if (ui16_seconds_since_power_on - ui16_seconds_since_power_on_offset >= (configuration_variables.ui8_lcd_power_off_time_minutes * 60))
+      {
+        // power off system and save variables to EEPROM
+        lcd_power_off (1);
+      }
+    }
+  }
 }
 
 
@@ -1876,10 +1877,13 @@ void calc_battery_soc (void)
 {
   uint16_t ui16_fluctuate_battery_voltage_x10;
   uint32_t ui32_temp;
+  static uint8_t ui8_update_counter;
 
-  // update battery level value every 100 ms -> 10 times per second. This helps to filter the fast changing values
-  if (ui8_lcd_menu_counter_100ms_state)
+  if (++ui8_update_counter > 10) // update battery level value every 100 ms -> 10. This helps to filter the fast changing values
   {
+    // reset counter
+    ui8_update_counter = 0;
+    
     // calculate battery voltage that takes into consideration current and internal battery pack resistance
     ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
     
@@ -1969,23 +1973,13 @@ void assist_level_state (void)
 
 void lights_state (void)
 {
-  // if UP button is click and hold
   if (buttons_get_up_long_click_event ())
   {
-    // clear button event
     buttons_clear_up_long_click_event ();
     
     // toggle light state and display backlight
-    if (ui8_lights_state == 0)
-    {
-      ui8_lights_state = 1;
-      motor_controller_data.ui8_lights = 1;
-    }
-    else
-    {
-      ui8_lights_state = 0;
-      motor_controller_data.ui8_lights = 0;
-    }
+    ui8_lights_state = !ui8_lights_state;
+    motor_controller_data.ui8_lights = ui8_lights_state;
   }
   
   // set backlight brightness
@@ -2078,25 +2072,18 @@ void street_mode (void)
       }
     }
     
-    if (buttons_get_onoff_state () && buttons_get_down_state ())
+    if (buttons_get_onoff_down_click_event ())
     {
       buttons_clear_all_events ();
       
-      if (ui8_street_mode_enabled)
-      {
-        ui8_street_mode_enabled = 0;
-        motor_controller_data.ui8_street_mode_enabled = 0;
-      }
-      else 
-      {
-        ui8_street_mode_enabled = 1;
-        motor_controller_data.ui8_street_mode_enabled = 1;
-      }
+      ui8_street_mode_enabled = !ui8_street_mode_enabled;
+      
+      motor_controller_data.ui8_street_mode_enabled = ui8_street_mode_enabled;
     }
     
     if (ui8_street_mode_enabled) 
     {
-      if (++ui8_street_mode_assist_symbol_state_counter > 50)
+      if (++ui8_street_mode_assist_symbol_state_counter > 40)
       {
         ui8_street_mode_assist_symbol_state_counter = 0;
         
@@ -2111,8 +2098,7 @@ void street_mode (void)
 
 void brake (void)
 {
-  if (motor_controller_data.ui8_braking) { lcd_enable_brake_symbol (1); }
-  else { lcd_enable_brake_symbol (0); }
+  lcd_enable_brake_symbol (motor_controller_data.ui8_braking);
 }
 
 
@@ -2141,23 +2127,25 @@ uint8_t reset_variable_check (void)
   // if there is one down_click_long_click_event
   if (buttons_get_down_click_long_click_event())
   {
+    buttons_clear_down_long_click_event();
+    
+    // start counting to reset variable
     ui8_odometer_reset_distance_counter_state = 1;
+    
+    // reset counter for variable reset
+    ui16_odometer_reset_distance_counter = 0;
   }
   
   if (ui8_odometer_reset_distance_counter_state)
   {
     if (buttons_get_down_state ())
     {
-      // clear the button events
+      // clear the possible button event (can maybe be removed)
       buttons_clear_down_click_event();
-      buttons_clear_down_long_click_event();
 
       // count time, after limit, reset everything
       if (++ui16_odometer_reset_distance_counter > 300)
       {
-        // reset counter
-        ui16_odometer_reset_distance_counter = 0;
-        
         // reset counter state
         ui8_odometer_reset_distance_counter_state = 0;
         
@@ -2176,11 +2164,6 @@ uint8_t reset_variable_check (void)
     {
       ui8_odometer_reset_distance_counter_state = 0;
     }
-  }
-  else
-  {
-    // reset counter
-    ui16_odometer_reset_distance_counter = 0;
   }
   
   // display variable as usual
@@ -3444,50 +3427,57 @@ void low_pass_filter_pedal_torque_and_power (void)
 {
   static uint32_t ui32_pedal_torque_accumulated;
   static uint32_t ui32_pedal_power_accumulated;
-  
-  // low pass filter for pedal torque display
-  ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
-  ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
-  ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
+  static uint8_t ui8_update_counter;
 
-  if (ui16_pedal_torque_filtered > 200)
+  if (++ui8_update_counter > 10) // update every 100 ms -> 10. This helps to filter the fast changing values
   {
-    ui16_pedal_torque_filtered /= 20;
-    ui16_pedal_torque_filtered *= 20;
-  }
-  else if (ui16_pedal_torque_filtered > 100)
-  {
-    ui16_pedal_torque_filtered /= 10;
-    ui16_pedal_torque_filtered *= 10;
-  }
-  else
-  {
-    // do nothing to orginal values
-  }
+    // reset counter
+    ui8_update_counter = 0;
+    
+    // low pass filter for pedal torque display
+    ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
+    ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
+    ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
 
-  // low pass filter for pedal power display
-  ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
-  ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
-  ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
+    if (ui16_pedal_torque_filtered > 200)
+    {
+      ui16_pedal_torque_filtered /= 20;
+      ui16_pedal_torque_filtered *= 20;
+    }
+    else if (ui16_pedal_torque_filtered > 100)
+    {
+      ui16_pedal_torque_filtered /= 10;
+      ui16_pedal_torque_filtered *= 10;
+    }
+    else
+    {
+      // do nothing to orginal values
+    }
 
-  if (ui16_pedal_power_filtered > 500)
-  {
-    ui16_pedal_power_filtered /= 25;
-    ui16_pedal_power_filtered *= 25;
-  }
-  else if (ui16_pedal_power_filtered > 200)
-  {
-    ui16_pedal_power_filtered /= 20;
-    ui16_pedal_power_filtered *= 20;
-  }
-  else if (ui16_pedal_power_filtered > 10)
-  {
-    ui16_pedal_power_filtered /= 10;
-    ui16_pedal_power_filtered *= 10;
-  }
-  else
-  {
-    ui16_pedal_power_filtered = 0; // no point to show less than 10 W
+    // low pass filter for pedal power display
+    ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
+    ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
+    ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
+
+    if (ui16_pedal_power_filtered > 500)
+    {
+      ui16_pedal_power_filtered /= 25;
+      ui16_pedal_power_filtered *= 25;
+    }
+    else if (ui16_pedal_power_filtered > 200)
+    {
+      ui16_pedal_power_filtered /= 20;
+      ui16_pedal_power_filtered *= 20;
+    }
+    else if (ui16_pedal_power_filtered > 10)
+    {
+      ui16_pedal_power_filtered /= 10;
+      ui16_pedal_power_filtered *= 10;
+    }
+    else
+    {
+      ui16_pedal_power_filtered = 0; // no point to show less than 10 W
+    }
   }
 }
 
@@ -3495,19 +3485,26 @@ void low_pass_filter_pedal_torque_and_power (void)
 static void low_pass_filter_pedal_cadence (void)
 {
   static uint16_t ui16_pedal_cadence_accumulated;
-  
-  // low pass filter
-  ui16_pedal_cadence_accumulated -= (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
-  ui16_pedal_cadence_accumulated += (uint16_t) motor_controller_data.ui8_pedal_cadence;
+  static uint8_t ui8_update_counter;
 
-  // consider the filtered value only for medium and high values of the unfiltered value
-  if (motor_controller_data.ui8_pedal_cadence > 20)
+  if (++ui8_update_counter > 50) // update every 500 ms -> 50. This helps to filter the fast changing values
   {
-    ui8_pedal_cadence_filtered = (uint8_t) (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
-  }
-  else
-  {
-    ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
+    // reset counter
+    ui8_update_counter = 0;
+    
+    // low pass filter
+    ui16_pedal_cadence_accumulated -= (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
+    ui16_pedal_cadence_accumulated += (uint16_t) motor_controller_data.ui8_pedal_cadence;
+
+    // consider the filtered value only for medium and high values of the unfiltered value
+    if (motor_controller_data.ui8_pedal_cadence > 20)
+    {
+      ui8_pedal_cadence_filtered = (uint8_t) (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
+    }
+    else
+    {
+      ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
+    }
   }
 }
 
@@ -3529,35 +3526,6 @@ void calc_distance (void)
    
     // reset the always incrementing value (up to motor controller power reset) by setting the offset to current value
     motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset = motor_controller_data.ui32_wheel_speed_sensor_tick_counter;
-  }
-}
-
-
-static void automatic_power_off_management (void)
-{
-  static uint16_t ui16_seconds_since_power_on_offset;
-  
-  // check if automatic power off management is configured to any value
-  if (configuration_variables.ui8_lcd_power_off_time_minutes != 0)
-  {
-    // check if there is system activity
-    if ((motor_controller_data.ui16_wheel_speed_x10 > 0) ||     // wheel speed > 0
-        (motor_controller_data.ui8_battery_current_x5 > 0) ||   // battery current > 0
-        (motor_controller_data.ui8_braking) ||                  // braking
-        (buttons_get_events ()))                                // any button active
-    {
-      // reset offset
-      ui16_seconds_since_power_on_offset = ui16_seconds_since_power_on;
-    }
-    else 
-    {
-      // check if system has been inactive over or equal to the configured threshold time
-      if (ui16_seconds_since_power_on - ui16_seconds_since_power_on_offset >= (configuration_variables.ui8_lcd_power_off_time_minutes * 60))
-      {
-        // power off system and save variables to EEPROM
-        lcd_power_off (1);
-      }
-    }
   }
 }
 
@@ -3601,9 +3569,12 @@ void lcd_set_backlight_intensity (uint8_t ui8_intensity)
 
 void update_menu_flashing_state(void)
 {
-  // ***************************************************************************************************
+  static uint8_t ui8_lcd_menu_flash_counter;
+  static uint16_t ui16_lcd_menu_flash_counter_temperature;
   
-  // For flashing on menus
+  #define LCD_TEMPERATURE_FLASH_OFF_THRESHOLD  20  // 20 -> 200 ms 
+
+  // flash on menus
   if (ui8_lcd_menu_flash_counter == 0)
   {
     if (ui8_lcd_menu_flash_state)
@@ -3619,71 +3590,29 @@ void update_menu_flashing_state(void)
   }
   ui8_lcd_menu_flash_counter--;
 
-  // ***************************************************************************************************
-  
-  ui8_lcd_menu_counter_100ms_state = 0;
-  if (++ui8_lcd_menu_counter_100ms > 10)
+  // flash the temperature field when the current is being limited due to motor over temperature
+  if (motor_controller_data.ui8_temperature_current_limiting_value < 255) // flash only if current is being limited, i.e. below 255
   {
-    ui8_lcd_menu_counter_100ms = 0;
-    ui8_lcd_menu_counter_100ms_state = 1;
-  }
-
-  ui8_lcd_menu_counter_500ms_state = 0;
-  if (++ui8_lcd_menu_counter_500ms > 50)
-  {
-    ui8_lcd_menu_counter_500ms = 0;
-    ui8_lcd_menu_counter_500ms_state = 1;
-  }
-
-  // ***************************************************************************************************
-  
-  // For flashing the temperature field when the current is being limited due to motor over temperature
-  // flash only if current is being limited: ui8_temperature_current_limiting_value != 255
-  if (motor_controller_data.ui8_temperature_current_limiting_value != 255)
-  {
-    if (ui8_lcd_menu_flash_state_temperature == 0) // state 0: disabled
+    if (ui8_lcd_menu_flash_state_temperature == 0)
     {
-      if (ui16_lcd_menu_flash_counter_temperature > 0)
+      if (++ui16_lcd_menu_flash_counter_temperature > LCD_TEMPERATURE_FLASH_OFF_THRESHOLD)
       {
-        ui16_lcd_menu_flash_counter_temperature--;
-      }
-
-      if (ui16_lcd_menu_flash_counter_temperature == 0)
-      {
-        // if motor_controller_data.ui8_temperature_current_limiting_value == 0, flash quicker meaning motor is shutoff
-        if (motor_controller_data.ui8_temperature_current_limiting_value > 0)
-        {
-          ui16_lcd_menu_flash_counter_temperature = 50 + ((uint16_t) motor_controller_data.ui8_temperature_current_limiting_value);
-        }
-        else
-        {
-          ui16_lcd_menu_flash_counter_temperature = 25;
-        }
-
+        ui16_lcd_menu_flash_counter_temperature = 0;
+        
         ui8_lcd_menu_flash_state_temperature = 1;
       }
     }
-
-    if (ui8_lcd_menu_flash_state_temperature == 1) // state 1: enabled
+    else if (++ui16_lcd_menu_flash_counter_temperature > motor_controller_data.ui8_temperature_current_limiting_value + LCD_TEMPERATURE_FLASH_OFF_THRESHOLD)
     {
-      if (ui16_lcd_menu_flash_counter_temperature > 0)
-      {
-        ui16_lcd_menu_flash_counter_temperature--;
-      }
-
-      if (ui16_lcd_menu_flash_counter_temperature == 0)
-      {
-        ui16_lcd_menu_flash_counter_temperature = 25; // 0.25 second
-        ui8_lcd_menu_flash_state_temperature = 0;
-      }
+      ui16_lcd_menu_flash_counter_temperature = 0;
+      
+      ui8_lcd_menu_flash_state_temperature = 0;
     }
   }
   else
   {
     ui8_lcd_menu_flash_state_temperature = 1;
   }
-  
-  // ***************************************************************************************************
 }
 
 

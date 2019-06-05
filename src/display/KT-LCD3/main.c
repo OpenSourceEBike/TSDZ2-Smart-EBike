@@ -67,7 +67,7 @@ int main (void)
     // because of continue; at the end of each if code block that will stop the while (1) loop there,
     // the first if block code will have the higher priority over any others
     ui16_timer3_counter = get_timer3_counter ();
-    if ((ui16_timer3_counter - ui16_10ms_loop_counter) > 10) // every 10ms
+    if ((ui16_timer3_counter - ui16_10ms_loop_counter) > 10) // every 10 ms
     {
       ui16_10ms_loop_counter = ui16_timer3_counter;
 

@@ -126,10 +126,7 @@ void uart_data_clock (void)
       p_motor_controller_data->ui16_wheel_speed_x10 = (((uint16_t) ui8_rx_buffer [5]) << 8) + ((uint16_t) ui8_rx_buffer [4]);
       
       // brake state
-      p_motor_controller_data->ui8_motor_controller_state_2 = ui8_rx_buffer[6];
-      
-      // set brake state
-      p_motor_controller_data->ui8_braking = p_motor_controller_data->ui8_motor_controller_state_2 & 1;
+      p_motor_controller_data->ui8_braking = ui8_rx_buffer[6] & 1;
       
       // throttle value from ADC
       p_motor_controller_data->ui8_adc_throttle = ui8_rx_buffer[7];
@@ -340,8 +337,8 @@ void uart_data_clock (void)
       // increment message ID for next package
       if (++ui8_message_ID > UART_MAX_NUMBER_MESSAGE_ID) { ui8_message_ID = 0; }
 
-      // let's wait for 10 packages, seems that first ADC battery voltage is an incorrect value
-      if (++ui8_uart_received_first_package > 10) { ui8_uart_received_first_package = 10; }
+      // disregard first packages (seems that first ADC battery voltage is an incorrect value)
+      if (++ui8_uart_received_first_package > 11) { ui8_uart_received_first_package = 11; }
     }
 
     // enable UART2 receive interrupt as we are now ready to receive a new package
@@ -352,7 +349,7 @@ void uart_data_clock (void)
 
 uint8_t uart_received_first_package (void)
 {
-  return (ui8_uart_received_first_package == 10) ? 1: 0;
+  return (ui8_uart_received_first_package == 11) ? 1: 0;
 }
 
 

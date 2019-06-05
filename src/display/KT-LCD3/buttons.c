@@ -21,6 +21,7 @@ uint8_t ui8_up_button_state = 0;
 uint8_t ui8_up_button_state_counter = 0;
 
 #define BUTTON_LONG_CLICK_THRESHOLD   120   // 120  ->  1.2 seconds
+#define BUTTON_CLICK_THRESHOLD        30    // 30  ->  0.3 seconds
 
 buttons_events_t buttons_events = 0;
 
@@ -129,6 +130,7 @@ void buttons_clear_onoff_long_click_event (void)
   buttons_events &= ~ONOFF_LONG_CLICK;
 }
 
+
 uint8_t buttons_get_up_down_click_event (void)
 {
   return (buttons_events & UPDOWN_CLICK) ? 1: 0;
@@ -138,6 +140,29 @@ void buttons_clear_up_down_click_event (void)
 {
   buttons_events &= ~UPDOWN_CLICK;
 }
+
+
+uint8_t buttons_get_onoff_up_click_event (void)
+{
+  return (buttons_events & ONOFFUP_CLICK) ? 1: 0;
+}
+
+void buttons_clear_onoff_up_click_event (void)
+{
+  buttons_events &= ~ONOFFUP_CLICK;
+}
+
+
+uint8_t buttons_get_onoff_down_click_event (void)
+{
+  return (buttons_events & ONOFFUP_CLICK) ? 1: 0;
+}
+
+void buttons_clear_onoff_down_click_event (void)
+{
+  buttons_events &= ~ONOFFUP_CLICK;
+}
+
 
 buttons_events_t buttons_get_events (void)
 {
@@ -159,63 +184,87 @@ void buttons_clear_all_events (void)
 
 void buttons_clock (void)
 {
-  // needed if the event is not cleared anywhere else
-  buttons_clear_onoff_click_long_click_event();
-
   switch (ui8_onoff_button_state)
   {
     case 0:
+    
       if (!buttons_get_onoff_click_event() &&
           !buttons_get_onoff_long_click_event() &&
           !buttons_get_onoff_click_long_click_event() &&
+          !buttons_get_onoff_up_click_event() &&
+          !buttons_get_onoff_down_click_event() &&
           buttons_get_onoff_state ())
-        {
-          ui8_onoff_button_state_counter = 0;
-          ui8_onoff_button_state = 1;
-        }
+      {
+        ui8_onoff_button_state_counter = 0;
+        ui8_onoff_button_state = 1;
+      }
+      
     break;
 
     case 1:
+    
       ui8_onoff_button_state_counter++;
 
-      // event long click
+      // long click
       if (ui8_onoff_button_state_counter > BUTTON_LONG_CLICK_THRESHOLD)
       {
-        buttons_set_events(ONOFF_LONG_CLICK);
+        // onoff and up or down button click
+        if (ui8_up_button_state == 1)
+        {
+          buttons_set_events(ONOFFUP_CLICK);
+          ui8_up_button_state = 2;
+        } 
+        else if (ui8_down_button_state == 1)
+        {
+          buttons_set_events(ONOFFDOWN_CLICK);
+          ui8_down_button_state = 2;
+        }
+        else
+        {
+          buttons_set_events(ONOFF_LONG_CLICK);
+        }
+
         ui8_onoff_button_state = 2;
+        
         break;
       }
 
-      // if button release
+      // button release
       if (!buttons_get_onoff_state ())
       {
-        // let's validade if will be a quick click + long click
-        if (ui8_onoff_button_state_counter <= 30) // 0.3 second
+        // check for click + long click
+        if (ui8_onoff_button_state_counter < BUTTON_CLICK_THRESHOLD)
         {
           ui8_onoff_button_state_counter = 0;
           ui8_onoff_button_state = 3;
+          
           break;
         }
-        // event click
         else
         {
           buttons_set_events(ONOFF_CLICK);
           ui8_onoff_button_state = 0;
+          
           break;
         }
       }
+      
     break;
 
     case 2:
+    
       // wait for button release
       if (!buttons_get_onoff_state ())
       {
         ui8_onoff_button_state = 0;
+        
         break;
       }
+      
     break;
 
     case 3:
+    
       ui8_onoff_button_state_counter++;
 
       // on next step, start counting for long click
@@ -223,26 +272,31 @@ void buttons_clock (void)
       {
         ui8_onoff_button_state_counter = 0;
         ui8_onoff_button_state = 4;
+        
         break;
       }
 
       // event click
-      if (ui8_onoff_button_state_counter > 40)
+      if (ui8_onoff_button_state_counter > BUTTON_CLICK_THRESHOLD)
       {
         buttons_set_events(ONOFF_CLICK);
         ui8_onoff_button_state = 0;
+        
         break;
       }
+      
     break;
 
     case 4:
+    
       ui8_onoff_button_state_counter++;
 
       // event click, but this time it is: click + long click
-      if (ui8_onoff_button_state_counter > 100)
+      if (ui8_onoff_button_state_counter > BUTTON_LONG_CLICK_THRESHOLD)
       {
         buttons_set_events(ONOFF_CLICK_LONG_CLICK);
         ui8_onoff_button_state = 2;
+        
         break;
       }
 
@@ -251,34 +305,42 @@ void buttons_clock (void)
       {
         buttons_set_events(ONOFF_CLICK);
         ui8_onoff_button_state = 0;
+        
         break;
       }
+      
     break;
 
     default:
+    
       ui8_onoff_button_state = 0;
+      
     break;
   }
 
   switch (ui8_up_button_state)
   {
     case 0:
+      
       if (!buttons_get_up_click_event() &&
           !buttons_get_up_long_click_event() &&
           !buttons_get_up_click_long_click_event() &&
           !buttons_get_up_down_click_event() &&
+          !buttons_get_onoff_up_click_event() &&
           buttons_get_up_state())
-        {
-          ui8_up_button_state_counter = 0;
-          ui8_up_button_state = 1;
-        }
+      {
+        ui8_up_button_state_counter = 0;
+        ui8_up_button_state = 1;
+      }
+      
     break;
 
     case 1:
+    
       ui8_up_button_state_counter++;
 
-      // event long click
-      if (ui8_up_button_state_counter++ > BUTTON_LONG_CLICK_THRESHOLD)
+      // long click
+      if (ui8_up_button_state_counter > BUTTON_LONG_CLICK_THRESHOLD)
       {
         // up and down button click
         if (ui8_down_button_state == 1)
@@ -292,40 +354,46 @@ void buttons_clock (void)
         }
 
         ui8_up_button_state = 2;
-        ui8_up_button_state_counter = 0;
+        
         break;
       }
 
-      // if button release
+      // button release
       if (!buttons_get_up_state ())
       {
-        // let's validade if will be a quick click + long click
-        if (ui8_up_button_state_counter <= 30) // 0.3 second
+        // check for click + long click
+        if (ui8_up_button_state_counter <= BUTTON_CLICK_THRESHOLD)
         {
           ui8_up_button_state_counter = 0;
           ui8_up_button_state = 3;
+          
           break;
         }
-        // event click
         else
         {
           buttons_set_events(UP_CLICK);
           ui8_up_button_state = 0;
+          
           break;
         }
       }
+      
     break;
 
     case 2:
+    
       // wait for button release
       if (!buttons_get_up_state ())
       {
         ui8_up_button_state = 0;
+        
         break;
       }
+      
     break;
 
     case 3:
+    
       ui8_up_button_state_counter++;
 
       // on next step, start counting for long click
@@ -333,26 +401,31 @@ void buttons_clock (void)
       {
         ui8_up_button_state_counter = 0;
         ui8_up_button_state = 4;
+        
         break;
       }
 
       // event click
-      if (ui8_up_button_state_counter > 30)
+      if (ui8_up_button_state_counter > BUTTON_CLICK_THRESHOLD)
       {
         buttons_set_events(UP_CLICK);
         ui8_up_button_state = 0;
+        
         break;
       }
+      
     break;
 
     case 4:
+    
       ui8_up_button_state_counter++;
 
       // event click, but this time it is: click + long click
-      if (ui8_up_button_state_counter > 100)
+      if (ui8_up_button_state_counter > BUTTON_LONG_CLICK_THRESHOLD)
       {
         buttons_set_events(UP_CLICK_LONG_CLICK);
         ui8_up_button_state = 2;
+        
         break;
       }
 
@@ -361,36 +434,44 @@ void buttons_clock (void)
       {
         buttons_set_events(UP_CLICK);
         ui8_up_button_state = 0;
+        
         break;
       }
+      
     break;
 
     default:
+    
       ui8_up_button_state = 0;
+      
     break;
   }
 
   switch (ui8_down_button_state)
   {
     case 0:
+      
       if (!buttons_get_down_click_event() &&
           !buttons_get_down_long_click_event() &&
           !buttons_get_down_click_long_click_event() &&
           !buttons_get_up_down_click_event() &&
+          !buttons_get_onoff_down_click_event() &&
           buttons_get_down_state())
-        {
-          ui8_down_button_state_counter = 0;
-          ui8_down_button_state = 1;
-        }
+      {
+        ui8_down_button_state_counter = 0;
+        ui8_down_button_state = 1;
+      }
+      
     break;
 
     case 1:
+    
       ui8_down_button_state_counter++;
 
-      // event long click
-      if (ui8_down_button_state_counter++ > BUTTON_LONG_CLICK_THRESHOLD)
+      // long click
+      if (ui8_down_button_state_counter > BUTTON_LONG_CLICK_THRESHOLD)
       {
-        // up and down button click
+        // up and down long click
         if (ui8_up_button_state == 1)
         {
           buttons_set_events(UPDOWN_CLICK);
@@ -402,41 +483,47 @@ void buttons_clock (void)
         }
 
         ui8_down_button_state = 2;
-        ui8_down_button_state_counter = 0;
+        
         break;
       }
 
 
-      // if button release
+      // button release
       if (!buttons_get_down_state ())
       {
-        // let's validade if will be a quick click + long click
-        if (ui8_down_button_state_counter <= 30) // 0.3 second
+        // check for click + long click
+        if (ui8_down_button_state_counter < BUTTON_CLICK_THRESHOLD)
         {
           ui8_down_button_state_counter = 0;
           ui8_down_button_state = 3;
+          
           break;
         }
-        // event click
         else
         {
           buttons_set_events(DOWN_CLICK);
           ui8_down_button_state = 0;
+          
           break;
         }
       }
+      
     break;
 
     case 2:
+    
       // wait for button release
       if (!buttons_get_down_state ())
       {
         ui8_down_button_state = 0;
+        
         break;
       }
+      
     break;
 
     case 3:
+    
       ui8_down_button_state_counter++;
 
       // on next step, start counting for long click
@@ -444,26 +531,31 @@ void buttons_clock (void)
       {
         ui8_down_button_state_counter = 0;
         ui8_down_button_state = 4;
+        
         break;
       }
 
       // event click
-      if (ui8_down_button_state_counter > 30)
+      if (ui8_down_button_state_counter > BUTTON_CLICK_THRESHOLD)
       {
         buttons_set_events(DOWN_CLICK);
         ui8_down_button_state = 0;
+        
         break;
       }
+      
     break;
 
     case 4:
+    
       ui8_down_button_state_counter++;
 
       // event click, but this time it is: click + long click
-      if (ui8_down_button_state_counter > 100)
+      if (ui8_down_button_state_counter > BUTTON_LONG_CLICK_THRESHOLD)
       {
         buttons_set_events(DOWN_CLICK_LONG_CLICK);
         ui8_down_button_state = 2;
+        
         break;
       }
 
@@ -472,12 +564,16 @@ void buttons_clock (void)
       {
         buttons_set_events(DOWN_CLICK);
         ui8_down_button_state = 0;
+        
         break;
       }
+      
     break;
 
     default:
+    
       ui8_down_button_state = 0;
+      
     break;
   }
 }

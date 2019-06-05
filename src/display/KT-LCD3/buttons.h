@@ -23,7 +23,9 @@ typedef enum
   DOWN_CLICK = 64,
   DOWN_CLICK_LONG_CLICK = 128,
   DOWN_LONG_CLICK = 256,
-  UPDOWN_CLICK = 512
+  UPDOWN_CLICK = 512,
+  ONOFFUP_CLICK = 1024,
+  ONOFFDOWN_CLICK = 2048
 } buttons_events_t;
 
 uint8_t buttons_get_up_state(void);
@@ -33,6 +35,7 @@ uint8_t buttons_get_up_long_click_event(void);
 void buttons_clear_up_click_event(void);
 void buttons_clear_up_click_long_click_event(void);
 void buttons_clear_up_long_click_event(void);
+
 uint8_t buttons_get_down_state(void);
 uint8_t buttons_get_down_click_event(void);
 uint8_t buttons_get_down_click_long_click_event(void);
@@ -40,6 +43,7 @@ uint8_t buttons_get_down_long_click_event(void);
 void buttons_clear_down_click_event(void);
 void buttons_clear_down_click_long_click_event(void);
 void buttons_clear_down_long_click_event(void);
+
 uint8_t buttons_get_onoff_state(void);
 uint8_t buttons_get_onoff_click_event(void);
 uint8_t buttons_get_onoff_click_long_click_event(void);
@@ -47,8 +51,14 @@ uint8_t buttons_get_onoff_long_click_event(void);
 void buttons_clear_onoff_click_event(void);
 void buttons_clear_onoff_click_long_click_event(void);
 void buttons_clear_onoff_long_click_event(void);
+
 uint8_t buttons_get_up_down_click_event(void);
 void buttons_clear_up_down_click_event(void);
+uint8_t buttons_get_onoff_up_click_event(void);
+void buttons_clear_onoff_up_click_event(void);
+uint8_t buttons_get_onoff_down_click_event(void);
+void buttons_clear_onoff_down_click_event(void);
+
 void buttons_clock(void);
 buttons_events_t buttons_get_events(void);
 void buttons_clear_all_events(void);

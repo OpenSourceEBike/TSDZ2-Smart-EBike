@@ -209,10 +209,10 @@
   
   Measured with a cheap digital hook scale. We found that 
   each torque sensor unit is equal to 0.556 Nm. Using the 
-  scale, it was found that each 1kg was measured as 3 
+  scale, it was found that each 1 kg was measured as 3 
   torque sensor units.
 
-  Force (Nm) = Kg * 9.18 * 0.17 (arm cranks size)
+  Force (Nm) = kg * 9.18 * 0.17 (arm cranks size)
 ---------------------------------------------------------*/
 
 
