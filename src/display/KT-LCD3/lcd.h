@@ -116,20 +116,23 @@ typedef struct _configuration_variables
   uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 
+// menu definitions
+#define MAIN_MENU               0
+#define POWER_MENU              1
+#define CONFIGURATION_MENU      2
 
 
-// LCD RAM has 32*8 bits
-#define LCD_FRAME_BUFFER_SIZE 32
+#define LCD_FRAME_BUFFER_SIZE   32 // LCD RAM has 32*8 bits
 
 extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 
-#define ASSIST_LEVEL_FIELD     0
-#define ODOMETER_FIELD         1
-#define TEMPERATURE_FIELD      2
-#define WHEEL_SPEED_FIELD      3
-#define BATTERY_POWER_FIELD    4
-#define TIME_SECOND_FIELD      5
-#define TIME_MINUTE_FIELD      6
+#define ASSIST_LEVEL_FIELD      0
+#define ODOMETER_FIELD          1
+#define TEMPERATURE_FIELD       2
+#define WHEEL_SPEED_FIELD       3
+#define BATTERY_POWER_FIELD     4
+#define TIME_SECOND_FIELD       5
+#define TIME_MINUTE_FIELD       6
 
 
 // each digit needs 7 bits to be defined + 1 digit that can be another symbol like a "point"

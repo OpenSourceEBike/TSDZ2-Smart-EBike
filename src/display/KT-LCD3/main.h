@@ -49,8 +49,8 @@
 
 // default values for battery parameters
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                           16  // 16 amps
-#define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      0   // e.g. 20 = 20 * 25 = 500, 0 is disabled
-#define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 --> 48V
+#define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      10  // 10 -> 10 * 25 = 250 watts
+#define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 -> 48 V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
 #define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, assistance without pedal rotation, temperature limit enabled, temperature field state

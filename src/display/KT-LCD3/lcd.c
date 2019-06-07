@@ -77,6 +77,7 @@ static struct_motor_controller_data motor_controller_data;
 static struct_configuration_variables configuration_variables;
 
 
+// global system variables
 static uint16_t   ui16_battery_voltage_filtered_x10;
 static uint16_t   ui16_battery_current_filtered_x5;
 static uint16_t   ui16_battery_power_filtered_x50;
@@ -89,11 +90,13 @@ static uint16_t   ui16_battery_voltage_soc_x10;
 static uint16_t   ui16_pedal_torque_filtered;
 static uint16_t   ui16_pedal_power_filtered;
 static uint8_t    ui8_pedal_cadence_filtered;
-
 static uint8_t    ui8_lights_state = 0;
 static uint8_t    ui8_street_mode_enabled = 0;
+static volatile uint16_t ui16_timer3_counter = 0;
 
-static uint8_t    ui8_lcd_menu = 0;
+
+// menu variables
+static uint8_t    ui8_lcd_menu = MAIN_MENU;
 static uint8_t    ui8_lcd_menu_config_submenu_state = 0;
 static uint8_t    ui8_lcd_menu_flash_state;
 static uint8_t    ui8_lcd_menu_flash_state_temperature;
@@ -101,23 +104,11 @@ static uint8_t    ui8_lcd_menu_config_submenu_number = 0;
 static uint8_t    ui8_lcd_menu_config_submenu_active = 0;
 static uint8_t    ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
 static uint8_t    ui8_odometer_sub_field_state;
-
 uint8_t           ui8_start_odometer_show_field_number = 0;
 uint8_t           ui8_odometer_show_field_number_counter_0 = 0;
 uint8_t           ui8_odometer_show_field_number_counter_1 = 1;
 uint8_t           ui8_odometer_show_field_number_state = 0;
 uint8_t           ui8_odometer_show_field_number = 0;
-uint16_t          ui16_odometer_reset_distance_counter = 0;
-uint8_t           ui8_odometer_reset_distance_counter_state = 1;
-
-static uint8_t    ui8_lcd_menu_counter_100ms = 0;
-static uint8_t    ui8_lcd_menu_counter_100ms_state = 0;
-static uint8_t    ui8_lcd_menu_counter_500ms = 0;
-static uint8_t    ui8_lcd_menu_counter_500ms_state = 0;
-
-static uint8_t    ui8_long_click_started = 0;
-static uint8_t    ui8_long_click_counter = 0;
-static volatile uint16_t ui16_timer3_counter = 0;
 
 
 // time measurement variables
@@ -187,7 +178,7 @@ void lcd_set_backlight_intensity (uint8_t ui8_intensity);
 void lcd_print (uint32_t ui32_number, uint8_t ui8_lcd_field, uint8_t ui8_options);
 void lcd_configurations_print_number(var_number_t* p_lcd_var_number);
 void power(void);
-void power_off_management (void);
+void power_off_timer (void);
 
 
 // LCD symbol functions
@@ -267,53 +258,37 @@ void lcd_clock (void)
   // clear the screen
   lcd_clear ();
 
-  // update LCD when the first communication package is received from the motor controller
+  // return here until the first communication package is received from the motor controller
   if (uart_received_first_package () == 0) { return; }
-  
-  update_menu_flashing_state ();
 
-  // enter configuration menu if...
-  if (buttons_get_up_down_click_event () && ui8_lcd_menu == 0)
-  {
-    buttons_clear_all_events ();
-    
-    ui8_lcd_menu = 1;
-  }
-  
-  // enter quick configure power menu if... 
-  if (buttons_get_onoff_up_click_event () && configuration_variables.ui8_main_screen_power_menu_enabled && !ui8_street_mode_enabled && ui8_lcd_menu == 0)
-  {
-    buttons_clear_all_events ();
-    
-    ui8_lcd_menu = 2;
-  }
-
+  // LCD menus 
   switch (ui8_lcd_menu)
   {
-    case 0:
+    case MAIN_MENU: 
       lcd_execute_main_screen ();
     break;
 
-    case 1:
-      lcd_execute_menu_config ();
-    break;
-    
-    case 2:
+    case POWER_MENU:
       lcd_execute_menu_config_power ();
     break;
     
+    case CONFIGURATION_MENU:
+      lcd_execute_menu_config ();
+    break;
+    
     default:
-      ui8_lcd_menu = 0;
+      ui8_lcd_menu = MAIN_MENU;
     break;
   }
-
+  
+  update_menu_flashing_state ();
   low_pass_filter_battery_voltage_current_power ();
   low_pass_filter_pedal_cadence ();
   low_pass_filter_pedal_torque_and_power ();
   calc_battery_soc ();
   calc_distance ();
   lcd_update ();
-  power_off_management ();
+  power_off_timer ();
 }
 
 
@@ -331,6 +306,24 @@ void lcd_execute_main_screen (void)
   time_measurement ();
   energy_data ();
   assist_level_state ();
+  
+  // enter configuration menu
+  if (buttons_get_up_down_click_event ())
+  {
+    ui8_lcd_menu = CONFIGURATION_MENU;
+  }
+  
+  // enter power menu
+  if (buttons_get_onoff_up_click_event () && configuration_variables.ui8_main_screen_power_menu_enabled && !ui8_street_mode_enabled)
+  {
+    ui8_lcd_menu = POWER_MENU;
+  }
+  
+  // power off
+  if (buttons_get_onoff_long_click_event ()) 
+  {
+    lcd_power_off (1); 
+  }
 }
 
 
@@ -387,46 +380,36 @@ void lcd_execute_menu_config (void)
   }
   else
   {
-    // advance on submenu if button_up_click_event
+    // advance on submenu if...
     if (buttons_get_up_click_event ())
     {
-      // clear button event
-      buttons_clear_up_click_event ();
-    
       if (ui8_lcd_menu_config_submenu_number < 9) { ++ui8_lcd_menu_config_submenu_number; } 
       else { ui8_lcd_menu_config_submenu_number = 0; }
     }
 
-    // recede on submenu if button_down_click_event
+    // recede on submenu if...
     if (buttons_get_down_click_event ())
     {
-      // clear button event
-      buttons_clear_down_click_event ();
-
       if (ui8_lcd_menu_config_submenu_number > 0) { --ui8_lcd_menu_config_submenu_number; } 
       else { ui8_lcd_menu_config_submenu_number = 9; }
     }
   
-    // enter submenu if onoff click event
+    // enter submenu if...
     if (buttons_get_onoff_click_event ())
     {
-      buttons_clear_onoff_click_event ();
-
       ui8_lcd_menu_config_submenu_active = 1;
       
       ui8_config_wh_x10_offset = 1;
     }
     
-    // leave config menu if button_onoff_long_click
+    // leave config menu if...
     if (buttons_get_onoff_long_click_event ())
     {
-      buttons_clear_all_events ();
-      
       // save the updated variables on EEPROM
       eeprom_write_variables ();
       
-      // switch to main screen
-      ui8_lcd_menu = 0;
+      // switch to main menu
+      ui8_lcd_menu = MAIN_MENU;
     }
     
     // print submenu number only half of the time
@@ -1129,7 +1112,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
       lcd_configurations_print_number(&lcd_var_number);
     break;
 
-    // enable/disable main screen power menu
+    // enable/disable quick set power menu
     case 9:
       lcd_var_number.p_var_number = &configuration_variables.ui8_main_screen_power_menu_enabled;
       lcd_var_number.ui8_size = 8;
@@ -1575,26 +1558,21 @@ void lcd_execute_menu_config_power (void)
   // leave config power menu with a long onoff click
   if (buttons_get_onoff_long_click_event ())
   {
-    buttons_clear_all_events ();
-    
     // disable change of variables
     ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
 
     // save the updated variables to EEPROM
     eeprom_write_variables ();
     
-    // change to main screen
-    ui8_lcd_menu = 0;
+    // change to main menu
+    ui8_lcd_menu = MAIN_MENU;
   }
 }
 
 
-void power_off_management (void)
+void power_off_timer (void)
 {
   static uint16_t ui16_seconds_since_power_on_offset;
-  
-  // power off system if ONOFF long click
-  if (buttons_get_onoff_long_click_event ()) { lcd_power_off (1); }
   
   // check if automatic power off management is configured to any value
   if (configuration_variables.ui8_lcd_power_off_time_minutes != 0)
@@ -1624,7 +1602,7 @@ void power_off_management (void)
 void temperature (void)
 {
   // if motor current is being limited due to temperature, force showing temperature!!
-  if (motor_controller_data.ui8_temperature_current_limiting_value != 255)
+  if (motor_controller_data.ui8_temperature_current_limiting_value < 255)
   {
     if (ui8_lcd_menu_flash_state_temperature)
     {
@@ -1935,9 +1913,6 @@ void assist_level_state (void)
   // if UP button is clicked
   if (buttons_get_up_click_event ())
   {
-    // clear button event
-    buttons_clear_up_click_event ();
-    
     // increment assist level and check if is out of bounds
     if (++configuration_variables.ui8_assist_level > configuration_variables.ui8_number_of_assist_levels)
     {
@@ -1949,9 +1924,6 @@ void assist_level_state (void)
   // if DOWN button is clicked
   if (buttons_get_down_click_event ())
   {
-    // clear button event
-    buttons_clear_down_click_event ();
-    
     // check if assist level is out of bounds
     if (configuration_variables.ui8_assist_level > 0)
     {
@@ -1975,8 +1947,6 @@ void lights_state (void)
 {
   if (buttons_get_up_long_click_event ())
   {
-    buttons_clear_up_long_click_event ();
-    
     // toggle light state and display backlight
     ui8_lights_state = !ui8_lights_state;
     motor_controller_data.ui8_lights = ui8_lights_state;
@@ -1995,11 +1965,17 @@ void walk_assist_state (void)
 {
   static uint8_t ui8_walk_assist_activated;
   static uint8_t ui8_cruise_activated;
+  static uint8_t ui8_long_hold_down_button;
   #define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 80 // 8.0 km/h
   
   if (buttons_get_down_long_click_event ())
   {
-    // if down button is still pressed
+    ui8_long_hold_down_button = 1;
+  }
+  
+  if (ui8_long_hold_down_button)
+  {
+    // if down button is pressed
     if (buttons_get_down_state ())
     {
       // enable walk assist or cruise function depending on speed and if function is enabled, also check if the other function was activetad first
@@ -2036,8 +2012,8 @@ void walk_assist_state (void)
       ui8_walk_assist_activated = 0;
       ui8_cruise_activated = 0;
       
-      // clear button long down click event
-      buttons_clear_down_long_click_event ();
+      // reset button event flag
+      ui8_long_hold_down_button = 0;
     }
   }
   else
@@ -2074,8 +2050,6 @@ void street_mode (void)
     
     if (buttons_get_onoff_down_click_event ())
     {
-      buttons_clear_all_events ();
-      
       ui8_street_mode_enabled = !ui8_street_mode_enabled;
       
       motor_controller_data.ui8_street_mode_enabled = ui8_street_mode_enabled;
@@ -2124,11 +2098,12 @@ void odometer_start_show_field_number (void)
 
 uint8_t reset_variable_check (void)
 {
+  static uint8_t ui8_odometer_reset_distance_counter_state;
+  static uint16_t ui16_odometer_reset_distance_counter;
+  
   // if there is one down_click_long_click_event
   if (buttons_get_down_click_long_click_event())
   {
-    buttons_clear_down_long_click_event();
-    
     // start counting to reset variable
     ui8_odometer_reset_distance_counter_state = 1;
     
@@ -2140,9 +2115,6 @@ uint8_t reset_variable_check (void)
   {
     if (buttons_get_down_state ())
     {
-      // clear the possible button event (can maybe be removed)
-      buttons_clear_down_click_event();
-
       // count time, after limit, reset everything
       if (++ui16_odometer_reset_distance_counter > 300)
       {
@@ -2176,9 +2148,6 @@ void odometer (void)
   // if user clicks onoff click event
   if (buttons_get_onoff_click_event ())
   {
-    // clear button ON/OFF event
-    buttons_clear_onoff_click_event ();
-    
     // increment odometer field state
     odometer_increase_field_state ();
     
@@ -3572,23 +3541,24 @@ void update_menu_flashing_state(void)
   static uint8_t ui8_lcd_menu_flash_counter;
   static uint16_t ui16_lcd_menu_flash_counter_temperature;
   
-  #define LCD_TEMPERATURE_FLASH_OFF_THRESHOLD  20  // 20 -> 200 ms 
+  #define LCD_MENU_FLASH_OFF_THRESHOLD          20
+  #define LCD_MENU_FLASH_ON_THRESHOLD           80
+  #define LCD_TEMPERATURE_FLASH_OFF_THRESHOLD   10  // 10 -> 100 ms 
 
   // flash on menus
-  if (ui8_lcd_menu_flash_counter == 0)
+  if (ui8_lcd_menu_flash_counter-- == 0)
   {
     if (ui8_lcd_menu_flash_state)
     {
       ui8_lcd_menu_flash_state = 0;
-      ui8_lcd_menu_flash_counter = 20;
+      ui8_lcd_menu_flash_counter = LCD_MENU_FLASH_OFF_THRESHOLD;
     }
     else
     {
       ui8_lcd_menu_flash_state = 1;
-      ui8_lcd_menu_flash_counter = 80;
+      ui8_lcd_menu_flash_counter = LCD_MENU_FLASH_ON_THRESHOLD;
     }
   }
-  ui8_lcd_menu_flash_counter--;
 
   // flash the temperature field when the current is being limited due to motor over temperature
   if (motor_controller_data.ui8_temperature_current_limiting_value < 255) // flash only if current is being limited, i.e. below 255
@@ -3620,17 +3590,9 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
 {
   if (ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
-    // clear onoff click event if it happened
-    if (buttons_get_onoff_click_event ())
-    {
-      buttons_clear_onoff_click_event ();
-    }
-    
     // stop changing variables if long onoff click
     if (buttons_get_onoff_long_click_event ())
     {
-      buttons_clear_onoff_long_click_event ();
-      
       ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
     }
   }
@@ -3639,37 +3601,27 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
     // change variables if onoff click event
     if (buttons_get_onoff_click_event ())
     {
-      buttons_clear_onoff_click_event ();
-      
       ui8_lcd_menu_config_submenu_change_variable_enabled = 1;
     }
     else
     {
-      // advance on submenus on button_up_click_event
+      // advance on submenus
       if (buttons_get_up_click_event ())
       {
-        // clear button event
-        buttons_clear_up_click_event ();
-        
         if (ui8_lcd_menu_config_submenu_state < ui8_state_max_number) { ++ui8_lcd_menu_config_submenu_state; } 
         else { ui8_lcd_menu_config_submenu_state = 0; }
       }
 
-      // recede on submenus on button_down_click_event
+      // recede on submenus
       if (buttons_get_down_click_event ())
       {
-        // clear button event
-        buttons_clear_down_click_event ();
-
         if (ui8_lcd_menu_config_submenu_state > 0) { --ui8_lcd_menu_config_submenu_state; } 
         else { ui8_lcd_menu_config_submenu_state = ui8_state_max_number; }
       }
       
-      // leave config menu with a button_onoff_long_click
+      // leave config menu
       if (buttons_get_onoff_long_click_event ())
       {
-        buttons_clear_onoff_long_click_event ();
-
         ui8_lcd_menu_config_submenu_active = 0;
         ui8_lcd_menu_config_submenu_state = 0;
         
@@ -3684,12 +3636,8 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
 
 void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 {
-  // if click up - click long up event
   if (buttons_get_up_click_long_click_event ())
   {
-    // clear button event
-    buttons_clear_up_click_long_click_event ();
-    
     if (*ui8_p_state < ui8_state_max_number) { ++*ui8_p_state; } 
     else { *ui8_p_state = 0; }
     
@@ -3723,6 +3671,9 @@ void lcd_power_off (uint8_t SaveToEEPROM)
 
 void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
 {
+  static uint8_t    ui8_long_click_started;
+  static uint8_t    ui8_long_click_counter;
+  
   uint8_t *ui8_p_var = 0;
   uint16_t *ui16_p_var = 0;
   uint32_t *ui32_p_var = 0;
@@ -3804,14 +3755,6 @@ void lcd_configurations_print_number(var_number_t* p_lcd_var_number)
         else { (*ui32_p_var) = p_lcd_var_number->ui32_min_value; }
       }
     }
-    
-    // clear button events
-    buttons_clear_up_click_event();
-    buttons_clear_down_click_event();
-    buttons_clear_up_click_long_click_event();
-    buttons_clear_up_long_click_event();
-    buttons_clear_down_click_long_click_event();
-    buttons_clear_down_long_click_event();
   }
   
   if(p_lcd_var_number->ui8_size == 8)
