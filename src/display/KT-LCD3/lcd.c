@@ -1908,7 +1908,6 @@ void power(void)
 
 void assist_level_state (void)
 {
-  // if UP button is clicked
   if (UP_CLICK)
   {
     // increment assist level and check if is out of bounds
@@ -1919,7 +1918,6 @@ void assist_level_state (void)
     }
   }
   
-  // if DOWN button is clicked
   if (DOWN_CLICK)
   {
     // check if assist level is out of bounds
@@ -2140,7 +2138,6 @@ uint8_t reset_variable_check (void)
 
 void odometer (void)
 {
-  // if user clicks onoff click event
   if (ONOFF_CLICK)
   {
     // increment odometer field state
@@ -3564,7 +3561,7 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
 {
   if (ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
-    // stop changing variables if long onoff click
+    // stop changing variables if...
     if (ONOFF_LONG_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
