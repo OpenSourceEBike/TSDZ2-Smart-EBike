@@ -24,10 +24,7 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_WHEEL_PERIMETER_1,                    // 8 + EEPROM_BASE_ADDRESS
     DEFAULT_VALUE_WHEEL_MAX_SPEED,                      // 9 + EEPROM_BASE_ADDRESS
     DEFAULT_VALUE_CONFIG_1,                             // 10 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_OFFROAD_CONFIG,                       // 11 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_OFFROAD_SPEED_LIMIT,                  // 12 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25,            // 13 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10           // 14 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10           // 11 + EEPROM_BASE_ADDRESS
   };
 
 
@@ -91,7 +88,6 @@ static void eeprom_read_values_to_variables (void)
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_lights = ui8_temp & 1 ? 1 : 0;
   p_configuration_variables->ui8_walk_assist = ui8_temp & (1 << 1) ? 1 : 0;
-  p_configuration_variables->ui8_offroad_mode = ui8_temp & (1 << 2) ? 1 : 0;
 
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
   p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte (ADDRESS_MOTOR_POWER_X10);
@@ -113,14 +109,6 @@ static void eeprom_read_values_to_variables (void)
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_1);
   p_configuration_variables->ui8_motor_type = ui8_temp & 3;
   p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
-
-  ui8_temp = FLASH_ReadByte (ADDRESS_OFFROAD_CONFIG);
-  p_configuration_variables->ui8_offroad_feature_enabled = ui8_temp & 1;
-  p_configuration_variables->ui8_offroad_enabled_on_startup = ui8_temp & (1 << 1);
-  p_configuration_variables->ui8_offroad_power_limit_enabled = ui8_temp & (1 << 2);
-
-  p_configuration_variables->ui8_offroad_speed_limit = FLASH_ReadByte (ADDRESS_OFFROAD_SPEED_LIMIT);
-  p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_DIV25);
   
   // ramp up, amps per second
   p_configuration_variables->ui8_ramp_up_amps_per_second_x10 = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10);
@@ -142,9 +130,8 @@ static void variables_to_array (uint8_t *ui8_array)
 
   ui8_array [0] = KEY;
   ui8_array [1] = p_configuration_variables->ui8_assist_level_factor_x10;
-  ui8_array [2] = (p_configuration_variables->ui8_lights & 1) |
-                 ((p_configuration_variables->ui8_walk_assist & 1) << 1) |
-                 ((p_configuration_variables->ui8_offroad_mode & 1) << 2);
+  ui8_array [2] = (p_configuration_variables->ui8_lights & 1) | 
+                 ((p_configuration_variables->ui8_walk_assist & 1) << 1);
   ui8_array [3] = p_configuration_variables->ui8_battery_max_current;
   ui8_array [4] = p_configuration_variables->ui8_motor_power_x10;
   ui8_array [5] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
@@ -154,12 +141,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [9] = p_configuration_variables->ui8_wheel_max_speed;
   ui8_array [10] = (p_configuration_variables->ui8_motor_type & 3) |
                   ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2);
-  ui8_array [11] = (p_configuration_variables->ui8_offroad_feature_enabled & 1) |
-                  ((p_configuration_variables->ui8_offroad_enabled_on_startup & 1) << 1) |
-                  ((p_configuration_variables->ui8_offroad_power_limit_enabled & 1) << 2);
-  ui8_array [12] = p_configuration_variables->ui8_offroad_speed_limit;
-  ui8_array [13] = p_configuration_variables->ui8_offroad_power_limit_div25;
-  ui8_array [14] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+  ui8_array [11] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
 }
 
 

@@ -70,11 +70,11 @@
 #define ADDRESS_LCD_BACKLIGHT_OFF_BRIGHTNESS                                51 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_PACK_RESISTANCE_0                                   52 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_PACK_RESISTANCE_1                                   53 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_FEATURE_ENABLED                                     54 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_MODE_ENABLED_ON_STARTUP                             55 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_SPEED_LIMIT                                         56 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_POWER_LIMIT_ENABLED                                 57 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OFFROAD_POWER_LIMIT_DIV25                                   58 + EEPROM_BASE_ADDRESS
+#define ADDRESS_STREET_MODE_FUNCTION_ENABLED                                54 + EEPROM_BASE_ADDRESS
+#define ADDRESS_STREET_MODE_ENABLED_ON_STARTUP                              55 + EEPROM_BASE_ADDRESS
+#define ADDRESS_STREET_MODE_SPEED_LIMIT                                     56 + EEPROM_BASE_ADDRESS
+#define ADDRESS_STREET_MODE_POWER_LIMIT_ENABLED                             57 + EEPROM_BASE_ADDRESS
+#define ADDRESS_STREET_MODE_POWER_LIMIT_DIV25                               58 + EEPROM_BASE_ADDRESS
 #define ADDRESS_ODOMETER_X10_0                                              59 + EEPROM_BASE_ADDRESS
 #define ADDRESS_ODOMETER_X10_1                                              60 + EEPROM_BASE_ADDRESS
 #define ADDRESS_ODOMETER_X10_2                                              61 + EEPROM_BASE_ADDRESS
@@ -121,7 +121,8 @@
 #define ADDRESS_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD                       102 + EEPROM_BASE_ADDRESS
 #define ADDRESS_SHOW_BATTERY_SOC_ODOMETER_FIELD                             103 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED                              104 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 105
+#define ADDRESS_STREET_MODE_THROTTLE_ENABLED                                105 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 106
 
 
 

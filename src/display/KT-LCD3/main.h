@@ -49,8 +49,8 @@
 
 // default values for battery parameters
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                           16  // 16 amps
-#define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      0   // e.g. 20 = 20 * 25 = 500, 0 is disabled
-#define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 --> 48V
+#define DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER                      10  // 10 -> 10 * 25 = 250 watts
+#define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 -> 48 V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
 #define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, assistance without pedal rotation, temperature limit enabled, temperature field state
@@ -113,12 +113,13 @@
 
 
 
-// default values for offroad function
-#define DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED                       0
-#define DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP               0
-#define DEFAULT_VALUE_OFFROAD_SPEED_LIMIT                           25
-#define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED                   0
-#define DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25                     10  // 10 * 25 = 250 W
+// default values for street mode function
+#define DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED                  0
+#define DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP                0
+#define DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT                       25
+#define DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED               0
+#define DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25                 10  // 10 * 25 = 250 W
+#define DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED                  0   // throttle is disabled in street mode by default
 
 
 
@@ -208,10 +209,10 @@
   
   Measured with a cheap digital hook scale. We found that 
   each torque sensor unit is equal to 0.556 Nm. Using the 
-  scale, it was found that each 1kg was measured as 3 
+  scale, it was found that each 1 kg was measured as 3 
   torque sensor units.
 
-  Force (Nm) = Kg * 9.18 * 0.17 (arm cranks size)
+  Force (Nm) = kg * 9.18 * 0.17 (arm cranks size)
 ---------------------------------------------------------*/
 
 

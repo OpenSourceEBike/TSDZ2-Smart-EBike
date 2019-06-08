@@ -70,11 +70,11 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS,                         // 51 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0,                            // 52 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1,                            // 53 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_OFFROAD_FEATURE_ENABLED,                              // 54 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_OFFROAD_MODE_ENABLED_ON_STARTUP,                      // 55 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_OFFROAD_SPEED_LIMIT,                                  // 56 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_OFFROAD_POWER_LIMIT_ENABLED,                          // 57 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_OFFROAD_POWER_LIMIT_DIV25,                            // 58 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED,                         // 54 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP,                       // 55 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT,                              // 56 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED,                      // 57 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25,                        // 58 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_ODOMETER_X10,                                         // 59 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_ODOMETER_X10,                                         // 60 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_ODOMETER_X10,                                         // 61 + EEPROM_BASE_ADDRESS (Array index)
@@ -120,7 +120,8 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD,                      // 101 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD,                // 102 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD,                      // 103 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                        // 104 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED,                       // 104 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED                          // 105 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -302,11 +303,13 @@ static void eeprom_read_values_to_variables (void)
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
   p_configuration_variables->ui16_battery_pack_resistance_x1000 = ui16_temp;
 
-  p_configuration_variables->ui8_offroad_feature_enabled = FLASH_ReadByte (ADDRESS_OFFROAD_FEATURE_ENABLED);
-  p_configuration_variables->ui8_offroad_enabled_on_startup = FLASH_ReadByte (ADDRESS_OFFROAD_MODE_ENABLED_ON_STARTUP);
-  p_configuration_variables->ui8_offroad_speed_limit = FLASH_ReadByte (ADDRESS_OFFROAD_SPEED_LIMIT);
-  p_configuration_variables->ui8_offroad_power_limit_enabled = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_ENABLED);
-  p_configuration_variables->ui8_offroad_power_limit_div25 = FLASH_ReadByte (ADDRESS_OFFROAD_POWER_LIMIT_DIV25);
+  // street mode variables
+  p_configuration_variables->ui8_street_mode_function_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_FUNCTION_ENABLED);
+  p_configuration_variables->ui8_street_mode_enabled_on_startup = FLASH_ReadByte (ADDRESS_STREET_MODE_ENABLED_ON_STARTUP);
+  p_configuration_variables->ui8_street_mode_speed_limit = FLASH_ReadByte (ADDRESS_STREET_MODE_SPEED_LIMIT);
+  p_configuration_variables->ui8_street_mode_power_limit_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_POWER_LIMIT_ENABLED);
+  p_configuration_variables->ui8_street_mode_power_limit_div25 = FLASH_ReadByte (ADDRESS_STREET_MODE_POWER_LIMIT_DIV25);
+  p_configuration_variables->ui8_street_mode_throttle_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_THROTTLE_ENABLED);
   
   
   // odometer variable
@@ -446,12 +449,12 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [53] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
 
 
-  // write offroad parameters
-  ui8_array [54] = p_configuration_variables->ui8_offroad_feature_enabled;
-  ui8_array [55] = p_configuration_variables->ui8_offroad_enabled_on_startup;
-  ui8_array [56] = p_configuration_variables->ui8_offroad_speed_limit;
-  ui8_array [57] = p_configuration_variables->ui8_offroad_power_limit_enabled;
-  ui8_array [58] = p_configuration_variables->ui8_offroad_power_limit_div25;
+  // write street mode parameters
+  ui8_array [54] = p_configuration_variables->ui8_street_mode_function_enabled;
+  ui8_array [55] = p_configuration_variables->ui8_street_mode_enabled_on_startup;
+  ui8_array [56] = p_configuration_variables->ui8_street_mode_speed_limit;
+  ui8_array [57] = p_configuration_variables->ui8_street_mode_power_limit_enabled;
+  ui8_array [58] = p_configuration_variables->ui8_street_mode_power_limit_div25;
   
   
   // write odometer variable
@@ -527,6 +530,9 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write main screen power menu enable variable
   ui8_array [104] = p_configuration_variables->ui8_main_screen_power_menu_enabled;
+  
+  // write street mode parameters
+  ui8_array [105] = p_configuration_variables->ui8_street_mode_throttle_enabled;
 }
 
 

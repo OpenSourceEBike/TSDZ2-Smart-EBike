@@ -26,11 +26,10 @@ typedef struct _motor_controller_data
   uint8_t ui8_duty_cycle;
   uint8_t ui8_error_states;
   uint16_t ui16_wheel_speed_x10;
-  uint8_t ui8_motor_controller_state_2;
   uint8_t ui8_braking;
   uint8_t ui8_pedal_cadence;
   uint8_t ui8_lights;
-  uint8_t ui8_offroad_state;
+  uint8_t ui8_street_mode_enabled;
   uint8_t ui8_walk_assist_level;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
@@ -88,11 +87,12 @@ typedef struct _configuration_variables
   uint8_t ui8_lcd_power_off_time_minutes;
   uint8_t ui8_lcd_backlight_on_brightness;
   uint8_t ui8_lcd_backlight_off_brightness;
-  uint8_t ui8_offroad_feature_enabled;
-  uint8_t ui8_offroad_enabled_on_startup;
-  uint8_t ui8_offroad_speed_limit;
-  uint8_t ui8_offroad_power_limit_enabled;
-  uint8_t ui8_offroad_power_limit_div25;
+  uint8_t ui8_street_mode_function_enabled;
+  uint8_t ui8_street_mode_enabled_on_startup;
+  uint8_t ui8_street_mode_speed_limit;
+  uint8_t ui8_street_mode_power_limit_enabled;
+  uint8_t ui8_street_mode_power_limit_div25;
+  uint8_t ui8_street_mode_throttle_enabled;
   uint16_t ui16_distance_since_power_on_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
@@ -116,20 +116,23 @@ typedef struct _configuration_variables
   uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 
+// menu definitions
+#define MAIN_MENU               0
+#define POWER_MENU              1
+#define CONFIGURATION_MENU      2
 
 
-// LCD RAM has 32*8 bits
-#define LCD_FRAME_BUFFER_SIZE 32
+#define LCD_FRAME_BUFFER_SIZE   32 // LCD RAM has 32*8 bits
 
 extern uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
 
-#define ASSIST_LEVEL_FIELD     0
-#define ODOMETER_FIELD         1
-#define TEMPERATURE_FIELD      2
-#define WHEEL_SPEED_FIELD      3
-#define BATTERY_POWER_FIELD    4
-#define TIME_SECOND_FIELD      5
-#define TIME_MINUTE_FIELD      6
+#define ASSIST_LEVEL_FIELD      0
+#define ODOMETER_FIELD          1
+#define TEMPERATURE_FIELD       2
+#define WHEEL_SPEED_FIELD       3
+#define BATTERY_POWER_FIELD     4
+#define TIME_SECOND_FIELD       5
+#define TIME_MINUTE_FIELD       6
 
 
 // each digit needs 7 bits to be defined + 1 digit that can be another symbol like a "point"
