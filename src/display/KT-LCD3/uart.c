@@ -15,7 +15,7 @@
 #include "lcd.h"
 #include "utils.h"
 
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   25  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   24  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_NUMBER_DATA_BYTES_TO_SEND      6   // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_MAX_NUMBER_MESSAGE_ID          8   // change this value depending on how many different packages there is to send
 
@@ -146,38 +146,35 @@ void uart_data_clock (void)
       // ADC torque_sensor
       p_motor_controller_data->ui8_adc_pedal_torque_sensor = ui8_rx_buffer[9];
       
-      // torque sensor value with offset removed and mapped to 255
+      // ADC torque sensor with offset
       p_motor_controller_data->ui8_pedal_torque_sensor = ui8_rx_buffer[10];
       
       // PAS cadence
       p_motor_controller_data->ui8_pedal_cadence = ui8_rx_buffer[11];
       
-      // pedal human power mapped to 255
-      p_motor_controller_data->ui8_pedal_human_power = ui8_rx_buffer[12];
-      
       // PWM duty_cycle
-      p_motor_controller_data->ui8_duty_cycle = ui8_rx_buffer[13];
+      p_motor_controller_data->ui8_duty_cycle = ui8_rx_buffer[12];
       
       // motor speed in ERPS
-      p_motor_controller_data->ui16_motor_speed_erps = (((uint16_t) ui8_rx_buffer [15]) << 8) + ((uint16_t) ui8_rx_buffer [14]);
+      p_motor_controller_data->ui16_motor_speed_erps = (((uint16_t) ui8_rx_buffer [14]) << 8) + ((uint16_t) ui8_rx_buffer [13]);
       
       // FOC angle
-      p_motor_controller_data->ui8_foc_angle = ui8_rx_buffer[16];
+      p_motor_controller_data->ui8_foc_angle = ui8_rx_buffer[15];
       
       // controller system state
-      p_motor_controller_data->ui8_error_states = ui8_rx_buffer[17];
+      p_motor_controller_data->ui8_error_states = ui8_rx_buffer[16];
       
       // temperature actual limiting value
-      p_motor_controller_data->ui8_temperature_current_limiting_value = ui8_rx_buffer[18];
+      p_motor_controller_data->ui8_temperature_current_limiting_value = ui8_rx_buffer[17];
       
       // wheel_speed_sensor_tick_counter
-      p_motor_controller_data->ui32_wheel_speed_sensor_tick_counter = (((uint32_t) ui8_rx_buffer[21]) << 16) + (((uint32_t) ui8_rx_buffer[20]) << 8) + ((uint32_t) ui8_rx_buffer[19]);
+      p_motor_controller_data->ui32_wheel_speed_sensor_tick_counter = (((uint32_t) ui8_rx_buffer[20]) << 16) + (((uint32_t) ui8_rx_buffer[19]) << 8) + ((uint32_t) ui8_rx_buffer[18]);
 
-      // ui16_pedal_torque_x10
-      p_motor_controller_data->ui16_pedal_torque_x10 = (((uint16_t) ui8_rx_buffer [23]) << 8) + ((uint16_t) ui8_rx_buffer [22]);
+      // pedal torque x100
+      p_motor_controller_data->ui16_pedal_torque_x100 = (((uint16_t) ui8_rx_buffer [22]) << 8) + ((uint16_t) ui8_rx_buffer [21]);
       
       // ui16_pedal_power_x10
-      p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [25]) << 8) + ((uint16_t) ui8_rx_buffer [24]);
+      p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [24]) << 8) + ((uint16_t) ui8_rx_buffer [23]);
 
       // signal that we processed the full package
       ui8_received_package_flag = 0;
@@ -193,7 +190,7 @@ void uart_data_clock (void)
       ui8_tx_buffer[1] = ui8_message_ID;
       
       // assist level
-      if (p_motor_controller_data->ui8_walk_assist_level) // if walk assist function is enabled, send walk assist level factor
+      if (p_motor_controller_data->ui8_walk_assist_enabled) // if walk assist is enabled, send walk assist level factor
       {
         ui8_tx_buffer[2] = p_configuration_variables->ui8_walk_assist_level_factor [(p_configuration_variables->ui8_assist_level)];
       }
@@ -207,10 +204,12 @@ void uart_data_clock (void)
       }
 
       // set lights state
-      // walk assist level state
+      // walk assist
+      // cruise
       ui8_tx_buffer[3] = ((p_motor_controller_data->ui8_lights & 1) |
-                         ((p_motor_controller_data->ui8_walk_assist_level & 1) << 1));
-      
+                         ((p_motor_controller_data->ui8_walk_assist_enabled & 1) << 1) |
+                         ((p_motor_controller_data->ui8_cruise_enabled & 1) << 2));
+                         
       // battery power limit
       if (p_motor_controller_data->ui8_street_mode_enabled && p_configuration_variables->ui8_street_mode_power_limit_enabled)
       {

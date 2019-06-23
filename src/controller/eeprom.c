@@ -24,7 +24,7 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_WHEEL_PERIMETER_1,                    // 8 + EEPROM_BASE_ADDRESS
     DEFAULT_VALUE_WHEEL_MAX_SPEED,                      // 9 + EEPROM_BASE_ADDRESS
     DEFAULT_VALUE_CONFIG_1,                             // 10 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10           // 11 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND               // 11 + EEPROM_BASE_ADDRESS
   };
 
 
@@ -67,7 +67,7 @@ void eeprom_init_variables (void)
       (p_configuration_variables->ui16_wheel_perimeter > 3000) ||
       (p_configuration_variables->ui16_wheel_perimeter < 750) ||
       (p_configuration_variables->ui8_wheel_max_speed > 99) ||
-      (p_configuration_variables->ui8_ramp_up_amps_per_second_x10 < 4))
+      (p_configuration_variables->ui8_ramp_up_amps_per_second < 4))
   {
     eeprom_write_array (array_default_values);
     eeprom_read_values_to_variables ();
@@ -87,7 +87,6 @@ static void eeprom_read_values_to_variables (void)
 
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_lights = ui8_temp & 1 ? 1 : 0;
-  p_configuration_variables->ui8_walk_assist = ui8_temp & (1 << 1) ? 1 : 0;
 
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
   p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte (ADDRESS_MOTOR_POWER_X10);
@@ -111,7 +110,7 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
   
   // ramp up, amps per second
-  p_configuration_variables->ui8_ramp_up_amps_per_second_x10 = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10);
+  p_configuration_variables->ui8_ramp_up_amps_per_second = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND);
 }
 
 
@@ -130,8 +129,7 @@ static void variables_to_array (uint8_t *ui8_array)
 
   ui8_array [0] = KEY;
   ui8_array [1] = p_configuration_variables->ui8_assist_level_factor_x10;
-  ui8_array [2] = (p_configuration_variables->ui8_lights & 1) | 
-                 ((p_configuration_variables->ui8_walk_assist & 1) << 1);
+  ui8_array [2] = p_configuration_variables->ui8_lights & 1;
   ui8_array [3] = p_configuration_variables->ui8_battery_max_current;
   ui8_array [4] = p_configuration_variables->ui8_motor_power_x10;
   ui8_array [5] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
@@ -141,7 +139,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [9] = p_configuration_variables->ui8_wheel_max_speed;
   ui8_array [10] = (p_configuration_variables->ui8_motor_type & 3) |
                   ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2);
-  ui8_array [11] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+  ui8_array [11] = p_configuration_variables->ui8_ramp_up_amps_per_second;
 }
 
 

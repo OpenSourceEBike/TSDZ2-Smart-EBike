@@ -13,12 +13,6 @@
 #include "main.h"
 #include "common/common.h"
 
-#define EBIKE_APP_STATE_MOTOR_COAST     0
-#define EBIKE_APP_STATE_MOTOR_STOP      1
-#define EBIKE_APP_STATE_MOTOR_STARTUP   2
-#define EBIKE_APP_STATE_MOTOR_COOL      3
-#define EBIKE_APP_STATE_MOTOR_RUNNING   4
-
 typedef struct _configuration_variables
 {
   uint8_t ui8_assist_level_factor_x10;
@@ -27,7 +21,6 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_low_voltage_cut_off_x10;
   uint16_t ui16_wheel_perimeter;
   uint8_t ui8_lights;
-  uint8_t ui8_walk_assist;
   uint8_t ui8_wheel_max_speed;
   uint8_t ui8_motor_type;
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
@@ -45,28 +38,23 @@ typedef struct _configuration_variables
   uint8_t ui8_temperature_current_limiting_value;
   uint16_t ui16_motor_temperature_x2;
   uint8_t ui8_motor_temperature;
-  uint8_t ui8_ramp_up_amps_per_second_x10;
+  uint8_t ui8_ramp_up_amps_per_second;
 } struct_configuration_variables;
 
 
 
-extern volatile uint16_t ui16_current_ramp_up_inverse_step;
-extern volatile uint8_t ui8_g_adc_torque_sensor_min_value;
-extern volatile uint8_t ui8_g_adc_torque_sensor_max_value;
+extern volatile uint8_t ui8_adc_pedal_torque_offset;
 extern volatile uint8_t ui8_adc_battery_current_offset;
-extern volatile uint8_t ui8_ebike_app_state;
-extern volatile uint8_t ui8_adc_target_battery_max_current;
-
+extern volatile uint8_t ui8_controller_adc_battery_current_target;
+extern volatile uint8_t ui8_controller_duty_cycle_target;
+extern volatile uint16_t ui16_current_ramp_up_inverse_step;
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_g_pedaling_direction;
-extern uint8_t ui8_pas_cadence_rpm;
-
+//extern uint8_t ui8_cadence_rpm;
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
 extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;
-
 extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
-void ebike_app_init (void);
 void ebike_app_controller (void);
 struct_configuration_variables* get_configuration_variables (void);
 

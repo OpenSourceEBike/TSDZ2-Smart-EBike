@@ -156,7 +156,7 @@
 
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0   // target PWM for walk assist
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0   // target duty cycle (PWM) for walk assist
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1                    25
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2                    30
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3                    35

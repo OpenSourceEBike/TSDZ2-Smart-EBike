@@ -9,7 +9,6 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#include "config.h"
 
 //#define DEBUG_UART
 
@@ -20,6 +19,17 @@
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                 (PWM_DUTY_CYCLE_MAX/2)
 
 
+// motor rotor offset 
+#define MOTOR_ROTOR_OFFSET_ANGLE                  10
+
+/*---------------------------------------------------------
+  NOTE: regarding motor rotor offset 
+  
+  The motor rotor offset should be as close to 0 as 
+  possible. You can try to tune with the wheel in the air,
+  full throttle and look at the batttery current. Adjust 
+  for the lowest battery current possible.
+---------------------------------------------------------*/
 
 #define MOTOR_ROTOR_ANGLE_90                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
 #define MOTOR_ROTOR_ANGLE_150                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
@@ -30,16 +40,65 @@
 
 
 
+// motor phase current
+#define ADC_MOTOR_PHASE_CURRENT_MAX               48 // 30 amps (0.625 amps each unit)
+
+
+
+// battery current
+#define ADC_BATTERY_CURRENT_MAX                   29 // 18 amps (0.625 amps each step)
+
+/*---------------------------------------------------------
+  NOTE: regarding ADC_BATTERY_CURRENT_MAX
+  
+  This is the maximum current in ADC steps that the motor 
+  will be able to draw from the battery. A higher value 
+  will give higher torque figures but the limit of the 
+  controller is 16 A and it should not be exceeded.
+---------------------------------------------------------*/
+
+
+
 // motor maximum rotation
 #define MOTOR_OVER_SPEED_ERPS                     520 // motor max speed, protection max value | 30 points for the sinewave at max speed
 #define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL        700 // experimental motor speed to allow a higher cadence
 
 
 
+// motor start interpolation
+#define MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES           10
+
+/*---------------------------------------------------------
+  NOTE: regarding motor start interpolation
+  
+  This value is the ERPS speed after which a transition 
+  happens from sinewave and no interpolation to 
+  interpolation 60 degrees. Must be found experimentally 
+  but a value of 25 may be good.
+---------------------------------------------------------*/
+
+
+
+// duty cycle (PWM) ramping
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP       20  // 20 -> 20 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP     20
+
+/*---------------------------------------------------------
+  NOTE: regarding duty cycle (PWM) ramping
+  
+  Choose appropriate duty cycle (PWM) ramp up/down step. 
+  A higher value will make the motor acceleration slower.
+  
+  For a 24 V battery, 25 for ramp up seems ok. For a 
+  higher voltage battery, this values should be higher.
+---------------------------------------------------------*/
+
+
+
 // throttle
 #define THROTTLE_FILTER_COEFFICIENT               1   // see note below
 #define ADC_THROTTLE_THRESHOLD                    10  // value in ADC 8 bits step
-#define ADC_TORQUE_SENSOR_THRESHOLD               6   // value in ADC 8 bits step
+
 
 /*---------------------------------------------------------
   NOTE: regarding throttle
@@ -48,15 +107,6 @@
   0 equals to no filtering and no delay, higher values 
   will increase filtering but will also add a bigger delay.
 ---------------------------------------------------------*/
-
-
-
-// walk assist and cruise
-#define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10    80    // 8.0 km/h
-#define CRUISE_PID_KP                             14    // 48 volt motor: 12, 36 volt motor: 14
-#define CRUISE_PID_KI                             0.7   // 48 volt motor: 1, 36 volt motor: 0.7
-#define CRUISE_PID_INTEGRAL_LIMIT                 1000
-#define CRUISE_PID_KD                             0
 
 
 
@@ -69,24 +119,6 @@
 
   Max voltage value for throttle, in ADC 8 bits step, 
   each ADC 8 bits step = (5 V / 256) = 0.0195
----------------------------------------------------------*/
-
-
-
-// torque sensor
-#define PEDAL_TORQUE_X100                         52
-
-/*---------------------------------------------------------
-  NOTE: regarding torque sensor
-
-  Torque (force) value found experimentaly.
-  
-  Measured with a cheap digital hook scale, we found that
-  each torque sensor unit is equal to 0.52 Nm. Using the 
-  scale it was found that 0.33 kg was measured as 1 torque 
-  sensor unit.
-  
-  Force (Nm) = 1 Kg * 9.18 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/
 
 
@@ -132,7 +164,7 @@
 
 
 // default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                 50  // 5.0 amps per second ramp up
+#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND                     5  // 5 amps per second ramp up
 
 
 // ADC battery voltage measurement

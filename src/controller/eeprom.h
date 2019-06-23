@@ -28,7 +28,7 @@
 #define ADDRESS_WHEEL_PERIMETER_1                           8 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_MAX_SPEED                             9 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CONFIG_1                                    10 + EEPROM_BASE_ADDRESS
-#define ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10                 11 + EEPROM_BASE_ADDRESS
+#define ADDRESS_RAMP_UP_AMPS_PER_SECOND                     11 + EEPROM_BASE_ADDRESS
 #define EEPROM_BYTES_STORED                                 12
 
 

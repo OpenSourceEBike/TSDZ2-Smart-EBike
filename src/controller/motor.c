@@ -16,7 +16,6 @@
 #include "ebike_app.h"
 #include "pins.h"
 #include "pwm.h"
-#include "config.h"
 #include "adc.h"
 #include "utils.h"
 #include "uart.h"
@@ -374,7 +373,6 @@ uint8_t ui8_hall_sensors_state_last = 0;
 uint8_t ui8_half_erps_flag = 0;
 
 volatile uint8_t ui8_g_duty_cycle = 0;
-static volatile uint8_t ui8_m_duty_cycle_target;
 uint16_t ui16_duty_cycle_ramp_up_inverse_step;
 uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 uint16_t ui16_counter_duty_cycle_ramp_up = 0;
@@ -388,7 +386,7 @@ uint16_t ui16_value;
 uint16_t ui16_counter_adc_battery_current_ramp_up = 0;
 uint8_t ui8_controller_adc_battery_max_current = 0;
 
-uint8_t ui8_first_time_run_flag = 1;
+
 
 volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff; // safe value so controller will not discharge the battery if not receiving a lower value from the LCD
 uint16_t ui16_adc_battery_voltage_accumulated = 0;
@@ -401,7 +399,7 @@ uint8_t ui8_adc_battery_current_filtered_10b;
 uint16_t ui16_adc_battery_current_10b;
 volatile uint8_t ui8_g_adc_battery_current;
 static volatile uint8_t ui8_adc_motor_phase_current;
-uint8_t ui8_current_controller_counter = 0;
+
 
 volatile uint8_t ui8_adc_target_motor_phase_max_current;
 volatile uint8_t ui8_g_adc_motor_phase_current_offset;
@@ -431,10 +429,8 @@ void motor_set_phase_current_max (uint8_t ui8_value);
 
 void motor_controller (void)
 {
-  // reads battery voltage and current
   read_battery_voltage ();
   read_battery_current ();
-
   calc_foc_angle ();
 }
 
@@ -537,7 +533,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           if (ui8_motor_commutation_type == BLOCK_COMMUTATION)
           {
             ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
-            ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_RUNNING;
           }
         }
         else
@@ -602,7 +597,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_g_foc_angle = 0;
     ui8_motor_commutation_type = BLOCK_COMMUTATION;
     ui8_hall_sensors_state_last = 0; // this way we force execution of hall sensors code next time
-//    if (ui8_ebike_app_state == EBIKE_APP_STATE_MOTOR_RUNNING) { ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP; }
   }
 
 
@@ -642,6 +636,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - ramp up/down PWM duty_cycle value
   // do not execute all, otherwise ui8_duty_cycle would be decremented more than onece on each PWM cycle
 
+  static uint8_t ui8_current_controller_counter;
+  
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
   if(++ui8_current_controller_counter > 12)
   {
@@ -677,9 +673,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
   {
-    if(ui8_m_duty_cycle_target > ui8_g_duty_cycle)
+    // if brake is active, keep duty cycle target at 0
+    if (ui8_motor_controller_state & MOTOR_CONTROLLER_STATE_BRAKE) { ui8_controller_duty_cycle_target = 0; }
+    
+    if (ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
     {
-      if(ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
+      if (ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_up = 0;
         
@@ -687,9 +686,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         ui8_g_duty_cycle++;
       }
     }
-    else if(ui8_m_duty_cycle_target < ui8_g_duty_cycle)
+    else if (ui8_controller_duty_cycle_target < ui8_g_duty_cycle)
     {
-      if(ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
+      if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_down = 0;
         
@@ -771,7 +770,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   // ramp up ADC battery current
-  if (ui8_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
+  if (ui8_controller_adc_battery_current_target > ui8_controller_adc_battery_max_current)
   {
     if (ui16_counter_adc_battery_current_ramp_up++ >= ui16_current_ramp_up_inverse_step)
     {
@@ -782,10 +781,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_controller_adc_battery_max_current++;
     }
   }
-  else if (ui8_adc_target_battery_max_current < ui8_controller_adc_battery_max_current)
+  else if (ui8_controller_adc_battery_current_target < ui8_controller_adc_battery_max_current)
   {
     // we are not doing a ramp down here, just directly setting to the target value
-    ui8_controller_adc_battery_max_current = ui8_adc_target_battery_max_current;
+    ui8_controller_adc_battery_max_current = ui8_controller_adc_battery_current_target;
   }
   
 
@@ -952,12 +951,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
 
-
+//  static uint8_t ui8_first_time_run_flag;
+//
 //  // reload watchdog timer, every PWM cycle to avoid automatic reset of the microcontroller
-//  if (ui8_first_time_run_flag)
+//  if (!ui8_first_time_run_flag)
 //  { // from the init of watchdog up to first reset on PWM cycle interrupt,
 //    // it can take up to 250ms and so we need to init here inside the PWM cycle
-//    ui8_first_time_run_flag = 0;
+//    ui8_first_time_run_flag = 1;
 //    watchdog_init ();
 //  }
 //  else
@@ -1010,16 +1010,6 @@ void motor_init (void)
   motor_set_pwm_duty_cycle_ramp_up_inverse_step (PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP); // each step = 64us
   motor_set_pwm_duty_cycle_ramp_down_inverse_step (PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP); // each step = 64us
   motor_set_phase_current_max (ADC_MOTOR_PHASE_CURRENT_MAX);
-}
-
-void motor_set_pwm_duty_cycle_target (uint8_t ui8_value)
-{
-  if (ui8_value > PWM_DUTY_CYCLE_MAX) { ui8_value = PWM_DUTY_CYCLE_MAX; }
-
-  // if brake is active, keep duty_cycle target at 0
-  if (ui8_motor_controller_state & MOTOR_CONTROLLER_STATE_BRAKE) { ui8_value = 0; }
-
-  ui8_m_duty_cycle_target = ui8_value;
 }
 
 void motor_set_pwm_duty_cycle_ramp_up_inverse_step (uint16_t ui16_value)
