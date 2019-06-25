@@ -1972,7 +1972,7 @@ void walk_assist_or_cruise(void)
       // enable walk assist or cruise if...
       if (configuration_variables.ui8_walk_assist_function_enabled && motor_controller_data.ui16_wheel_speed_x10 < WALK_ASSIST_THRESHOLD_SPEED_X10 && !ui8_cruise_activated)
       {
-        lcd_enable_walk_symbol (1);
+        lcd_enable_walk_symbol(1);
         motor_controller_data.ui8_walk_assist_enabled = 1;
         
         // set flag to indicate that walk assist was activated first during this button event
@@ -1980,7 +1980,7 @@ void walk_assist_or_cruise(void)
       }
       else if (configuration_variables.ui8_cruise_function_enabled && motor_controller_data.ui16_wheel_speed_x10 > CRUISE_THRESHOLD_SPEED_X10 && !ui8_walk_assist_activated)
       {
-        lcd_enable_cruise_symbol (1);
+        lcd_enable_cruise_symbol(1);
         motor_controller_data.ui8_cruise_enabled = 1;
         
         // set flag to indicate that cruise was activated first during this button event

@@ -392,7 +392,6 @@ volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff; // safe value so contro
 uint16_t ui16_adc_battery_voltage_accumulated = 0;
 uint16_t ui16_adc_battery_voltage_filtered_10b;
 
-uint16_t ui16_adc_battery_current_accumulated = 0;
 uint8_t ui8_adc_battery_current_filtered_10b;
 
 
@@ -409,17 +408,11 @@ uint8_t ui8_pas_state_old;
 uint8_t ui8_pas_after_first_pulse = 0;
 uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 
-volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
-uint8_t ui8_torque_sensor_pas_signal_change_counter = 0;
-uint16_t ui16_torque_sensor_throttle_max_value = 0;
-uint16_t ui16_torque_sensor_throttle_value;
-
 
 // wheel speed
 uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
-uint16_t ui16_wheel_speed_sensor_counter = 0;
-uint8_t ui8_wheel_speed_sensor_change_counter = 0;
+
 
 void read_battery_voltage (void);
 void read_battery_current (void);
@@ -863,28 +856,35 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       }
     }
 
-    // NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
-    // but lets save this because we may want to use it in future
-//    // filter the torque signal, by saving the max value of each one pedal rotation
-//    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
-//    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
-//
-//    ui8_torque_sensor_pas_signal_change_counter++;
-//    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
-//    {
-//      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
-//      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
-//      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
-//    }
-//    else
-//    {
-//      // store the max value
-//      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
-//      {
-//        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
-//      }
-//    }
+    // NOTE: next block of code calculates the max torque signal during one pedal rotation, lets save this because we may want to use it in future
+    /*   
+    volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
+    static uint8_t ui8_torque_sensor_pas_signal_change_counter = 0;
+    static uint16_t ui16_torque_sensor_throttle_max_value = 0;
+    static uint16_t ui16_torque_sensor_throttle_value;
 
+    // filter the torque signal, by saving the max value of each one pedal rotation
+    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
+    
+    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
+
+    ui8_torque_sensor_pas_signal_change_counter++;
+    
+    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
+    {
+      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
+      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
+      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
+    }
+    else
+    {
+      // store the max value
+      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
+      {
+        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
+      }
+    }
+    */
   }
 
   // limit min PAS cadence
@@ -894,15 +894,15 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui16_pas_counter = 0;
     ui8_pas_after_first_pulse = 0;
     ui8_g_pedaling_direction = 0;
-
-//    ui16_torque_sensor_throttle_processed_value = 0;
+    // ui16_torque_sensor_throttle_processed_value = 0;
   }
 
 
 
   /****************************************************************************/
   
-  
+  static uint16_t ui16_wheel_speed_sensor_counter;
+  static uint8_t ui8_wheel_speed_sensor_change_counter;
   
   // calc wheel speed sensor timming between each positive pulses, in PWM cycles ticks
   ui16_wheel_speed_sensor_counter++;
@@ -1044,6 +1044,8 @@ void read_battery_voltage (void)
 
 void read_battery_current (void)
 {
+  static uint16_t ui16_adc_battery_current_accumulated;
+  
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
   ui16_adc_battery_current_accumulated -= ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
   ui16_adc_battery_current_accumulated += ui16_adc_battery_current_10b;

@@ -89,7 +89,7 @@ void adc_init (void)
 
   // ADC torque sensor initialization //////////////////////////////////////////////////////////////////////
   
-  #define ADC_TORQUE_SENSOR_OFFSET_ADJUSTMENT   6
+  #define ADC_TORQUE_SENSOR_OFFSET_ADJUSTMENT   7
   
   uint16_t ui16_adc_pedal_torque_offset = 0;
   

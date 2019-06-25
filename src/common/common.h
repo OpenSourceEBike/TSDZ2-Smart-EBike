@@ -24,4 +24,9 @@
 // cruise
 #define CRUISE_THRESHOLD_SPEED_X10              90 // 90 -> 9.0 kph, this is the minimum speed limit in which cruise can be activated
 
+// optional ADC channel function
+#define NOT_IN_USE                              0
+#define TEMPERATURE_CONTROL                     1
+#define THROTTLE_CONTROL                        2
+
 #endif /* COMMON_COMMON_H_ */
