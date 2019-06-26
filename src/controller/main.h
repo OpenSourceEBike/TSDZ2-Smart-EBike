@@ -119,6 +119,7 @@
 
   Max voltage value for throttle, in ADC 8 bits step, 
   each ADC 8 bits step = (5 V / 256) = 0.0195
+
 ---------------------------------------------------------*/
 
 

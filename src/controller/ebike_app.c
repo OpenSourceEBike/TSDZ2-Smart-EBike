@@ -468,8 +468,8 @@ static void uart_send_package(void)
   {
     ui8_tx_buffer[10] = 0; 
   }
-  
-  // PAS cadence
+
+  // pedal cadence
   ui8_tx_buffer[11] = ui8_cadence_rpm;
   
   // PWM duty_cycle
@@ -546,6 +546,10 @@ static void calc_crank_power(void)
   if (ui8_adc_pedal_torque > ui8_adc_pedal_torque_offset)
   {
     ui16_pedal_torque_x100 = (uint16_t) (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset) * (uint16_t) ADC_PEDAL_TORQUE_CONVERSION_X100;
+  }
+  else
+  {
+    ui16_pedal_torque_x100 = 0;
   }
 
   // calculate power on crank
