@@ -587,7 +587,7 @@ static void uart_send_package(void)
   // ADC torque_sensor
   ui8_tx_buffer[9] = UI8_ADC_TORQUE_SENSOR;
   
-  // torque sensor value with offset removed and mapped to 255
+  // torque sensor value with offset removed
   ui8_tx_buffer[10] = ui8_torque_sensor;
   
   // PAS cadence
@@ -670,14 +670,17 @@ static void calc_pedal_force_and_torque(void)
   uint16_t ui16_pedal_torque_x100;
 
   // calculate torque on pedals
-  ui16_pedal_torque_x100 = (uint16_t) ui8_torque_sensor * (uint16_t) PEDAL_TORQUE_X100;
+  ui16_pedal_torque_x100 = (uint16_t) ui8_torque_sensor * (uint16_t) ADC_STEP_PEDAL_TORQUE_X100;
   ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
 
   // calculate power on pedals
   // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
-  // formula for angular velocity in degrees: power  =  force  *  rotations per minute  *  2  *  pi / 60
-  // (100 * 2 * pi) / 60 = 628
-//  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_temp * (uint32_t) ui8_pas_cadence_rpm)) / 105);
+  // formula for angular velocity in degrees: power  =  (force  *  rotations per minute  *  2  *  pi) / 60
+
+  // ui16_pedal_power_x10 = (ui16_pedal_torque_x100 * ui8_pas_cadence_rpm  *  2  *  pi) / (60 * 10)
+  // (2 * pi) / (60 * 10) = 0.010466667
+  // 1 / 0.010466667 = 96
+  // ui16_pedal_power_x10 = (ui16_pedal_torque_x100 * ui8_pas_cadence_rpm) / 96
 
   // NOTE
   /*
@@ -689,9 +692,8 @@ static void calc_pedal_force_and_torque(void)
 
   For a quick hack, we can just reduce actual value to 0.637.
 
-  95.5 * (1/0.637) = 150
   */
-  ui16_pedal_power_x10 = (uint16_t) ((((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm)) / (uint32_t) 150);
+  ui16_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
 }
 
 
@@ -1045,13 +1047,19 @@ static void read_pas_cadence(void)
 
 static void torque_sensor_read(void)
 {
-  // map value from 0 up to 255
-  // map value from 0 up to 255
-  ui8_torque_sensor_raw = (uint8_t) (map (  UI8_ADC_TORQUE_SENSOR,
-                                            (uint8_t) ui8_g_adc_torque_sensor_min_value,
-                                            (uint8_t) ui8_g_adc_torque_sensor_max_value,
-                                            (uint8_t) 0,
-                                            (uint8_t) 255));
+  uint8_t ui8_adc_torque_sensor = UI8_ADC_TORQUE_SENSOR;
+
+  // remove the offset
+  // make sure readed value is higher than the offset
+  if(ui8_adc_torque_sensor >= ui8_g_adc_torque_sensor_min_value)
+  {
+    ui8_torque_sensor_raw = ui8_adc_torque_sensor - ui8_g_adc_torque_sensor_min_value;
+  }
+  // offset is higher, something is wrong so just keep ui8_torque_sensor_raw at 0 value
+  else
+  {
+    ui8_torque_sensor_raw = 0;
+  }
 
   // next state machine is used to filter out the torque sensor signal
   // when user is resting on the pedals

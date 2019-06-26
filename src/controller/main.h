@@ -74,7 +74,7 @@
 
 
 // torque sensor
-#define PEDAL_TORQUE_X100                         52
+#define ADC_STEP_PEDAL_TORQUE_X100                         120
 
 /*---------------------------------------------------------
   NOTE: regarding torque sensor
@@ -82,11 +82,11 @@
   Torque (force) value found experimentaly.
   
   Measured with a cheap digital hook scale, we found that
-  each torque sensor unit is equal to 0.52 Nm. Using the 
-  scale it was found that 0.33 kg was measured as 1 torque 
-  sensor unit.
-  
-  Force (Nm) = 1 Kg * 9.18 * 0.17 (0.17 = arm cranks size)
+  each ADC 8 bits step measures 0.77kgs.
+  Full ADC range of 10 bits, it can measure as low as 0.19 kgs.
+
+  Force (Nm) = 0.77 Kg * 9.18 * 0.17 (0.17 = arm cranks size)
+  Force per each ADC 8 bits step = 1.2 Nm
 ---------------------------------------------------------*/
 
 
