@@ -60,8 +60,8 @@
 
 
 // motor maximum rotation
-#define MOTOR_OVER_SPEED_ERPS                     520 // motor max speed, protection max value | 30 points for the sinewave at max speed
-#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL        700 // experimental motor speed to allow a higher cadence
+#define MOTOR_OVER_SPEED_ERPS                                     520 // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700 // experimental motor speed to allow a higher cadence
 
 
 
@@ -80,8 +80,8 @@
 
 
 // duty cycle (PWM) ramping
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP       20  // 20 -> 20 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP     20
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       20  // 20 -> 20 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     20
 
 /*---------------------------------------------------------
   NOTE: regarding duty cycle (PWM) ramping
@@ -96,8 +96,8 @@
 
 
 // throttle
-#define THROTTLE_FILTER_COEFFICIENT               1   // see note below
-#define ADC_THROTTLE_THRESHOLD                    10  // value in ADC 8 bits step
+#define THROTTLE_FILTER_COEFFICIENT                               1   // see note below
+#define ADC_THROTTLE_THRESHOLD                                    10  // value in ADC 8 bits step
 
 
 /*---------------------------------------------------------
@@ -111,8 +111,8 @@
 
 
 // throttle ADC values
-#define ADC_THROTTLE_MIN_VALUE                    47
-#define ADC_THROTTLE_MAX_VALUE                    176
+#define ADC_THROTTLE_MIN_VALUE                                    47
+#define ADC_THROTTLE_MAX_VALUE                                    176
 
 /*---------------------------------------------------------
   NOTE: regarding throttle ADC values
@@ -159,7 +159,9 @@
 #define DEFAULT_VALUE_WHEEL_PERIMETER_0                           2   // 26'' wheel: 2050 mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                           8
 #define DEFAULT_VALUE_WHEEL_MAX_SPEED                             50  // 50 km/h
-#define DEFAULT_VALUE_CONFIG_1                                    0
+#define DEFAULT_VALUE_MOTOR_TYPE                                  0
+#define DEFAULT_VALUE_CADENCE_RPM_MIN                             0
+
 
 
 
@@ -187,7 +189,6 @@
 
 // ADC battery current measurement and filter
 #define ADC_BATTERY_CURRENT_PER_ADC_STEP_X512                     102 // 1 A per 5 steps of ADC_10bits
-#define ADC_BATTERY_VOLTAGE_MIN                                   (uint8_t) ((float) (BATTERY_LI_ION_CELLS_NUMBER * LI_ION_CELL_VOLTS_0) / ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP)
 #define READ_BATTERY_CURRENT_FILTER_COEFFICIENT                   2
 #define READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT                   2
 

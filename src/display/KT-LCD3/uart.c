@@ -307,8 +307,8 @@ void uart_data_clock (void)
             ui8_tx_buffer[5] = p_configuration_variables->ui8_temperature_limit_feature_enabled;
           }
           
-          // enable/disable motor assistance without pedal rotation
-          ui8_tx_buffer[6] = p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation;
+          // motor assistance without pedal rotation
+          ui8_tx_buffer[6] = p_configuration_variables->ui8_cadence_rpm_min;
         break;
         
         default:

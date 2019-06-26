@@ -23,7 +23,7 @@ typedef struct _configuration_variables
   uint8_t ui8_lights;
   uint8_t ui8_wheel_max_speed;
   uint8_t ui8_motor_type;
-  uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
+  uint8_t ui8_cadence_rpm_min;
   uint8_t ui8_target_battery_max_power_div25;
   uint8_t configuration_variables;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;

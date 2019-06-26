@@ -72,7 +72,7 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_voltage_reset_wh_counter_x10;
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
-  uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
+  uint8_t ui8_cadence_rpm_min;
   uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;

@@ -27,12 +27,14 @@ volatile struct_configuration_variables m_configuration_variables;
 
 // variables for various system functions
 volatile uint8_t  ui8_system_state = NO_ERROR;
+uint16_t          ui16_pedal_power_x10 = 0;
+static uint8_t    ui8_brakes_enabled = 0;
+
+
+// variables for the cadence sensor
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t  ui8_g_pedaling_direction = 0;
 uint8_t           ui8_cadence_rpm = 0;
-uint16_t          ui16_pedal_power_x10 = 0;
-static uint8_t    ui8_brakes_enabled = 0;
-uint16_t          ui16_battery_voltage_filtered = 0;
 
 
 // variables for power control
@@ -44,6 +46,7 @@ volatile uint8_t  ui8_controller_duty_cycle_target = 0;
 uint8_t           ui8_adc_battery_current_target = 0;
 uint8_t           ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX;
 uint8_t           ui8_duty_cycle_target = 0;
+uint16_t          ui16_battery_voltage_filtered = 0;
 
 
 // variables for the throttle function
@@ -56,22 +59,20 @@ volatile uint8_t ui8_adc_pedal_torque_offset;
 uint16_t         ui16_pedal_torque_x100 = 0;
 
 
-// variables for walk assist function
+// variables for the walk assist function
 static uint8_t    ui8_walk_assist_enabled = 0;
 
 
-// variables for cruise function
+// variables for the cruise function
 static uint8_t    ui8_cruise_enabled = 0;
 static uint8_t    ui8_initialize_cruise_PID = 1;
 static uint16_t   ui16_wheel_speed_target_received_x10 = 0;
 
 
-
-// variables for wheel speed
+// variables for wheel speed calculation
 volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
-uint8_t           ui8_wheel_speed_max = 0;
-static uint16_t   ui16_wheel_speed_x10;
 volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
+static uint16_t   ui16_wheel_speed_x10;
 
 
 // variables for boost
@@ -359,7 +360,7 @@ static void uart_receive_package(void)
           
           if (m_configuration_variables.ui8_ramp_up_amps_per_second < 1) { m_configuration_variables.ui8_ramp_up_amps_per_second = 1; }
           
-          if (m_configuration_variables.ui8_ramp_up_amps_per_second > 100) { m_configuration_variables.ui8_ramp_up_amps_per_second = 100; }
+          if (m_configuration_variables.ui8_ramp_up_amps_per_second > 200) { m_configuration_variables.ui8_ramp_up_amps_per_second = 200; }
           
           // calculate current step for ramp up
           ui32_temp = ((uint32_t) 9765) / ((uint32_t) m_configuration_variables.ui8_ramp_up_amps_per_second); // see note below
@@ -390,8 +391,8 @@ static void uart_receive_package(void)
           // motor temperature limit function or throttle
           m_configuration_variables.ui8_temperature_limit_feature_enabled = ui8_rx_buffer [5];
           
-          // motor assistance without pedal rotation enable/disable when startup 
-          m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = ui8_rx_buffer [6];
+          // motor assistance without pedal rotation
+          m_configuration_variables.ui8_cadence_rpm_min = ui8_rx_buffer [6];
         break;
         
         default:
@@ -1018,10 +1019,9 @@ static void calc_cadence(void)
     ui8_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064));
   }
   
-  if (m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation)
-  {
-    if (ui8_cadence_rpm < 10) { ui8_cadence_rpm = 10; }
-  }
+  if (m_configuration_variables.ui8_cadence_rpm_min > 10) { m_configuration_variables.ui8_cadence_rpm_min = 10; }
+  
+  if (ui8_cadence_rpm < m_configuration_variables.ui8_cadence_rpm_min) { ui8_cadence_rpm = m_configuration_variables.ui8_cadence_rpm_min; }
 }
 
 

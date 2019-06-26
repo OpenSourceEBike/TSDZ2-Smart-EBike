@@ -383,33 +383,25 @@ uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
 uint16_t ui16_value;
 
-uint16_t ui16_counter_adc_battery_current_ramp_up = 0;
+
+// power variables
 uint8_t ui8_controller_adc_battery_max_current = 0;
-
-
-
 volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff; // safe value so controller will not discharge the battery if not receiving a lower value from the LCD
-uint16_t ui16_adc_battery_voltage_accumulated = 0;
 uint16_t ui16_adc_battery_voltage_filtered_10b;
-
 uint8_t ui8_adc_battery_current_filtered_10b;
-
-
 uint16_t ui16_adc_battery_current_10b;
 volatile uint8_t ui8_g_adc_battery_current;
 static volatile uint8_t ui8_adc_motor_phase_current;
-
-
 volatile uint8_t ui8_adc_target_motor_phase_max_current;
 volatile uint8_t ui8_g_adc_motor_phase_current_offset;
 
-uint8_t ui8_pas_state;
-uint8_t ui8_pas_state_old;
+
+// cadence sensor
 uint8_t ui8_pas_after_first_pulse = 0;
 uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 
 
-// wheel speed
+// wheel speed sensor
 uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
 
@@ -632,23 +624,22 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   static uint8_t ui8_current_controller_counter;
   
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
-  if(++ui8_current_controller_counter > 12)
+  if (++ui8_current_controller_counter > 12)
   {
     // reset counter
     ui8_current_controller_counter = 0;
     
     // if battery max current or phase current is too much, reduce duty cycle
-    if((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) ||
-       (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
+    if ((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) || (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
     {
-      if(ui8_g_duty_cycle > 0)
+      if (ui8_g_duty_cycle > 0)
       {
         // decrement duty cycle
         ui8_g_duty_cycle--;
       }
     }
   }
-  else if(UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
+  else if (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
   {
     if (ui8_g_duty_cycle > 0)
     {
@@ -656,7 +647,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_g_duty_cycle--;
     }
   }
-  else if((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
+  else if ((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
   {
     if (ui8_g_duty_cycle > 0)
     {
@@ -760,7 +751,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
   
-  
+  static uint16_t ui16_counter_adc_battery_current_ramp_up;
   
   // ramp up ADC battery current
   if (ui8_controller_adc_battery_current_target > ui8_controller_adc_battery_max_current)
@@ -784,7 +775,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
 
-
+  static uint8_t ui8_pas_state;
+  static uint8_t ui8_pas_state_old;
 
   // calc PAS timming between each positive pulses, in PWM cycles ticks
   // calc PAS on and off timming of each pulse, in PWM cycles ticks
@@ -1035,6 +1027,8 @@ uint16_t ui16_motor_get_motor_speed_erps (void)
 
 void read_battery_voltage (void)
 {
+  static uint16_t ui16_adc_battery_voltage_accumulated;
+  
   // low pass filter the voltage readed value, to avoid possible fast spikes/noise
   ui16_adc_battery_voltage_accumulated -= ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
   ui16_adc_battery_voltage_accumulated += ui16_adc_read_battery_voltage_10b ();

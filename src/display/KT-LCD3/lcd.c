@@ -1308,10 +1308,10 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
     
     // motor assistance startup without pedal rotation
     case 3:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_rpm_min;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_max_value = 10;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -3558,14 +3558,14 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
   if (ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
     // stop changing variables if...
-    if (ONOFF_LONG_CLICK)
+    if (ONOFF_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
     }
   }
   else
   {
-    // change variables if onoff click event
+    // change variables if...
     if (ONOFF_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 1;
