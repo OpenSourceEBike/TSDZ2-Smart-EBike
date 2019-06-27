@@ -23,8 +23,9 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     DEFAULT_VALUE_WHEEL_PERIMETER_0,                    // 7 + EEPROM_BASE_ADDRESS
     DEFAULT_VALUE_WHEEL_PERIMETER_1,                    // 8 + EEPROM_BASE_ADDRESS
     DEFAULT_VALUE_WHEEL_MAX_SPEED,                      // 9 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_CONFIG_1,                             // 10 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10           // 11 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_MOTOR_TYPE,                           // 10 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_CADENCE_RPM_MIN,                      // 11 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND               // 12 + EEPROM_BASE_ADDRESS
   };
 
 
@@ -67,7 +68,7 @@ void eeprom_init_variables (void)
       (p_configuration_variables->ui16_wheel_perimeter > 3000) ||
       (p_configuration_variables->ui16_wheel_perimeter < 750) ||
       (p_configuration_variables->ui8_wheel_max_speed > 99) ||
-      (p_configuration_variables->ui8_ramp_up_amps_per_second_x10 < 4))
+      (p_configuration_variables->ui8_ramp_up_amps_per_second < 4))
   {
     eeprom_write_array (array_default_values);
     eeprom_read_values_to_variables ();
@@ -87,12 +88,11 @@ static void eeprom_read_values_to_variables (void)
 
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_lights = ui8_temp & 1 ? 1 : 0;
-  p_configuration_variables->ui8_walk_assist = ui8_temp & (1 << 1) ? 1 : 0;
 
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
   p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte (ADDRESS_MOTOR_POWER_X10);
   
-  // battery low cut off voltage
+  // battery low voltage cut off 
   ui16_temp = FLASH_ReadByte (ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0);
   ui8_temp = FLASH_ReadByte (ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1);
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
@@ -104,14 +104,14 @@ static void eeprom_read_values_to_variables (void)
   ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
   p_configuration_variables->ui16_wheel_perimeter = ui16_temp;
 
-  p_configuration_variables->ui8_wheel_max_speed = FLASH_ReadByte (ADDRESS_WHEEL_MAX_SPEED);
+  p_configuration_variables->ui8_wheel_max_speed = FLASH_ReadByte(ADDRESS_WHEEL_MAX_SPEED);
 
-  ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_1);
-  p_configuration_variables->ui8_motor_type = ui8_temp & 3;
-  p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
+  p_configuration_variables->ui8_motor_type = FLASH_ReadByte(ADDRESS_MOTOR_TYPE);
+  
+  p_configuration_variables->ui8_cadence_rpm_min = FLASH_ReadByte(ADDRESS_CADENCE_RPM_MIN);
   
   // ramp up, amps per second
-  p_configuration_variables->ui8_ramp_up_amps_per_second_x10 = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10);
+  p_configuration_variables->ui8_ramp_up_amps_per_second = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND);
 }
 
 
@@ -130,8 +130,7 @@ static void variables_to_array (uint8_t *ui8_array)
 
   ui8_array [0] = KEY;
   ui8_array [1] = p_configuration_variables->ui8_assist_level_factor_x10;
-  ui8_array [2] = (p_configuration_variables->ui8_lights & 1) | 
-                 ((p_configuration_variables->ui8_walk_assist & 1) << 1);
+  ui8_array [2] = p_configuration_variables->ui8_lights;
   ui8_array [3] = p_configuration_variables->ui8_battery_max_current;
   ui8_array [4] = p_configuration_variables->ui8_motor_power_x10;
   ui8_array [5] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
@@ -139,9 +138,9 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [7] = p_configuration_variables->ui16_wheel_perimeter & 255;
   ui8_array [8] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
   ui8_array [9] = p_configuration_variables->ui8_wheel_max_speed;
-  ui8_array [10] = (p_configuration_variables->ui8_motor_type & 3) |
-                  ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2);
-  ui8_array [11] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+  ui8_array [10] = p_configuration_variables->ui8_motor_type;
+  ui8_array [11] = p_configuration_variables->ui8_cadence_rpm_min;
+  ui8_array [12] = p_configuration_variables->ui8_ramp_up_amps_per_second;
 }
 
 

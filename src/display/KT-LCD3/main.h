@@ -53,7 +53,7 @@
 #define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 -> 48 V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
-#define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, assistance without pedal rotation, temperature limit enabled, temperature field state
+#define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, temperature limit enabled, temperature field state
 
 
 
@@ -156,7 +156,7 @@
 
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0   // target PWM for walk assist
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0   // target duty cycle (PWM) for walk assist
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1                    25
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2                    30
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3                    35
@@ -196,6 +196,10 @@
 
 // default value for the main screen power menu
 #define DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                1   // enabled by default
+
+
+// default value for minimum cadence
+#define DEFAULT_VALUE_CADENCE_RPM_MIN                               0
 
 
 

@@ -121,14 +121,15 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD,                // 102 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD,                      // 103 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED,                       // 104 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED                          // 105 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED,                         // 105 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_RPM_MIN                                       // 106 + EEPROM_BASE_ADDRESS (Array index)
 };
-
 
 
 static void eeprom_write_array (uint8_t *p_array_data, uint8_t ui8_len);
 static void eeprom_read_values_to_variables (void);
 static void variables_to_array (uint8_t *ui8_array);
+
 
 void eeprom_init (void)
 {
@@ -173,8 +174,7 @@ void eeprom_init_variables (void)
 //      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 < 160) ||
 //      (p_configuration_variables->ui8_motor_type > 2) ||
 //      (p_configuration_variables->ui8_motor_temperature_min_value_to_limit < 124) ||
-//      (p_configuration_variables->ui8_motor_temperature_max_value_to_limit < 124) ||
-//      (p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation > 1))
+//      (p_configuration_variables->ui8_motor_temperature_max_value_to_limit < 124))
 //  {
 //    eeprom_write_array (array_default_values);
 //    eeprom_read_values_to_variables ();
@@ -261,13 +261,12 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 = ui16_temp;
 
 
-  // motor type, motor assistance startup without pedal rotation, temperature limit enabled, tempereture field state
+  // motor type, temperature limit enabled, tempereture field state
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_motor_type = ui8_temp & 3;
-  p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation = (ui8_temp & 4) >> 2;
   p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 24) >> 3;
   p_configuration_variables->ui8_temperature_field_state = (ui8_temp & 224) >> 5;
-  
+
   
   // assist levels
   p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte (ADDRESS_NUMBER_OF_ASSIST_LEVELS);
@@ -366,8 +365,11 @@ static void eeprom_read_values_to_variables (void)
   
   
   // main screen power menu enable 
-  p_configuration_variables->ui8_main_screen_power_menu_enabled = FLASH_ReadByte (ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED);
+  p_configuration_variables->ui8_main_screen_power_menu_enabled = FLASH_ReadByte(ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED);
+  
+  p_configuration_variables->ui8_cadence_rpm_min = FLASH_ReadByte(ADDRESS_CADENCE_RPM_MIN);
 }
+
 
 void eeprom_write_variables (void)
 {
@@ -375,6 +377,7 @@ void eeprom_write_variables (void)
   variables_to_array (array_variables);
   eeprom_write_array (array_variables, ((uint8_t) EEPROM_BYTES_STORED));
 }
+
 
 static void variables_to_array (uint8_t *ui8_array)
 {
@@ -407,9 +410,8 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [20] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
   
   
-  // write motor type, motor assistance startup without pedal rotation, temperature limit enabled, tempereture field state
+  // write motor type, temperature limit enabled, tempereture field state
   ui8_array [21] = (p_configuration_variables->ui8_motor_type & 3) |
-                  ((p_configuration_variables->ui8_motor_assistance_startup_without_pedal_rotation & 1) << 2) |
                   ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3) |
                   ((p_configuration_variables->ui8_temperature_field_state & 7) << 5);
 
@@ -533,6 +535,9 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write street mode parameters
   ui8_array [105] = p_configuration_variables->ui8_street_mode_throttle_enabled;
+
+  // write cadence min
+  ui8_array [106] = p_configuration_variables->ui8_cadence_rpm_min;
 }
 
 

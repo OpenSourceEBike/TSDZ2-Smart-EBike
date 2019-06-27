@@ -122,7 +122,8 @@
 #define ADDRESS_SHOW_BATTERY_SOC_ODOMETER_FIELD                             103 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED                              104 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_THROTTLE_ENABLED                                105 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 106
+#define ADDRESS_CADENCE_RPM_MIN                                             106 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 107
 
 
 

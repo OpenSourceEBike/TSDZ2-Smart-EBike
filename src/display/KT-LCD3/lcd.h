@@ -22,7 +22,6 @@ typedef struct _motor_controller_data
   uint8_t ui8_throttle;
   uint8_t ui8_adc_pedal_torque_sensor;
   uint8_t ui8_pedal_torque_sensor;
-  uint8_t ui8_pedal_human_power;
   uint8_t ui8_duty_cycle;
   uint8_t ui8_error_states;
   uint16_t ui16_wheel_speed_x10;
@@ -30,14 +29,15 @@ typedef struct _motor_controller_data
   uint8_t ui8_pedal_cadence;
   uint8_t ui8_lights;
   uint8_t ui8_street_mode_enabled;
-  uint8_t ui8_walk_assist_level;
+  uint8_t ui8_walk_assist_enabled;
+  uint8_t ui8_cruise_enabled;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
   uint8_t ui8_temperature_current_limiting_value;
   uint8_t ui8_motor_temperature;
   uint32_t ui32_wheel_speed_sensor_tick_counter;
   uint32_t ui32_wheel_speed_sensor_tick_counter_offset;
-  uint16_t ui16_pedal_torque_x10;
+  uint16_t ui16_pedal_torque_x100;
   uint16_t ui16_pedal_power_x10;
 } struct_motor_controller_data;
 
@@ -72,7 +72,7 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_voltage_reset_wh_counter_x10;
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
-  uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
+  uint8_t ui8_cadence_rpm_min;
   uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;
@@ -98,7 +98,7 @@ typedef struct _configuration_variables
   uint32_t ui32_trip_x10;
   uint8_t ui8_ramp_up_amps_per_second_x10;
   uint8_t ui8_walk_assist_function_enabled;
-  uint8_t ui8_walk_assist_level_factor [10];
+  uint8_t ui8_walk_assist_level_factor[10];
   uint8_t ui8_cruise_function_enabled;
   uint8_t ui8_cruise_function_set_target_speed_enabled;
   uint8_t ui8_cruise_function_target_speed_kph;

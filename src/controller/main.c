@@ -81,7 +81,7 @@ int main (void)
   hall_sensor_init();
   pwm_init_bipolar_4q();
   motor_init();
-  ebike_app_init();
+  eeprom_init_variables();
   enableInterrupts();
 
   while(1)

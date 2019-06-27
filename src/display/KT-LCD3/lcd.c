@@ -129,21 +129,21 @@ static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
 // system functions
 void low_pass_filter_battery_voltage_current_power (void);
-void assist_level_state (void);
-void brake (void);
-void odometer (void);
-void wheel_speed (void);
-void temperature (void);
-void battery_soc (void);
-void calc_distance (void);
-void calc_battery_soc (void);
-void low_pass_filter_pedal_torque_and_power (void);
-static void low_pass_filter_pedal_cadence (void);
-void lights_state (void);
-void walk_assist_state (void);
-void street_mode (void);
-void time_measurement (void);
-void energy_data (void);
+void assist_level(void);
+void brake(void);
+void odometer(void);
+void wheel_speed(void);
+void temperature(void);
+void battery_soc(void);
+void calc_distance(void);
+void calc_battery_soc(void);
+void low_pass_filter_pedal_torque_and_power(void);
+static void low_pass_filter_pedal_cadence(void);
+void lights(void);
+void walk_assist_or_cruise(void);
+void street_mode(void);
+void time_measurement(void);
+void energy_data(void);
 
 
 // menu functions
@@ -292,18 +292,18 @@ void lcd_clock (void)
 
 void lcd_execute_main_screen (void)
 {
-  temperature ();
-  odometer ();
-  wheel_speed ();
-  walk_assist_state ();
-  street_mode ();
-  power ();
-  battery_soc ();
-  lights_state ();
-  brake ();
-  time_measurement ();
-  energy_data ();
-  assist_level_state ();
+  temperature();
+  odometer();
+  wheel_speed();
+  walk_assist_or_cruise();
+  street_mode();
+  power();
+  battery_soc();
+  lights();
+  brake();
+  time_measurement();
+  energy_data();
+  assist_level();
   
   // enter configuration menu if...
   if (UP_DOWN_LONG_CLICK)
@@ -1298,9 +1298,9 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
     case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_ramp_up_amps_per_second_x10;
       lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 1;
-      lcd_var_number.ui32_max_value = 100;
-      lcd_var_number.ui32_min_value = 4;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 255;
+      lcd_var_number.ui32_min_value = 1;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
@@ -1308,10 +1308,10 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
     
     // motor assistance startup without pedal rotation
     case 3:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_rpm_min;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_max_value = 10;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -1497,23 +1497,19 @@ void lcd_execute_menu_config_submenu_technical (void)
     break;
 
     case 5:
-      lcd_print(motor_controller_data.ui8_pedal_human_power, ODOMETER_FIELD, 0);
-    break;
-
-    case 6:
       lcd_print(motor_controller_data.ui8_duty_cycle, ODOMETER_FIELD, 0);
     break;
 
-    case 7:
+    case 6:
       lcd_print(motor_controller_data.ui16_motor_speed_erps, ODOMETER_FIELD, 0);
     break;
 
-    case 8:
+    case 7:
       lcd_print(motor_controller_data.ui8_foc_angle, ODOMETER_FIELD, 0);
     break;
   }
 
-  submenu_state_controller(8);
+  submenu_state_controller(7);
 
   if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
@@ -1906,7 +1902,7 @@ void power(void)
 }
 
 
-void assist_level_state (void)
+void assist_level(void)
 {
   if (UP_CLICK)
   {
@@ -1939,7 +1935,7 @@ void assist_level_state (void)
 }
 
 
-void lights_state (void)
+void lights(void)
 {
   if (UP_LONG_CLICK)
   {
@@ -1957,12 +1953,11 @@ void lights_state (void)
 }
 
 
-void walk_assist_state (void)
+void walk_assist_or_cruise(void)
 {
   static uint8_t ui8_walk_assist_activated;
   static uint8_t ui8_cruise_activated;
   static uint8_t ui8_long_hold_down_button;
-  #define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 80 // 8.0 km/h
   
   if (DOWN_LONG_CLICK)
   {
@@ -1974,35 +1969,35 @@ void walk_assist_state (void)
     // if down button is pressed
     if (buttons_get_down_state ())
     {
-      // enable walk assist or cruise function depending on speed and if function is enabled, also check if the other function was activetad first
-      if (motor_controller_data.ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 && configuration_variables.ui8_walk_assist_function_enabled && ui8_cruise_activated == 0)
+      // enable walk assist or cruise if...
+      if (configuration_variables.ui8_walk_assist_function_enabled && motor_controller_data.ui16_wheel_speed_x10 < WALK_ASSIST_THRESHOLD_SPEED_X10 && !ui8_cruise_activated)
       {
-        // enable walk assist function because: the wheel speed is less than threshold speed, the function is enabled and cruise was not activated first
-        lcd_enable_walk_symbol (1);
-        motor_controller_data.ui8_walk_assist_level = 1;
+        lcd_enable_walk_symbol(1);
+        motor_controller_data.ui8_walk_assist_enabled = 1;
         
         // set flag to indicate that walk assist was activated first during this button event
         ui8_walk_assist_activated = 1;
       }
-      else if (motor_controller_data.ui16_wheel_speed_x10 > WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10 && configuration_variables.ui8_cruise_function_enabled && ui8_walk_assist_activated == 0)
+      else if (configuration_variables.ui8_cruise_function_enabled && motor_controller_data.ui16_wheel_speed_x10 > CRUISE_THRESHOLD_SPEED_X10 && !ui8_walk_assist_activated)
       {
-        // enable cruise function because: the wheel speed is more than threshold speed, the function is enabled and walk assist was not activated first
-        lcd_enable_cruise_symbol (1);
-        motor_controller_data.ui8_walk_assist_level = 1;
+        lcd_enable_cruise_symbol(1);
+        motor_controller_data.ui8_cruise_enabled = 1;
         
         // set flag to indicate that cruise was activated first during this button event
         ui8_cruise_activated = 1;
       }
       else
       {
-        // disable walk assist or cruise function
-        motor_controller_data.ui8_walk_assist_level = 0;
+        // disable walk assist and cruise function
+        motor_controller_data.ui8_walk_assist_enabled = 0;
+        motor_controller_data.ui8_cruise_enabled = 0;
       }
     }
     else // button not longer pressed
     {
-      // disable walk assist or cruise function
-      motor_controller_data.ui8_walk_assist_level = 0;
+      // disable walk assist and cruise function
+      motor_controller_data.ui8_walk_assist_enabled = 0;
+      motor_controller_data.ui8_cruise_enabled = 0;
       
       // reset flags for walk assist and cruise activated
       ui8_walk_assist_activated = 0;
@@ -2014,8 +2009,9 @@ void walk_assist_state (void)
   }
   else
   {
-    // disable walk assist or cruise function
-    motor_controller_data.ui8_walk_assist_level = 0;
+    // disable walk assist and cruise function
+    motor_controller_data.ui8_walk_assist_enabled = 0;
+    motor_controller_data.ui8_cruise_enabled = 0;
     
     // reset flags for walk assist and cruise activated
     ui8_walk_assist_activated = 0;
@@ -3384,7 +3380,7 @@ void low_pass_filter_pedal_torque_and_power (void)
     
     // low pass filter for pedal torque display
     ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
-    ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x10 / 10;
+    ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x100 / 100;
     ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
 
     if (ui16_pedal_torque_filtered > 200)
@@ -3562,14 +3558,14 @@ void submenu_state_controller (uint8_t ui8_state_max_number)
   if (ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
     // stop changing variables if...
-    if (ONOFF_LONG_CLICK)
+    if (ONOFF_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
     }
   }
   else
   {
-    // change variables if onoff click event
+    // change variables if...
     if (ONOFF_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 1;

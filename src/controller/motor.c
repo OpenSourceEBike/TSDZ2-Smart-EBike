@@ -16,7 +16,6 @@
 #include "ebike_app.h"
 #include "pins.h"
 #include "pwm.h"
-#include "config.h"
 #include "adc.h"
 #include "utils.h"
 #include "uart.h"
@@ -374,7 +373,6 @@ uint8_t ui8_hall_sensors_state_last = 0;
 uint8_t ui8_half_erps_flag = 0;
 
 volatile uint8_t ui8_g_duty_cycle = 0;
-static volatile uint8_t ui8_m_duty_cycle_target;
 uint16_t ui16_duty_cycle_ramp_up_inverse_step;
 uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 uint16_t ui16_counter_duty_cycle_ramp_up = 0;
@@ -385,43 +383,28 @@ uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
 uint16_t ui16_value;
 
-uint16_t ui16_counter_adc_battery_current_ramp_up = 0;
+
+// power variables
 uint8_t ui8_controller_adc_battery_max_current = 0;
-
-uint8_t ui8_first_time_run_flag = 1;
-
 volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff; // safe value so controller will not discharge the battery if not receiving a lower value from the LCD
-uint16_t ui16_adc_battery_voltage_accumulated = 0;
 uint16_t ui16_adc_battery_voltage_filtered_10b;
-
-uint16_t ui16_adc_battery_current_accumulated = 0;
 uint8_t ui8_adc_battery_current_filtered_10b;
-
-
 uint16_t ui16_adc_battery_current_10b;
 volatile uint8_t ui8_g_adc_battery_current;
 static volatile uint8_t ui8_adc_motor_phase_current;
-uint8_t ui8_current_controller_counter = 0;
-
 volatile uint8_t ui8_adc_target_motor_phase_max_current;
 volatile uint8_t ui8_g_adc_motor_phase_current_offset;
 
-uint8_t ui8_pas_state;
-uint8_t ui8_pas_state_old;
+
+// cadence sensor
 uint8_t ui8_pas_after_first_pulse = 0;
 uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 
-volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
-uint8_t ui8_torque_sensor_pas_signal_change_counter = 0;
-uint16_t ui16_torque_sensor_throttle_max_value = 0;
-uint16_t ui16_torque_sensor_throttle_value;
 
-
-// wheel speed
+// wheel speed sensor
 uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
-uint16_t ui16_wheel_speed_sensor_counter = 0;
-uint8_t ui8_wheel_speed_sensor_change_counter = 0;
+
 
 void read_battery_voltage (void);
 void read_battery_current (void);
@@ -431,10 +414,8 @@ void motor_set_phase_current_max (uint8_t ui8_value);
 
 void motor_controller (void)
 {
-  // reads battery voltage and current
   read_battery_voltage ();
   read_battery_current ();
-
   calc_foc_angle ();
 }
 
@@ -537,7 +518,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           if (ui8_motor_commutation_type == BLOCK_COMMUTATION)
           {
             ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
-            ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_RUNNING;
           }
         }
         else
@@ -602,7 +582,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_g_foc_angle = 0;
     ui8_motor_commutation_type = BLOCK_COMMUTATION;
     ui8_hall_sensors_state_last = 0; // this way we force execution of hall sensors code next time
-//    if (ui8_ebike_app_state == EBIKE_APP_STATE_MOTOR_RUNNING) { ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP; }
   }
 
 
@@ -642,24 +621,25 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - ramp up/down PWM duty_cycle value
   // do not execute all, otherwise ui8_duty_cycle would be decremented more than onece on each PWM cycle
 
+  static uint8_t ui8_current_controller_counter;
+  
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
-  if(++ui8_current_controller_counter > 12)
+  if (++ui8_current_controller_counter > 12)
   {
     // reset counter
     ui8_current_controller_counter = 0;
     
     // if battery max current or phase current is too much, reduce duty cycle
-    if((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) ||
-       (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
+    if ((ui8_g_adc_battery_current > ui8_controller_adc_battery_max_current) || (ui8_adc_motor_phase_current > ui8_adc_target_motor_phase_max_current))
     {
-      if(ui8_g_duty_cycle > 0)
+      if (ui8_g_duty_cycle > 0)
       {
         // decrement duty cycle
         ui8_g_duty_cycle--;
       }
     }
   }
-  else if(UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
+  else if (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, reduce duty_cycle
   {
     if (ui8_g_duty_cycle > 0)
     {
@@ -667,7 +647,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_g_duty_cycle--;
     }
   }
-  else if((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
+  else if ((ui16_motor_speed_erps > ui16_max_motor_speed_erps)) // if motor speed over max motor ERPS, reduce duty_cycle
   {
     if (ui8_g_duty_cycle > 0)
     {
@@ -677,9 +657,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
   {
-    if(ui8_m_duty_cycle_target > ui8_g_duty_cycle)
+    // if brake is active, keep duty cycle target at 0
+    if (ui8_motor_controller_state & MOTOR_CONTROLLER_STATE_BRAKE) { ui8_controller_duty_cycle_target = 0; }
+    
+    if (ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
     {
-      if(ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
+      if (ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_up = 0;
         
@@ -687,9 +670,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         ui8_g_duty_cycle++;
       }
     }
-    else if(ui8_m_duty_cycle_target < ui8_g_duty_cycle)
+    else if (ui8_controller_duty_cycle_target < ui8_g_duty_cycle)
     {
-      if(ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
+      if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_down = 0;
         
@@ -768,10 +751,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
   
-  
+  static uint16_t ui16_counter_adc_battery_current_ramp_up;
   
   // ramp up ADC battery current
-  if (ui8_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
+  if (ui8_controller_adc_battery_current_target > ui8_controller_adc_battery_max_current)
   {
     if (ui16_counter_adc_battery_current_ramp_up++ >= ui16_current_ramp_up_inverse_step)
     {
@@ -782,17 +765,18 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_controller_adc_battery_max_current++;
     }
   }
-  else if (ui8_adc_target_battery_max_current < ui8_controller_adc_battery_max_current)
+  else if (ui8_controller_adc_battery_current_target < ui8_controller_adc_battery_max_current)
   {
     // we are not doing a ramp down here, just directly setting to the target value
-    ui8_controller_adc_battery_max_current = ui8_adc_target_battery_max_current;
+    ui8_controller_adc_battery_max_current = ui8_controller_adc_battery_current_target;
   }
   
 
 
   /****************************************************************************/
 
-
+  static uint8_t ui8_pas_state;
+  static uint8_t ui8_pas_state_old;
 
   // calc PAS timming between each positive pulses, in PWM cycles ticks
   // calc PAS on and off timming of each pulse, in PWM cycles ticks
@@ -864,28 +848,35 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       }
     }
 
-    // NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
-    // but lets save this because we may want to use it in future
-//    // filter the torque signal, by saving the max value of each one pedal rotation
-//    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
-//    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
-//
-//    ui8_torque_sensor_pas_signal_change_counter++;
-//    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
-//    {
-//      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
-//      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
-//      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
-//    }
-//    else
-//    {
-//      // store the max value
-//      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
-//      {
-//        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
-//      }
-//    }
+    // NOTE: next block of code calculates the max torque signal during one pedal rotation, lets save this because we may want to use it in future
+    /*   
+    volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
+    static uint8_t ui8_torque_sensor_pas_signal_change_counter = 0;
+    static uint16_t ui16_torque_sensor_throttle_max_value = 0;
+    static uint16_t ui16_torque_sensor_throttle_value;
 
+    // filter the torque signal, by saving the max value of each one pedal rotation
+    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
+    
+    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
+
+    ui8_torque_sensor_pas_signal_change_counter++;
+    
+    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
+    {
+      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
+      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
+      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
+    }
+    else
+    {
+      // store the max value
+      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
+      {
+        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
+      }
+    }
+    */
   }
 
   // limit min PAS cadence
@@ -895,15 +886,15 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui16_pas_counter = 0;
     ui8_pas_after_first_pulse = 0;
     ui8_g_pedaling_direction = 0;
-
-//    ui16_torque_sensor_throttle_processed_value = 0;
+    // ui16_torque_sensor_throttle_processed_value = 0;
   }
 
 
 
   /****************************************************************************/
   
-  
+  static uint16_t ui16_wheel_speed_sensor_counter;
+  static uint8_t ui8_wheel_speed_sensor_change_counter;
   
   // calc wheel speed sensor timming between each positive pulses, in PWM cycles ticks
   ui16_wheel_speed_sensor_counter++;
@@ -952,12 +943,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
 
-
+//  static uint8_t ui8_first_time_run_flag;
+//
 //  // reload watchdog timer, every PWM cycle to avoid automatic reset of the microcontroller
-//  if (ui8_first_time_run_flag)
+//  if (!ui8_first_time_run_flag)
 //  { // from the init of watchdog up to first reset on PWM cycle interrupt,
 //    // it can take up to 250ms and so we need to init here inside the PWM cycle
-//    ui8_first_time_run_flag = 0;
+//    ui8_first_time_run_flag = 1;
 //    watchdog_init ();
 //  }
 //  else
@@ -1012,16 +1004,6 @@ void motor_init (void)
   motor_set_phase_current_max (ADC_MOTOR_PHASE_CURRENT_MAX);
 }
 
-void motor_set_pwm_duty_cycle_target (uint8_t ui8_value)
-{
-  if (ui8_value > PWM_DUTY_CYCLE_MAX) { ui8_value = PWM_DUTY_CYCLE_MAX; }
-
-  // if brake is active, keep duty_cycle target at 0
-  if (ui8_motor_controller_state & MOTOR_CONTROLLER_STATE_BRAKE) { ui8_value = 0; }
-
-  ui8_m_duty_cycle_target = ui8_value;
-}
-
 void motor_set_pwm_duty_cycle_ramp_up_inverse_step (uint16_t ui16_value)
 {
   ui16_duty_cycle_ramp_up_inverse_step = ui16_value;
@@ -1045,6 +1027,8 @@ uint16_t ui16_motor_get_motor_speed_erps (void)
 
 void read_battery_voltage (void)
 {
+  static uint16_t ui16_adc_battery_voltage_accumulated;
+  
   // low pass filter the voltage readed value, to avoid possible fast spikes/noise
   ui16_adc_battery_voltage_accumulated -= ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
   ui16_adc_battery_voltage_accumulated += ui16_adc_read_battery_voltage_10b ();
@@ -1054,6 +1038,8 @@ void read_battery_voltage (void)
 
 void read_battery_current (void)
 {
+  static uint16_t ui16_adc_battery_current_accumulated;
+  
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
   ui16_adc_battery_current_accumulated -= ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
   ui16_adc_battery_current_accumulated += ui16_adc_battery_current_10b;
