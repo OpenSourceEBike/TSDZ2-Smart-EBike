@@ -21,7 +21,7 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_low_voltage_cut_off_x10;
   uint16_t ui16_wheel_perimeter;
   uint8_t ui8_lights;
-  uint8_t ui8_wheel_max_speed;
+  uint8_t ui8_wheel_speed_max;
   uint8_t ui8_motor_type;
   uint8_t ui8_cadence_rpm_min;
   uint8_t ui8_target_battery_max_power_div25;
@@ -38,7 +38,6 @@ typedef struct _configuration_variables
   uint8_t ui8_temperature_current_limiting_value;
   uint16_t ui16_motor_temperature_x2;
   uint8_t ui8_motor_temperature;
-  uint8_t ui8_ramp_up_amps_per_second;
 } struct_configuration_variables;
 
 
@@ -47,7 +46,8 @@ extern volatile uint8_t ui8_adc_pedal_torque_offset;
 extern volatile uint8_t ui8_adc_battery_current_offset;
 extern volatile uint8_t ui8_controller_adc_battery_current_target;
 extern volatile uint8_t ui8_controller_duty_cycle_target;
-extern volatile uint16_t ui16_current_ramp_up_inverse_step;
+extern volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step;
+extern volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_g_pedaling_direction;
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;

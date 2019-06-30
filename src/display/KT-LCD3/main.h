@@ -43,7 +43,7 @@
 // default values for battery capacity variables
 #define DEFAULT_VALUE_WH_OFFSET                                     0
 #define DEFAULT_VALUE_HW_X10_100_PERCENT                            0
-#define DEAFULT_VALUE_BATTERY_SOC_FUNCTION_ENABLED                  0
+#define DEFAULT_VALUE_BATTERY_SOC_FUNCTION_ENABLED                  0
 
 
 
@@ -194,8 +194,10 @@
 #define DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD               1   // enabled by default
 
 
+
 // default value for the main screen power menu
 #define DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                1   // enabled by default
+
 
 
 // default value for minimum cadence

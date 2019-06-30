@@ -162,7 +162,7 @@ void uart_data_clock (void)
       p_motor_controller_data->ui8_foc_angle = ui8_rx_buffer[15];
       
       // controller system state
-      p_motor_controller_data->ui8_error_states = ui8_rx_buffer[16];
+      p_motor_controller_data->ui8_controller_system_state = ui8_rx_buffer[16];
       
       // temperature actual limiting value
       p_motor_controller_data->ui8_temperature_current_limiting_value = ui8_rx_buffer[17];

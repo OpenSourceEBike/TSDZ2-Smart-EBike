@@ -12,15 +12,29 @@
 
 //#define DEBUG_UART
 
-#define PWM_CYCLES_COUNTER_MAX                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
-#define PWM_CYCLES_SECOND                         15625L  // 1 / 64us(PWM period)
-#define PWM_DUTY_CYCLE_MAX                        254
-#define PWM_DUTY_CYCLE_MIN                        20
-#define MIDDLE_PWM_DUTY_CYCLE_MAX                 (PWM_DUTY_CYCLE_MAX/2)
 
 
-// motor rotor offset 
-#define MOTOR_ROTOR_OFFSET_ANGLE                  10
+// motor 
+#define PWM_CYCLES_COUNTER_MAX                              3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
+#define PWM_CYCLES_SECOND                                   15625L  // 1 / 64us(PWM period)
+#define PWM_DUTY_CYCLE_MAX                                  254
+#define PWM_DUTY_CYCLE_MIN                                  0
+#define MIDDLE_PWM_DUTY_CYCLE_MAX                           (PWM_DUTY_CYCLE_MAX/2)
+
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                 60      // 60 -> 60 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP               25      // 25 -> 25 * 64 us for every duty cycle increment
+
+/*---------------------------------------------------------
+  NOTE: regarding duty cycle (PWM) ramping
+  
+  Choose appropriate duty cycle (PWM) ramp up/down step. 
+  A higher value will make the motor acceleration slower.
+  
+  For a 24 V battery, 25 for ramp up seems ok. For a 
+  higher voltage battery, this values should be higher.
+---------------------------------------------------------*/
+
+#define MOTOR_ROTOR_OFFSET_ANGLE                            10
 
 /*---------------------------------------------------------
   NOTE: regarding motor rotor offset 
@@ -31,22 +45,16 @@
   for the lowest battery current possible.
 ---------------------------------------------------------*/
 
-#define MOTOR_ROTOR_ANGLE_90                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_150                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_210                     (148 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_270                     (191 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_330                     (233 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_30                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_90                                (63  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_150                               (106 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_210                               (148 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_270                               (191 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_330                               (233 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_30                                (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
+#define ADC_MOTOR_PHASE_CURRENT_MAX                         48      // 30 amps (0.625 amps each unit)
 
-
-// motor phase current
-#define ADC_MOTOR_PHASE_CURRENT_MAX               48 // 30 amps (0.625 amps each unit)
-
-
-
-// battery current
-#define ADC_BATTERY_CURRENT_MAX                   29 // 18 amps (0.625 amps each step)
+#define ADC_BATTERY_CURRENT_MAX                             29      // 18 amps (0.625 amps each step)
 
 /*---------------------------------------------------------
   NOTE: regarding ADC_BATTERY_CURRENT_MAX
@@ -57,16 +65,10 @@
   controller is 16 A and it should not be exceeded.
 ---------------------------------------------------------*/
 
+#define MOTOR_OVER_SPEED_ERPS                               520     // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                  700     // experimental motor speed to allow a higher cadence
 
-
-// motor maximum rotation
-#define MOTOR_OVER_SPEED_ERPS                                     520 // motor max speed, protection max value | 30 points for the sinewave at max speed
-#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700 // experimental motor speed to allow a higher cadence
-
-
-
-// motor start interpolation
-#define MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES           10
+#define MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES     10
 
 /*---------------------------------------------------------
   NOTE: regarding motor start interpolation
@@ -75,22 +77,6 @@
   happens from sinewave and no interpolation to 
   interpolation 60 degrees. Must be found experimentally 
   but a value of 25 may be good.
----------------------------------------------------------*/
-
-
-
-// duty cycle (PWM) ramping
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       20  // 20 -> 20 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     20
-
-/*---------------------------------------------------------
-  NOTE: regarding duty cycle (PWM) ramping
-  
-  Choose appropriate duty cycle (PWM) ramp up/down step. 
-  A higher value will make the motor acceleration slower.
-  
-  For a 24 V battery, 25 for ramp up seems ok. For a 
-  higher voltage battery, this values should be higher.
 ---------------------------------------------------------*/
 
 
@@ -159,15 +145,10 @@
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1           1
 #define DEFAULT_VALUE_WHEEL_PERIMETER_0                           2   // 26'' wheel: 2050 mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                           8
-#define DEFAULT_VALUE_WHEEL_MAX_SPEED                             50  // 50 km/h
+#define DEFAULT_VALUE_WHEEL_SPEED_MAX                             50  // 50 km/h
 #define DEFAULT_VALUE_MOTOR_TYPE                                  0
 #define DEFAULT_VALUE_CADENCE_RPM_MIN                             0
 
-
-
-
-// default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND                     5  // 5 amps per second ramp up
 
 
 // ADC battery voltage measurement

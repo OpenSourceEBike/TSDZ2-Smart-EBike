@@ -84,7 +84,7 @@ int main (void)
   eeprom_init_variables();
   enableInterrupts();
 
-  while(1)
+  while (1)
   {
     // because of continue; at the end of each if code block that will stop the while (1) loop there,
     // the first if block code will have the higher priority over any others

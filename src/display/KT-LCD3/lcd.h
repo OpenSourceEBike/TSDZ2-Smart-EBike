@@ -23,7 +23,7 @@ typedef struct _motor_controller_data
   uint8_t ui8_adc_pedal_torque_sensor;
   uint8_t ui8_pedal_torque_sensor;
   uint8_t ui8_duty_cycle;
-  uint8_t ui8_error_states;
+  uint8_t ui8_controller_system_state;
   uint16_t ui16_wheel_speed_x10;
   uint8_t ui8_braking;
   uint8_t ui8_pedal_cadence;
@@ -116,11 +116,12 @@ typedef struct _configuration_variables
   uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 
+
+
 // menu definitions
 #define MAIN_MENU               0
 #define POWER_MENU              1
 #define CONFIGURATION_MENU      2
-
 
 #define LCD_FRAME_BUFFER_SIZE   32 // LCD RAM has 32*8 bits
 

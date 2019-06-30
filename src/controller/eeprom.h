@@ -26,11 +26,10 @@
 #define ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1           6 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_PERIMETER_0                           7 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_PERIMETER_1                           8 + EEPROM_BASE_ADDRESS
-#define ADDRESS_WHEEL_MAX_SPEED                             9 + EEPROM_BASE_ADDRESS
+#define ADDRESS_WHEEL_SPEED_MAX                             9 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MOTOR_TYPE                                  10 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_RPM_MIN                             11 + EEPROM_BASE_ADDRESS
-#define ADDRESS_RAMP_UP_AMPS_PER_SECOND                     12 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                 13
+#define EEPROM_BYTES_STORED                                 12
 
 
 

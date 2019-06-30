@@ -1294,13 +1294,13 @@ void lcd_execute_menu_config_submenu_motor_temperature (void)
 
     break;
   
-    // ramp up, amps per second
+    // ramp up
     case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_ramp_up_amps_per_second_x10;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 255;
-      lcd_var_number.ui32_min_value = 1;
+      lcd_var_number.ui32_min_value = 15;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
@@ -1611,7 +1611,7 @@ void temperature (void)
       // show motor temperature
       case 1:
         // if function is enabled -> display motor temperature
-        if (configuration_variables.ui8_temperature_limit_feature_enabled == 1)
+        if (configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL)
         {
           lcd_print (motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
           lcd_enable_temperature_degrees_symbol (1);
@@ -2144,11 +2144,11 @@ void odometer (void)
   }
 
   // if there are errors, show the error number on odometer field instead of any other information
-  if (motor_controller_data.ui8_error_states != NO_ERROR)
+  if (motor_controller_data.ui8_controller_system_state != NO_ERROR)
   {
     if (ui8_lcd_menu_flash_state)
     {
-      lcd_print(motor_controller_data.ui8_error_states, ODOMETER_FIELD, 0);
+      lcd_print(motor_controller_data.ui8_controller_system_state, ODOMETER_FIELD, 0);
     }
   }
   else
@@ -2356,17 +2356,17 @@ void odometer (void)
         {
           // pedal power
           case 0:
-            lcd_print (ui16_pedal_power_filtered, ODOMETER_FIELD, 0);
+            lcd_print(ui16_pedal_power_filtered, ODOMETER_FIELD, 0);
           break;
 
           // pedal cadence
           case 1:
-            lcd_print (ui8_pedal_cadence_filtered, ODOMETER_FIELD, 0);
+            lcd_print(ui8_pedal_cadence_filtered, ODOMETER_FIELD, 0);
           break;
 
           // pedal torque
           case 2:
-            lcd_print (ui16_pedal_torque_filtered, ODOMETER_FIELD, 0);
+            lcd_print(ui16_pedal_torque_filtered, ODOMETER_FIELD, 0);
           break;
         }
         
@@ -2618,7 +2618,7 @@ void odometer (void)
       case 7:
       
         // check if user has enabled temperature limit function and enabled to show the value in the odometer field
-        if (configuration_variables.ui8_temperature_limit_feature_enabled == 0 || configuration_variables.ui8_show_motor_temperature_odometer_field == 0)
+        if (configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL || configuration_variables.ui8_show_motor_temperature_odometer_field == 0)
         {
           // increment odometer field state
           odometer_increase_field_state ();
@@ -3369,87 +3369,14 @@ void low_pass_filter_battery_voltage_current_power (void)
 
 void low_pass_filter_pedal_torque_and_power (void)
 {
-  static uint32_t ui32_pedal_torque_accumulated;
-  static uint32_t ui32_pedal_power_accumulated;
-  static uint8_t ui8_update_counter;
-
-  if (++ui8_update_counter > 10) // update every 100 ms -> 10. This helps to filter the fast changing values
-  {
-    // reset counter
-    ui8_update_counter = 0;
-    
-    // low pass filter for pedal torque display
-    ui32_pedal_torque_accumulated -= ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT;
-    ui32_pedal_torque_accumulated += (uint32_t) motor_controller_data.ui16_pedal_torque_x100 / 100;
-    ui16_pedal_torque_filtered = ((uint32_t) (ui32_pedal_torque_accumulated >> PEDAL_TORQUE_FILTER_COEFFICIENT));
-
-    if (ui16_pedal_torque_filtered > 200)
-    {
-      ui16_pedal_torque_filtered /= 20;
-      ui16_pedal_torque_filtered *= 20;
-    }
-    else if (ui16_pedal_torque_filtered > 100)
-    {
-      ui16_pedal_torque_filtered /= 10;
-      ui16_pedal_torque_filtered *= 10;
-    }
-    else
-    {
-      // do nothing to orginal values
-    }
-
-    // low pass filter for pedal power display
-    ui32_pedal_power_accumulated -= ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT;
-    ui32_pedal_power_accumulated += (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
-    ui16_pedal_power_filtered = ((uint32_t) (ui32_pedal_power_accumulated >> PEDAL_POWER_FILTER_COEFFICIENT));
-
-    if (ui16_pedal_power_filtered > 500)
-    {
-      ui16_pedal_power_filtered /= 25;
-      ui16_pedal_power_filtered *= 25;
-    }
-    else if (ui16_pedal_power_filtered > 200)
-    {
-      ui16_pedal_power_filtered /= 20;
-      ui16_pedal_power_filtered *= 20;
-    }
-    else if (ui16_pedal_power_filtered > 10)
-    {
-      ui16_pedal_power_filtered /= 10;
-      ui16_pedal_power_filtered *= 10;
-    }
-    else
-    {
-      ui16_pedal_power_filtered = 0; // no point to show less than 10 W
-    }
-  }
+  ui16_pedal_torque_filtered = (uint32_t) motor_controller_data.ui16_pedal_torque_x100 / 100;
+  ui16_pedal_power_filtered = (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
 }
 
 
 static void low_pass_filter_pedal_cadence (void)
 {
-  static uint16_t ui16_pedal_cadence_accumulated;
-  static uint8_t ui8_update_counter;
-
-  if (++ui8_update_counter > 50) // update every 500 ms -> 50. This helps to filter the fast changing values
-  {
-    // reset counter
-    ui8_update_counter = 0;
-    
-    // low pass filter
-    ui16_pedal_cadence_accumulated -= (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
-    ui16_pedal_cadence_accumulated += (uint16_t) motor_controller_data.ui8_pedal_cadence;
-
-    // consider the filtered value only for medium and high values of the unfiltered value
-    if (motor_controller_data.ui8_pedal_cadence > 20)
-    {
-      ui8_pedal_cadence_filtered = (uint8_t) (ui16_pedal_cadence_accumulated >> PEDAL_CADENCE_FILTER_COEFFICIENT);
-    }
-    else
-    {
-      ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
-    }
-  }
+  ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
 }
 
 
@@ -3493,7 +3420,7 @@ void lcd_init (void)
   lcd_update();
 
   // init variables with the stored value on EEPROM
-  eeprom_init_variables ();
+  eeprom_init_variables();
 }
 
 

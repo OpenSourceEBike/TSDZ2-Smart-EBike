@@ -30,7 +30,7 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_HW_X10_100_PERCENT,
   DEFAULT_VALUE_HW_X10_100_PERCENT,
   DEFAULT_VALUE_HW_X10_100_PERCENT,
-  DEAFULT_VALUE_BATTERY_SOC_FUNCTION_ENABLED,
+  DEFAULT_VALUE_BATTERY_SOC_FUNCTION_ENABLED,
   DEFAULT_VALUE_ODOMETER_FIELD_STATE,
   DEFAULT_VALUE_BATTERY_MAX_CURRENT,
   DEFAULT_VALUE_TARGET_MAX_BATTERY_POWER,
@@ -367,6 +367,8 @@ static void eeprom_read_values_to_variables (void)
   // main screen power menu enable 
   p_configuration_variables->ui8_main_screen_power_menu_enabled = FLASH_ReadByte(ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED);
   
+  
+  // cadence rpm min
   p_configuration_variables->ui8_cadence_rpm_min = FLASH_ReadByte(ADDRESS_CADENCE_RPM_MIN);
 }
 

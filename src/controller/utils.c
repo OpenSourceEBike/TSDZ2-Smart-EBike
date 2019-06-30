@@ -56,7 +56,21 @@ void ui8_limit_max (uint8_t *ui8_p_value, uint8_t ui8_max_value)
   if (*ui8_p_value > ui8_max_value) { *ui8_p_value = ui8_max_value; }
 }
 
-void pi_controller (struct_pi_controller_state *pi_controller)
+uint8_t ui8_filter(uint8_t ui8_new_value, uint8_t ui8_old_value, uint8_t ui8_alpha)
+{
+  if (ui8_alpha > 10) { ui8_alpha = 10; }
+  
+  return (((ui8_alpha * ui8_new_value) + ((10 - ui8_alpha) * ui8_old_value)) / 10);
+}
+
+uint16_t ui16_filter(uint16_t ui16_new_value, uint16_t ui16_old_value, uint16_t ui16_alpha)
+{
+  if (ui16_alpha > 10) { ui16_alpha = 10; }
+  
+  return (((ui16_alpha * ui16_new_value) + ((10 - ui16_alpha) * ui16_old_value)) / 10);
+}
+
+/* void pi_controller (struct_pi_controller_state *pi_controller)
 {
   int16_t i16_error;
   int16_t i16_p_term;
@@ -79,7 +93,7 @@ void pi_controller (struct_pi_controller_state *pi_controller)
 void pi_controller_reset (struct_pi_controller_state *pi_controller)
 {
   pi_controller->i16_i_term = 0;
-}
+} */
 
 // from here: https://github.com/FxDev/PetitModbus/blob/master/PetitModbus.c
 /*
@@ -90,14 +104,13 @@ void pi_controller_reset (struct_pi_controller_state *pi_controller)
  */
 void crc16(uint8_t ui8_data, uint16_t* ui16_crc)
 {
-    unsigned int i;
+  unsigned int i;
 
-    *ui16_crc = *ui16_crc ^(uint16_t) ui8_data;
-    for (i = 8; i > 0; i--)
-    {
-        if (*ui16_crc & 0x0001)
-            *ui16_crc = (*ui16_crc >> 1) ^ 0xA001;
-        else
-            *ui16_crc >>= 1;
-    }
+  *ui16_crc = *ui16_crc ^(uint16_t) ui8_data;
+  
+  for (i = 8; i > 0; i--)
+  {
+    if (*ui16_crc & 0x0001) { *ui16_crc = (*ui16_crc >> 1) ^ 0xA001; }
+    else { *ui16_crc >>= 1; }
+  }
 }
