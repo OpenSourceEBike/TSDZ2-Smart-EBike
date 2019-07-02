@@ -15,8 +15,8 @@
 
 typedef struct _motor_controller_data
 {
-  uint16_t ui16_adc_battery_voltage;
-  uint8_t ui8_battery_current_x5;
+  uint16_t ui16_battery_voltage_x1000;
+  uint8_t ui8_battery_current_x10;
   uint8_t ui8_motor_controller_state_1;
   uint8_t ui8_adc_throttle;
   uint8_t ui8_throttle;
@@ -26,7 +26,7 @@ typedef struct _motor_controller_data
   uint8_t ui8_controller_system_state;
   uint16_t ui16_wheel_speed_x10;
   uint8_t ui8_braking;
-  uint8_t ui8_pedal_cadence;
+  uint8_t ui8_pedal_cadence_RPM;
   uint8_t ui8_lights;
   uint8_t ui8_street_mode_enabled;
   uint8_t ui8_walk_assist_enabled;

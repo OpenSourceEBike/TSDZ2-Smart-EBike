@@ -375,8 +375,8 @@ uint8_t ui8_phase_a_voltage;
 uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
 
-uint8_t ui8_adc_battery_current_filtered_10b;
-uint16_t ui16_adc_battery_current_10b;
+
+volatile uint16_t ui16_adc_battery_current_10b;
 volatile uint8_t ui8_adc_target_motor_phase_max_current;
 
 
@@ -386,6 +386,7 @@ volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_
 volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP;
 volatile uint8_t ui8_g_duty_cycle = 0;
 volatile uint16_t ui16_adc_battery_voltage_filtered = 0;
+volatile uint8_t ui8_adc_battery_current_filtered = 0;
 volatile uint8_t ui8_g_adc_battery_current = 0;
 volatile uint8_t ui8_g_foc_angle = 0;
 volatile uint8_t ui8_controller_adc_battery_current_target = 0;
@@ -441,7 +442,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ADC1->CR1 |= ADC1_CR1_ADON;               // start ADC1 conversion
   while (!(ADC1->CSR & ADC1_FLAG_EOC));     // wait for end of conversion
   
-  ui16_adc_battery_current_10b = ui16_adc_read_battery_current_10b ();
+  ui16_adc_battery_current_10b = ui16_adc_read_battery_current_10b();
   ui8_g_adc_battery_current = ui16_adc_battery_current_10b >> 2;
 
   // calculate motor phase current ADC value
@@ -1009,7 +1010,7 @@ void read_battery_current (void)
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
   ui16_adc_battery_current_accumulated -= ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
   ui16_adc_battery_current_accumulated += ui16_adc_battery_current_10b;
-  ui8_adc_battery_current_filtered_10b = ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
+  ui8_adc_battery_current_filtered = ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
 }
 
 
@@ -1034,14 +1035,14 @@ void calc_foc_angle (void)
   // angle between phase current and rotor magnetic flux (BEMF) is kept at 0 (max torque per amp)
 
   // calc E phase voltage
-  ui16_temp = ui16_adc_battery_voltage_filtered * BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X512;
+  ui16_temp = ui16_adc_battery_voltage_filtered * BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512;
   ui16_temp = (ui16_temp >> 8) * ui8_g_duty_cycle;
   ui16_e_phase_voltage = ui16_temp >> 9;
 
   // calc I phase current
   if (ui8_g_duty_cycle > 10)
   {
-    ui16_temp = ((uint16_t) ui8_adc_battery_current_filtered_10b) * BATTERY_CURRENT_PER_ADC_STEP_X512;
+    ui16_temp = ((uint16_t) ui8_adc_battery_current_filtered) * BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512;
     ui32_i_phase_current_x2 = ui16_temp / ui8_g_duty_cycle;
   }
   else
@@ -1131,12 +1132,6 @@ uint8_t asin_table (uint8_t ui8_inverted_angle_x128)
 
   // first value of table is 0 so ui8_index will always increment to at least 1 and return 0
   return ui8_index--;
-}
-
-
-uint8_t motor_get_adc_battery_current_filtered_10b (void)
-{
-  return ui8_adc_battery_current_filtered_10b;
 }
 
 

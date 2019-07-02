@@ -30,6 +30,8 @@ static uint16_t   ui16_crc_rx;
 static uint16_t   ui16_crc_tx;
 static uint8_t    ui8_message_ID = 0;
 
+volatile uint8_t  ui8_received_first_package = 0;
+
 
 void uart2_init (void)
 {
@@ -115,11 +117,11 @@ void uart_data_clock (void)
       p_motor_controller_data = lcd_get_motor_controller_data ();
       p_configuration_variables = get_configuration_variables ();
       
-      // battery voltage filtered x10000
-      p_motor_controller_data->ui16_adc_battery_voltage = (((uint16_t) ui8_rx_buffer [2]) << 8) + ((uint16_t) ui8_rx_buffer [1]);
+      // battery voltage x1000
+      p_motor_controller_data->ui16_battery_voltage_x1000 = (((uint16_t) ui8_rx_buffer [2]) << 8) + ((uint16_t) ui8_rx_buffer [1]);
       
-      // battery current x5
-      p_motor_controller_data->ui8_battery_current_x5 = ui8_rx_buffer[3];
+      // battery current x10
+      p_motor_controller_data->ui8_battery_current_x10 = ui8_rx_buffer[3];
       
       // wheel speed
       p_motor_controller_data->ui16_wheel_speed_x10 = (((uint16_t) ui8_rx_buffer [5]) << 8) + ((uint16_t) ui8_rx_buffer [4]);
@@ -148,8 +150,8 @@ void uart_data_clock (void)
       // ADC torque sensor with offset
       p_motor_controller_data->ui8_pedal_torque_sensor = ui8_rx_buffer[10];
       
-      // PAS cadence
-      p_motor_controller_data->ui8_pedal_cadence = ui8_rx_buffer[11];
+      // pedal cadence in RPM
+      p_motor_controller_data->ui8_pedal_cadence_RPM = ui8_rx_buffer[11];
       
       // PWM duty_cycle
       p_motor_controller_data->ui8_duty_cycle = ui8_rx_buffer[12];
@@ -175,9 +177,11 @@ void uart_data_clock (void)
       // ui16_pedal_power_x10
       p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [24]) << 8) + ((uint16_t) ui8_rx_buffer [23]);
 
-      // signal that we processed the full package
+      // flag that we processed the full package
       ui8_received_package_flag = 0;
 
+      // flag that the first communication from the controller is received
+      ui8_received_first_package = 1;
 
       // ----------------- now send the data to the motor controller ----------------- //
 
@@ -281,7 +285,7 @@ void uart_data_clock (void)
         break;
         
         case 7:
-          // ramp up, amps per second
+          // acceleration
           ui8_tx_buffer[5] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
           
           // cruise target speed

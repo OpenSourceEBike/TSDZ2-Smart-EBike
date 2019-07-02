@@ -16,7 +16,6 @@
 #include "lcd.h"
 #include "uart.h"
 #include "ht162.h"
-#include "config.h"
 #include "eeprom.h"
 
 // With SDCC, interrupt service routine function prototypes must be placed in the file that contains main()

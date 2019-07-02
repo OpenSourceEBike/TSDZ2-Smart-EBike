@@ -17,7 +17,6 @@
 #include "adc.h"
 #include "buttons.h"
 #include "main.h"
-#include "config.h"
 #include "eeprom.h"
 #include "pins.h"
 #include "uart.h"
@@ -79,18 +78,18 @@ static struct_configuration_variables configuration_variables;
 
 // global system variables
 static volatile uint16_t ui16_timer3_counter = 0;
-static uint16_t   ui16_battery_voltage_filtered_x10;
-static uint16_t   ui16_battery_current_filtered_x5;
-static uint16_t   ui16_battery_power_filtered_x50;
+static uint16_t   ui16_battery_voltage_filtered_x1000;
+static uint16_t   ui16_battery_current_filtered_x10;
+static uint16_t   ui16_battery_power_filtered_x100;
 static uint16_t   ui16_battery_power_filtered;
-static volatile uint32_t ui32_wh_sum_x5 = 0;
+static volatile uint32_t ui32_wh_sum_x10 = 0;
 static uint32_t   ui32_wh_x10 = 0;
 static uint8_t    ui8_config_wh_x10_offset;
 static uint16_t   ui16_battery_soc_watts_hour;
 static uint16_t   ui16_battery_voltage_soc_x10;
 static uint16_t   ui16_pedal_torque_filtered;
 static uint16_t   ui16_pedal_power_filtered;
-static uint8_t    ui8_pedal_cadence_filtered;
+static uint8_t    ui8_pedal_cadence_RPM_filtered;
 static uint8_t    ui8_lights_state = 0;
 static uint8_t    ui8_street_mode_enabled = 0;
 
@@ -223,9 +222,9 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
     ui8_100ms_timmer_counter = 0;
     
     // measure consumed watt-hours
-    if (ui16_battery_power_filtered_x50 > 0)
+    if (ui16_battery_power_filtered_x100 > 0)
     {
-      ui32_wh_sum_x5 += ui16_battery_power_filtered_x50 / 10;
+      ui32_wh_sum_x10 += ui16_battery_power_filtered_x100 / 10;
     }
   }
   
@@ -254,6 +253,9 @@ void lcd_clock (void)
 {
   // clear the screen
   lcd_clear();
+  
+  // return here until the first communication package is received from the motor controller
+  if (!ui8_received_first_package) { return; }
 
   // LCD menus 
   switch (ui8_lcd_menu)
@@ -752,7 +754,7 @@ void lcd_execute_menu_config_submenu_battery (void)
       }
       
       // keep reseting these values
-      ui32_wh_sum_x5 = 0;
+      ui32_wh_sum_x10 = 0;
       ui32_wh_x10 = 0;
 
       lcd_var_number.p_var_number = &configuration_variables.ui32_wh_x10_offset;
@@ -1487,7 +1489,7 @@ void lcd_execute_menu_config_submenu_technical (void)
     break;
 
     case 4:
-      lcd_print(motor_controller_data.ui8_pedal_cadence, ODOMETER_FIELD, 0);
+      lcd_print(motor_controller_data.ui8_pedal_cadence_RPM, ODOMETER_FIELD, 0);
     break;
 
     case 5:
@@ -1567,7 +1569,7 @@ void power_off_timer (void)
   {
     // check if there is system activity
     if ((motor_controller_data.ui16_wheel_speed_x10 > 0) ||     // wheel speed > 0
-        (motor_controller_data.ui8_battery_current_x5 > 0) ||   // battery current > 0
+        (motor_controller_data.ui8_battery_current_x10 > 0) ||   // battery current > 0
         (motor_controller_data.ui8_braking) ||                  // braking
         (buttons_get_events ()))                                // any button active
     {
@@ -1614,22 +1616,22 @@ void temperature (void)
       
       // show battery state of charge watt-hours
       case 2:
-        lcd_print (ui16_battery_soc_watts_hour, TEMPERATURE_FIELD, 1);
+        lcd_print(ui16_battery_soc_watts_hour, TEMPERATURE_FIELD, 1);
       break;
       
       // battery voltage
       case 3:
-        lcd_print (ui16_battery_voltage_filtered_x10/10, TEMPERATURE_FIELD, 1);
+        lcd_print(ui16_battery_voltage_filtered_x1000 / 1000, TEMPERATURE_FIELD, 1);
       break;
       
       // battery current
       case 4:
-        lcd_print (ui16_battery_current_filtered_x5/5, TEMPERATURE_FIELD, 1);
+        lcd_print(ui16_battery_current_filtered_x10 / 10, TEMPERATURE_FIELD, 1);
       break;
       
       // pedal cadence
       case 5:
-        lcd_print (ui8_pedal_cadence_filtered, TEMPERATURE_FIELD, 1);
+        lcd_print(ui8_pedal_cadence_RPM_filtered, TEMPERATURE_FIELD, 1);
       break;
       
       // average wheel speed since power on
@@ -1727,14 +1729,14 @@ void energy_data (void)
   {
     ui8_executed_on_startup = 1;
     
-    if (((uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000) > ((uint32_t) configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 1000))
+    if (((uint32_t) motor_controller_data.ui16_battery_voltage_x1000) > ((uint32_t) configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 100))
     {
       configuration_variables.ui32_wh_x10_offset = 0;
     }
   }
 
   // calculate watt-hours since power on
-  ui32_wh_since_power_on_x10 = ui32_wh_sum_x5 / 18000; //  wh_sum_x5  /  (3600 * 5)
+  ui32_wh_since_power_on_x10 = ui32_wh_sum_x10 / 36000; //  wh_sum_x10  /  (3600 * 10)  |  converting watt-second / 10 to watt-hour
   
   // calculate watt-hours since last full charge
   ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_wh_since_power_on_x10;
@@ -1849,7 +1851,7 @@ void battery_soc (void)
 
 void calc_battery_soc (void)
 {
-  uint16_t ui16_fluctuate_battery_voltage_x10;
+  uint16_t ui16_battery_voltage_internal_resistance_adjusted_x10;
   uint32_t ui32_temp;
   static uint8_t ui8_update_counter;
 
@@ -1859,10 +1861,10 @@ void calc_battery_soc (void)
     ui8_update_counter = 0;
     
     // calculate battery voltage that takes into consideration current and internal battery pack resistance
-    ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x5)) / ((uint32_t) 500));
+    ui16_battery_voltage_internal_resistance_adjusted_x10 = (uint16_t) ((((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000) * ((uint32_t) ui16_battery_current_filtered_x10)) / 1000);
     
     // add voltage value
-    ui16_battery_voltage_soc_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
+    ui16_battery_voltage_soc_x10 = (uint16_t) ((ui16_battery_voltage_filtered_x1000 + ui16_battery_voltage_internal_resistance_adjusted_x10) / 1000);
   }
 
   // calculate battery SOC percentage
@@ -2324,13 +2326,13 @@ void odometer (void)
         {
           // voltage value
           case 0:
-            lcd_print(ui16_battery_voltage_filtered_x10, ODOMETER_FIELD, 1);
-            lcd_enable_vol_symbol (1);
+            lcd_print(ui16_battery_voltage_filtered_x1000 / 1000, ODOMETER_FIELD, 1);
+            lcd_enable_vol_symbol(1);
           break;
 
           // current value
           case 1:
-            lcd_print(ui16_battery_current_filtered_x5 << 1, ODOMETER_FIELD, 1);
+            lcd_print(ui16_battery_current_filtered_x10 / 10, ODOMETER_FIELD, 1);
           break;
         }
       
@@ -2363,7 +2365,7 @@ void odometer (void)
 
           // pedal cadence
           case 1:
-            lcd_print(ui8_pedal_cadence_filtered, ODOMETER_FIELD, 0);
+            lcd_print(ui8_pedal_cadence_RPM_filtered, ODOMETER_FIELD, 0);
           break;
 
           // pedal torque
@@ -3331,14 +3333,16 @@ void lcd_enable_colon_symbol (uint8_t ui8_state)
 
 void filter_variables()
 {
-  ui16_battery_voltage_filtered_x10 = (uint32_t) motor_controller_data.ui16_adc_battery_voltage;
-  ui16_battery_current_filtered_x5 = motor_controller_data.ui8_battery_current_x5;
+  ui16_battery_voltage_filtered_x1000 = motor_controller_data.ui16_battery_voltage_x1000;
   
-  ui16_battery_power_filtered_x50 = ui16_battery_current_filtered_x5 * ui16_battery_voltage_filtered_x10;
-  ui16_battery_power_filtered = ui16_battery_power_filtered_x50 / 50;
+  ui16_battery_current_filtered_x10 = motor_controller_data.ui8_battery_current_x10;
   
-  ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
+  ui16_battery_power_filtered_x100 = (ui16_battery_current_filtered_x10 * ui16_battery_voltage_filtered_x1000) / 100;
+  
+  ui8_pedal_cadence_RPM_filtered = motor_controller_data.ui8_pedal_cadence_RPM;
+  
   ui16_pedal_torque_filtered = motor_controller_data.ui16_pedal_torque_x100 / 100;
+  
   ui16_pedal_power_filtered = motor_controller_data.ui16_pedal_power_x10 / 10;
 }
 

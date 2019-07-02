@@ -155,9 +155,10 @@
 
 
 // ADC battery voltage measurement
-#define BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X512                  44
-#define BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X256                  22
-#define BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X10000                863
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512                  44
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X256                  22
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000                 86
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X10000                863
 #define BATTERY_VOLTAGE_PER_8_BIT_ADC_STEP_X256                   88
 
 /*---------------------------------------------------------
@@ -174,7 +175,8 @@
 
 
 // ADC battery current measurement
-#define BATTERY_CURRENT_PER_ADC_STEP_X512                         102 // 1 A per 5 steps for 10 bits ADC
+#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  102
+#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X10                   2
 
 /*---------------------------------------------------------
   NOTE: regarding default value battery current ADC
