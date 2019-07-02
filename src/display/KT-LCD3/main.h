@@ -205,49 +205,4 @@
 
 
 
-// default value for the torque sensor force scale
-#define TORQUE_SENSOR_FORCE_SCALE_X1000                             556 // see note below
-
-/*---------------------------------------------------------
-  NOTE: regarding TORQUE_SENSOR_FORCE_SCALE_X1000
-
-  Torque sensor value found experimentaly.
-  
-  Measured with a cheap digital hook scale. We found that 
-  each torque sensor unit is equal to 0.556 Nm. Using the 
-  scale, it was found that each 1 kg was measured as 3 
-  torque sensor units.
-
-  Force (Nm) = kg * 9.18 * 0.17 (arm cranks size)
----------------------------------------------------------*/
-
-
-
-// default values for battery voltage ADC, see note below
-#define ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512                 44
-#define ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X256                 (ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512 >> 1)
-#define ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP                       0.344
-
-/*---------------------------------------------------------
-  NOTE: regarding default values for battery voltage ADC
-
-  0.344 per ADC_8bits step: 
-  17.9 V --> ADC_8bits = 52; 
-  40 V --> ADC_8bits = 116; this signal is atenuated by 
-  the opamp 358
----------------------------------------------------------*/
-
-
-
-// default value battery current ADC, see note below
-#define ADC_BATTERY_CURRENT_PER_ADC_STEP_X512                       102
-
-/*---------------------------------------------------------
-  NOTE: regarding default value battery current ADC
-
-  1 A per 5 steps of ADC_10bits
----------------------------------------------------------*/
-
-
-
 #endif // _MAIN_H_

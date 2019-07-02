@@ -19,7 +19,7 @@
 #define PWM_CYCLES_SECOND                                   15625L  // 1 / 64us(PWM period)
 #define PWM_DUTY_CYCLE_MAX                                  254
 #define PWM_DUTY_CYCLE_MIN                                  0
-#define MIDDLE_PWM_DUTY_CYCLE_MAX                           (PWM_DUTY_CYCLE_MAX/2)
+#define MIDDLE_PWM_DUTY_CYCLE_MAX                           127     // PWM_DUTY_CYCLE_MAX / 2
 
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                 60      // 60 -> 60 * 64 us for every duty cycle increment
 #define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP               25      // 25 -> 25 * 64 us for every duty cycle increment
@@ -34,7 +34,15 @@
   higher voltage battery, this values should be higher.
 ---------------------------------------------------------*/
 
+
+
 #define MOTOR_ROTOR_OFFSET_ANGLE                            10
+#define MOTOR_ROTOR_ANGLE_90                                73      // (63  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_150                               116     // (106 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_210                               158     // (148 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_270                               201     // (191 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_330                               243     // (233 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_30                                30      // (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 /*---------------------------------------------------------
   NOTE: regarding motor rotor offset 
@@ -45,12 +53,7 @@
   for the lowest battery current possible.
 ---------------------------------------------------------*/
 
-#define MOTOR_ROTOR_ANGLE_90                                (63  + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_150                               (106 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_210                               (148 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_270                               (191 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_330                               (233 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_30                                (20  + MOTOR_ROTOR_OFFSET_ANGLE)
+
 
 #define ADC_MOTOR_PHASE_CURRENT_MAX                         48      // 30 amps (0.625 amps each unit)
 
@@ -111,10 +114,10 @@
 
 
 // PAS
-#define PAS_NUMBER_MAGNETS                                        20 // see note below
-#define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
-#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  (6250 / PAS_NUMBER_MAGNETS)   // max hard limit to 150 RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  (93750 / PAS_NUMBER_MAGNETS)  // min hard limit to 10 RPM PAS cadence, see note below
+#define PAS_NUMBER_MAGNETS                                        20                            // see note below
+#define PAS_NUMBER_MAGNETS_X2                                     40                            // PAS_NUMBER_MAGNETS * 2
+#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  312                           // 6250 / PAS_NUMBER_MAGNETS  |  max hard limit to 150 RPM PAS cadence, see note below
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  4688                          // 93750 / PAS_NUMBER_MAGNETS  |  min hard limit to 10 RPM PAS cadence, see note below
 
 /*---------------------------------------------------------
   NOTE: regarding PAS
@@ -152,41 +155,51 @@
 
 
 // ADC battery voltage measurement
-#define ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512               44
-#define ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X256               (ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512 >> 1)
-#define ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP_INVERSE_X256        (ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X256 << 2)
+#define BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X512                  44
+#define BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X256                  22
+#define BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X10000                863
+#define BATTERY_VOLTAGE_PER_8_BIT_ADC_STEP_X256                   88
 
 /*---------------------------------------------------------
   NOTE: regarding ADC battery voltage measurement
 
-  0.344 per ADC_8bits step:
+  0.344 per ADC 8 bit step:
   
-  17.9 V -->  ADC_8bits  = 52; 
-  40 V   -->  ADC_8bits  = 116; 
+  17.9 V -->  ADC 8 bits value  = 52; 
+  40 V   -->  ADC 8 bits value  = 116; 
   
   This signal is atenuated by the opamp 358.
 ---------------------------------------------------------*/
 
 
 
-// ADC battery current measurement and filter
-#define ADC_BATTERY_CURRENT_PER_ADC_STEP_X512                     102 // 1 A per 5 steps of ADC_10bits
-#define READ_BATTERY_CURRENT_FILTER_COEFFICIENT                   2
-#define READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT                   2
+// ADC battery current measurement
+#define BATTERY_CURRENT_PER_ADC_STEP_X512                         102 // 1 A per 5 steps for 10 bits ADC
 
 /*---------------------------------------------------------
-  NOTE: regarding ADC battery current measurement and 
-  filter coefficients 
+  NOTE: regarding default value battery current ADC
 
-  Possible values: 0, 1, 2, 3, 4, 5, 6
-  0 equals to no filtering and no delay, higher values 
-  will increase filtering but will also add a bigger delay.
+  1 A per 5 steps of ADC_10bits
 ---------------------------------------------------------*/
 
 
 
-// motor temperature filter coefficient 
-#define READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT                 4
+// ADC torque sensor
+#define PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100                      52 // see note below
+
+/*---------------------------------------------------------
+
+  NOTE: regarding the torque sensor output values
+
+  Torque (force) value found experimentaly.
+  
+  Measured with a cheap digital hook scale, we found that
+  each torque sensor unit is equal to 0.52 Nm. Using the 
+  scale it was found that 0.33 kg was measured as 1 torque 
+  sensor unit.
+  
+  Force (Nm) = 1 Kg * 9.18 * 0.17 (0.17 = arm cranks size)
+---------------------------------------------------------*/
 
 
 

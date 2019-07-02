@@ -41,18 +41,11 @@ typedef struct _configuration_variables
 } struct_configuration_variables;
 
 
-
-extern volatile uint8_t ui8_adc_pedal_torque_offset;
-extern volatile uint8_t ui8_adc_battery_current_offset;
-extern volatile uint8_t ui8_controller_adc_battery_current_target;
-extern volatile uint8_t ui8_controller_duty_cycle_target;
-extern volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step;
-extern volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_g_pedaling_direction;
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
-extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;
 extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
+
 
 void ebike_app_controller (void);
 struct_configuration_variables* get_configuration_variables (void);

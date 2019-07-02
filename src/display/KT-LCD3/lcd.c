@@ -78,6 +78,7 @@ static struct_configuration_variables configuration_variables;
 
 
 // global system variables
+static volatile uint16_t ui16_timer3_counter = 0;
 static uint16_t   ui16_battery_voltage_filtered_x10;
 static uint16_t   ui16_battery_current_filtered_x5;
 static uint16_t   ui16_battery_power_filtered_x50;
@@ -92,7 +93,7 @@ static uint16_t   ui16_pedal_power_filtered;
 static uint8_t    ui8_pedal_cadence_filtered;
 static uint8_t    ui8_lights_state = 0;
 static uint8_t    ui8_street_mode_enabled = 0;
-static volatile uint16_t ui16_timer3_counter = 0;
+
 
 
 // menu variables
@@ -128,7 +129,6 @@ static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
 
 
 // system functions
-void low_pass_filter_battery_voltage_current_power (void);
 void assist_level(void);
 void brake(void);
 void odometer(void);
@@ -137,8 +137,7 @@ void temperature(void);
 void battery_soc(void);
 void calc_distance(void);
 void calc_battery_soc(void);
-void low_pass_filter_pedal_torque_and_power(void);
-static void low_pass_filter_pedal_cadence(void);
+void filter_variables(void);
 void lights(void);
 void walk_assist_or_cruise(void);
 void street_mode(void);
@@ -254,24 +253,21 @@ uint16_t get_timer3_counter(void)
 void lcd_clock (void)
 {
   // clear the screen
-  lcd_clear ();
-
-  // return here until the first communication package is received from the motor controller
-  if (uart_received_first_package () == 0) { return; }
+  lcd_clear();
 
   // LCD menus 
   switch (ui8_lcd_menu)
   {
     case MAIN_MENU: 
-      lcd_execute_main_screen ();
+      lcd_execute_main_screen();
     break;
 
     case POWER_MENU:
-      lcd_execute_menu_config_power ();
+      lcd_execute_menu_config_power();
     break;
     
     case CONFIGURATION_MENU:
-      lcd_execute_menu_config ();
+      lcd_execute_menu_config();
     break;
     
     default:
@@ -279,14 +275,12 @@ void lcd_clock (void)
     break;
   }
   
-  update_menu_flashing_state ();
-  low_pass_filter_battery_voltage_current_power ();
-  low_pass_filter_pedal_cadence ();
-  low_pass_filter_pedal_torque_and_power ();
-  calc_battery_soc ();
-  calc_distance ();
-  lcd_update ();
-  power_off_timer ();
+  update_menu_flashing_state();
+  filter_variables();
+  calc_battery_soc();
+  calc_distance();
+  lcd_update();
+  power_off_timer();
 }
 
 
@@ -332,43 +326,43 @@ void lcd_execute_menu_config (void)
     switch (ui8_lcd_menu_config_submenu_number)
     {
       case 0:
-        lcd_execute_menu_config_submenu_basic_config ();
+        lcd_execute_menu_config_submenu_basic_config();
       break;
 
       case 1:
-        lcd_execute_menu_config_submenu_battery ();
+        lcd_execute_menu_config_submenu_battery();
       break;
 
       case 2:
-        lcd_execute_menu_config_submenu_assist_level ();
+        lcd_execute_menu_config_submenu_assist_level();
       break;
       
       case 3:
-        lcd_execute_menu_config_submenu_walk_assist ();
+        lcd_execute_menu_config_submenu_walk_assist();
       break;
       
       case 4:
-        lcd_execute_menu_config_submenu_cruise ();
+        lcd_execute_menu_config_submenu_cruise();
       break;
       
       case 5:
-        lcd_execute_menu_config_main_screen_setup ();
+        lcd_execute_menu_config_main_screen_setup();
       break;
 
       case 6:
-        lcd_execute_menu_config_submenu_motor_startup_power_boost ();
+        lcd_execute_menu_config_submenu_motor_startup_power_boost();
       break;
 
       case 7:
-        lcd_execute_menu_config_submenu_motor_temperature ();        
+        lcd_execute_menu_config_submenu_motor_temperature();        
       break;
 
       case 8:
-        lcd_execute_menu_config_submenu_street_mode ();
+        lcd_execute_menu_config_submenu_street_mode();
       break;
 
       case 9:
-        lcd_execute_menu_config_submenu_technical ();
+        lcd_execute_menu_config_submenu_technical();
       break;  
 
       default:
@@ -404,7 +398,7 @@ void lcd_execute_menu_config (void)
     if (ONOFF_LONG_CLICK)
     {
       // save the updated variables on EEPROM
-      eeprom_write_variables ();
+      eeprom_write_variables();
       
       // switch to main menu
       ui8_lcd_menu = MAIN_MENU;
@@ -634,7 +628,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       if (ui8_reset_to_defaults_counter > 9)
       {
         // erase saved EEPROM values (all values will be set to defaults)
-        eeprom_erase_key_value ();
+        eeprom_erase_key_value();
 
         // Turn off LCD
         lcd_power_off (0);
@@ -1556,7 +1550,7 @@ void lcd_execute_menu_config_power (void)
     ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
 
     // save the updated variables to EEPROM
-    eeprom_write_variables ();
+    eeprom_write_variables();
     
     // change to main menu
     ui8_lcd_menu = MAIN_MENU;
@@ -1786,6 +1780,14 @@ void energy_data (void)
 
 void battery_soc (void)
 {
+  // This values were taken from a discharge graph of Samsung INR18650-25R cells, at almost no current discharge
+  // This graph: https://endless-sphere.com/forums/download/file.php?id=183920&sid=b7fd7180ef87351cabe74a22f1d162d7
+  
+  #define LI_ION_CELL_VOLTS_83    3.96
+  #define LI_ION_CELL_VOLTS_50    3.70
+  #define LI_ION_CELL_VOLTS_17    3.44
+  #define LI_ION_CELL_VOLTS_0     3.30
+  
   static uint8_t ui8_timmer_counter;
   static uint8_t ui8_battery_state_of_charge;
   uint8_t ui8_battery_cells_number_x10;
@@ -2137,10 +2139,10 @@ void odometer (void)
   if (ONOFF_CLICK)
   {
     // increment odometer field state
-    odometer_increase_field_state ();
+    odometer_increase_field_state();
     
     // show field number
-    odometer_start_show_field_number ();
+    odometer_start_show_field_number();
   }
 
   // if there are errors, show the error number on odometer field instead of any other information
@@ -2162,7 +2164,7 @@ void odometer (void)
         if (configuration_variables.ui8_show_distance_data_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2274,7 +2276,7 @@ void odometer (void)
         if (configuration_variables.ui8_battery_SOC_function_enabled == 0 || configuration_variables.ui8_show_battery_SOC_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2307,7 +2309,7 @@ void odometer (void)
         if (configuration_variables.ui8_show_battery_state_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2341,7 +2343,7 @@ void odometer (void)
         if (configuration_variables.ui8_show_pedal_data_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2379,7 +2381,7 @@ void odometer (void)
         if (configuration_variables.ui8_show_energy_data_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2445,7 +2447,7 @@ void odometer (void)
         if (configuration_variables.ui8_show_time_measurement_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2520,7 +2522,7 @@ void odometer (void)
         if (configuration_variables.ui8_show_wheel_speed_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2621,7 +2623,7 @@ void odometer (void)
         if (configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL || configuration_variables.ui8_show_motor_temperature_odometer_field == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -2637,7 +2639,7 @@ void odometer (void)
         if (configuration_variables.ui8_cruise_function_set_target_speed_enabled == 0 || configuration_variables.ui8_show_cruise_function_set_target_speed == 0)
         {
           // increment odometer field state
-          odometer_increase_field_state ();
+          odometer_increase_field_state();
           
           break;
         }
@@ -3327,56 +3329,17 @@ void lcd_enable_colon_symbol (uint8_t ui8_state)
 }
 
 
-void low_pass_filter_battery_voltage_current_power (void)
+void filter_variables()
 {
-  static uint32_t ui32_battery_voltage_accumulated_x10000;
-  static uint16_t ui16_battery_current_accumulated_x5;
+  ui16_battery_voltage_filtered_x10 = (uint32_t) motor_controller_data.ui16_adc_battery_voltage;
+  ui16_battery_current_filtered_x5 = motor_controller_data.ui8_battery_current_x5;
   
-  // low pass filter battery voltage
-  ui32_battery_voltage_accumulated_x10000 -= ui32_battery_voltage_accumulated_x10000 >> BATTERY_VOLTAGE_FILTER_COEFFICIENT;
-  ui32_battery_voltage_accumulated_x10000 += (uint32_t) motor_controller_data.ui16_adc_battery_voltage * ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000;
-  ui16_battery_voltage_filtered_x10 = ((uint32_t) (ui32_battery_voltage_accumulated_x10000 >> BATTERY_VOLTAGE_FILTER_COEFFICIENT)) / 1000;
-
-  // low pass filter battery current
-  ui16_battery_current_accumulated_x5 -= ui16_battery_current_accumulated_x5 >> BATTERY_CURRENT_FILTER_COEFFICIENT;
-  ui16_battery_current_accumulated_x5 += (uint16_t) motor_controller_data.ui8_battery_current_x5;
-  ui16_battery_current_filtered_x5 = ui16_battery_current_accumulated_x5 >> BATTERY_CURRENT_FILTER_COEFFICIENT;
-
-  // battery power
   ui16_battery_power_filtered_x50 = ui16_battery_current_filtered_x5 * ui16_battery_voltage_filtered_x10;
   ui16_battery_power_filtered = ui16_battery_power_filtered_x50 / 50;
-
-  // loose resolution under 200 W
-  if (ui16_battery_power_filtered < 200)
-  {
-    ui16_battery_power_filtered /= 10;
-    ui16_battery_power_filtered *= 10;
-  }
-  // loose resolution under 400 W
-  else if (ui16_battery_power_filtered < 400)
-  {
-    ui16_battery_power_filtered /= 20;
-    ui16_battery_power_filtered *= 20;
-  }
-  // loose resolution all other values
-  else
-  {
-    ui16_battery_power_filtered /= 25;
-    ui16_battery_power_filtered *= 25;
-  }
-}
-
-
-void low_pass_filter_pedal_torque_and_power (void)
-{
-  ui16_pedal_torque_filtered = (uint32_t) motor_controller_data.ui16_pedal_torque_x100 / 100;
-  ui16_pedal_power_filtered = (uint32_t) motor_controller_data.ui16_pedal_power_x10 / 10;
-}
-
-
-static void low_pass_filter_pedal_cadence (void)
-{
+  
   ui8_pedal_cadence_filtered = motor_controller_data.ui8_pedal_cadence;
+  ui16_pedal_torque_filtered = motor_controller_data.ui16_pedal_torque_x100 / 100;
+  ui16_pedal_power_filtered = motor_controller_data.ui16_pedal_power_x10 / 10;
 }
 
 
@@ -3415,8 +3378,8 @@ struct_motor_controller_data* lcd_get_motor_controller_data (void)
 
 void lcd_init (void)
 {
-  ht1622_init ();
-  lcd_set_frame_buffer ();
+  ht1622_init();
+  lcd_set_frame_buffer();
   lcd_update();
 
   // init variables with the stored value on EEPROM
@@ -3535,7 +3498,7 @@ void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
     if (*ui8_p_state < ui8_state_max_number) { ++*ui8_p_state; } 
     else { *ui8_p_state = 0; }
     
-    odometer_start_show_field_number ();
+    odometer_start_show_field_number();
   }
 }
 
@@ -3548,12 +3511,12 @@ void lcd_power_off (uint8_t SaveToEEPROM)
     configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
     
     // save variables to EEPROM
-    eeprom_write_variables ();
+    eeprom_write_variables();
   }
 
   // clear LCD so it is clear to user what is happening
-  lcd_clear ();
-  lcd_update ();
+  lcd_clear();
+  lcd_update();
 
   // now disable the power to all the system
   GPIO_WriteLow(LCD3_ONOFF_POWER__PORT, LCD3_ONOFF_POWER__PIN);

@@ -9,6 +9,15 @@
 #ifndef COMMON_COMMON_H_
 #define COMMON_COMMON_H_
 
+// system modes
+#define NO_ACTIVE_MODE          0
+#define POWER_ASSIST_MODE       1
+#define TORQUE_ASSIST_MODE      2
+#define CADENCE_ASSIST_MODE     3
+#define eMTB_MODE               4
+#define WALK_ASSIST_MODE        5
+#define CRUISE_MODE             6
+
 // error codes
 #define NO_ERROR                                0
 #define ERROR_MOTOR_BLOCKED                     1
@@ -19,10 +28,10 @@
 #define ERROR_LOW_CONTROLLER_VOLTAGE            6 // controller works with no less than 15 V so give error code if voltage is too low
 
 // walk assist
-#define WALK_ASSIST_THRESHOLD_SPEED_X10         80 // 80 -> 8.0 kph, this is the maximum speed limit in which walk assist can be activated
+#define WALK_ASSIST_THRESHOLD_SPEED_X10         80 // 80 -> 8.0 kph, this is the maximum speed limit from which walk assist can be activated
 
 // cruise
-#define CRUISE_THRESHOLD_SPEED_X10              90 // 90 -> 9.0 kph, this is the minimum speed limit in which cruise can be activated
+#define CRUISE_THRESHOLD_SPEED_X10              90 // 90 -> 9.0 kph, this is the minimum speed limit from which cruise can be activated
 
 // optional ADC channel function
 #define NOT_IN_USE                              0

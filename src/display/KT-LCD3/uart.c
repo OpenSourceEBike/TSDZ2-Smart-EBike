@@ -26,7 +26,6 @@ volatile uint8_t  ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 3];
 volatile uint8_t  ui8_i;
 volatile uint8_t  ui8_byte_received;
 volatile uint8_t  ui8_state_machine = 0;
-volatile uint8_t  ui8_uart_received_first_package = 0;
 static uint16_t   ui16_crc_rx;
 static uint16_t   ui16_crc_tx;
 static uint8_t    ui8_message_ID = 0;
@@ -116,8 +115,8 @@ void uart_data_clock (void)
       p_motor_controller_data = lcd_get_motor_controller_data ();
       p_configuration_variables = get_configuration_variables ();
       
-      // ADC 10 bits battery voltage
-      p_motor_controller_data->ui16_adc_battery_voltage = (((uint16_t) (ui8_rx_buffer[2] & 0x30)) << 4) + ui8_rx_buffer[1];
+      // battery voltage filtered x10000
+      p_motor_controller_data->ui16_adc_battery_voltage = (((uint16_t) ui8_rx_buffer [2]) << 8) + ((uint16_t) ui8_rx_buffer [1]);
       
       // battery current x5
       p_motor_controller_data->ui8_battery_current_x5 = ui8_rx_buffer[3];
@@ -335,9 +334,6 @@ void uart_data_clock (void)
       
       // increment message ID for next package
       if (++ui8_message_ID > UART_MAX_NUMBER_MESSAGE_ID) { ui8_message_ID = 0; }
-
-      // disregard first packages (seems that first ADC battery voltage is an incorrect value)
-      if (++ui8_uart_received_first_package > 11) { ui8_uart_received_first_package = 11; }
     }
 
     // enable UART2 receive interrupt as we are now ready to receive a new package
@@ -345,11 +341,6 @@ void uart_data_clock (void)
   }
 }
 
-
-uint8_t uart_received_first_package (void)
-{
-  return (ui8_uart_received_first_package == 11) ? 1: 0;
-}
 
 
 #if __SDCC_REVISION < 9624

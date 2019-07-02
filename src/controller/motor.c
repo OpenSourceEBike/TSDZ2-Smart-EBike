@@ -360,7 +360,7 @@ uint8_t ui8_svm_table_index = 0;
 uint8_t ui8_motor_rotor_absolute_angle;
 uint8_t ui8_motor_rotor_angle;
 
-volatile uint8_t ui8_g_foc_angle = 0;
+
 uint8_t ui8_interpolation_angle = 0;
 uint16_t ui16_foc_angle_accumulated = 0;
 
@@ -371,25 +371,26 @@ uint8_t ui8_hall_sensors_state_last = 0;
 
 uint8_t ui8_half_erps_flag = 0;
 
-volatile uint8_t ui8_g_duty_cycle = 0;
-
-
 uint8_t ui8_phase_a_voltage;
 uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
-uint16_t ui16_value;
+
+uint8_t ui8_adc_battery_current_filtered_10b;
+uint16_t ui16_adc_battery_current_10b;
+volatile uint8_t ui8_adc_target_motor_phase_max_current;
+
 
 
 // power variables
-uint8_t ui8_controller_adc_battery_max_current = 0;
-volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff; // safe value so controller will not discharge the battery if not receiving a lower value from the LCD
-uint16_t ui16_adc_battery_voltage_filtered_10b;
-uint8_t ui8_adc_battery_current_filtered_10b;
-uint16_t ui16_adc_battery_current_10b;
-volatile uint8_t ui8_g_adc_battery_current;
-static volatile uint8_t ui8_adc_motor_phase_current;
-volatile uint8_t ui8_adc_target_motor_phase_max_current;
-volatile uint8_t ui8_g_adc_motor_phase_current_offset;
+volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
+volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP;
+volatile uint8_t ui8_g_duty_cycle = 0;
+volatile uint16_t ui16_adc_battery_voltage_filtered = 0;
+volatile uint8_t ui8_g_adc_battery_current = 0;
+volatile uint8_t ui8_g_foc_angle = 0;
+volatile uint8_t ui8_controller_adc_battery_current_target = 0;
+volatile uint8_t ui8_controller_duty_cycle_target = 0;
+volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff;
 
 
 // cadence sensor
@@ -406,7 +407,7 @@ void read_battery_voltage (void);
 void read_battery_current (void);
 void calc_foc_angle (void);
 uint8_t asin_table (uint8_t ui8_inverted_angle_x128);
-void motor_set_phase_current_max (uint8_t ui8_value);
+
 
 void motor_controller (void)
 {
@@ -424,6 +425,7 @@ void motor_controller (void)
 // runs every 64us (PWM frequency)
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
+  static uint8_t ui8_adc_motor_phase_current;
   static uint8_t ui8_temp;
   
   struct_configuration_variables *p_configuration_variables;
@@ -434,15 +436,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
-  // disable scan mode
-  ADC1->CR2 &= (uint8_t)(~ADC1_CR2_SCAN);
+  ADC1->CR2 &= (uint8_t)(~ADC1_CR2_SCAN);   // disable scan mode
+  ADC1->CSR = 0x05;                         // clear EOC flag first (select channel 5)
+  ADC1->CR1 |= ADC1_CR1_ADON;               // start ADC1 conversion
+  while (!(ADC1->CSR & ADC1_FLAG_EOC));     // wait for end of conversion
   
-  // clear EOC flag first (selected also channel 5)
-  ADC1->CSR = 0x05;
-  
-  // start ADC1 conversion
-  ADC1->CR1 |= ADC1_CR1_ADON;
-  while (!(ADC1->CSR & ADC1_FLAG_EOC)) ;
   ui16_adc_battery_current_10b = ui16_adc_read_battery_current_10b ();
   ui8_g_adc_battery_current = ui16_adc_battery_current_10b >> 2;
 
@@ -461,9 +459,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   // trigger ADC conversion of all channels (scan conversion, buffered)
-  ADC1->CR2 |= ADC1_CR2_SCAN; // enable scan mode
-  ADC1->CSR = 0x07; // clear EOC flag first (selected also channel 7)
-  ADC1->CR1 |= ADC1_CR1_ADON; // start ADC1 conversion
+  ADC1->CR2 |= ADC1_CR2_SCAN;     // enable scan mode
+  ADC1->CSR = 0x07;               // clear EOC flag first (select channel 7)
+  ADC1->CR1 |= ADC1_CR1_ADON;     // start ADC1 conversion
 
 
   /****************************************************************************/
@@ -655,11 +653,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
   {
-    // limit duty cycle ramp up
-    if (ui16_duty_cycle_ramp_up_inverse_step < 20 ) { ui16_duty_cycle_ramp_up_inverse_step = 20; }
-    
     if (ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
     {
+      // limit duty cycle ramp up
+      if (ui16_duty_cycle_ramp_up_inverse_step < 20 ) { ui16_duty_cycle_ramp_up_inverse_step = 20; }
+    
       if (++ui16_counter_duty_cycle_ramp_up > ui16_duty_cycle_ramp_up_inverse_step)
       {
         ui16_counter_duty_cycle_ramp_up = 0;
@@ -684,10 +682,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
   
-  
+
   
   // calculate final PWM duty_cycle values to be applied to TIMER1
-
+  
+  uint16_t ui16_value;
+  
   // scale and apply PWM duty_cycle for the 3 phases
   // phase A is advanced 240 degrees over phase B
   ui8_temp = ui8_svm_table [(uint8_t) (ui8_svm_table_index + 171 /* 240º */)];
@@ -961,14 +961,9 @@ void hall_sensor_init (void)
 
 void motor_init (void)
 {
-  motor_set_phase_current_max (ADC_MOTOR_PHASE_CURRENT_MAX);
+  ui8_adc_target_motor_phase_max_current = ui8_g_adc_motor_phase_current_offset + ADC_MOTOR_PHASE_CURRENT_MAX;
 }
 
-
-void motor_set_phase_current_max (uint8_t ui8_value)
-{
-  ui8_adc_target_motor_phase_max_current = ui8_g_adc_motor_phase_current_offset + ui8_value;
-}
 
 uint16_t ui16_motor_get_motor_speed_erps (void)
 {
@@ -978,17 +973,37 @@ uint16_t ui16_motor_get_motor_speed_erps (void)
 
 void read_battery_voltage (void)
 {
+  #define READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT   2
+
+  /*---------------------------------------------------------
+    NOTE: regarding filter coefficients 
+
+    Possible values: 0, 1, 2, 3, 4, 5, 6
+    0 equals to no filtering and no delay, higher values 
+    will increase filtering but will also add a bigger delay.
+  ---------------------------------------------------------*/
+
   static uint16_t ui16_adc_battery_voltage_accumulated;
   
   // low pass filter the voltage readed value, to avoid possible fast spikes/noise
   ui16_adc_battery_voltage_accumulated -= ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
-  ui16_adc_battery_voltage_accumulated += ui16_adc_read_battery_voltage_10b ();
-  ui16_adc_battery_voltage_filtered_10b = ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
+  ui16_adc_battery_voltage_accumulated += ui16_adc_read_battery_voltage_10b();
+  ui16_adc_battery_voltage_filtered = ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
 }
 
 
 void read_battery_current (void)
 {
+  #define READ_BATTERY_CURRENT_FILTER_COEFFICIENT   2
+
+  /*---------------------------------------------------------
+    NOTE: regarding filter coefficients 
+
+    Possible values: 0, 1, 2, 3, 4, 5, 6
+    0 equals to no filtering and no delay, higher values 
+    will increase filtering but will also add a bigger delay.
+  ---------------------------------------------------------*/
+
   static uint16_t ui16_adc_battery_current_accumulated;
   
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
@@ -1019,14 +1034,14 @@ void calc_foc_angle (void)
   // angle between phase current and rotor magnetic flux (BEMF) is kept at 0 (max torque per amp)
 
   // calc E phase voltage
-  ui16_temp = ui16_adc_battery_voltage_filtered_10b * ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512;
+  ui16_temp = ui16_adc_battery_voltage_filtered * BATTERY_VOLTAGE_PER_16_BIT_ADC_STEP_X512;
   ui16_temp = (ui16_temp >> 8) * ui8_g_duty_cycle;
   ui16_e_phase_voltage = ui16_temp >> 9;
 
   // calc I phase current
   if (ui8_g_duty_cycle > 10)
   {
-    ui16_temp = ((uint16_t) ui8_adc_battery_current_filtered_10b) * ADC_BATTERY_CURRENT_PER_ADC_STEP_X512;
+    ui16_temp = ((uint16_t) ui8_adc_battery_current_filtered_10b) * BATTERY_CURRENT_PER_ADC_STEP_X512;
     ui32_i_phase_current_x2 = ui16_temp / ui8_g_duty_cycle;
   }
   else
@@ -1118,20 +1133,12 @@ uint8_t asin_table (uint8_t ui8_inverted_angle_x128)
   return ui8_index--;
 }
 
+
 uint8_t motor_get_adc_battery_current_filtered_10b (void)
 {
   return ui8_adc_battery_current_filtered_10b;
 }
 
-uint16_t motor_get_adc_battery_voltage_filtered_10b (void)
-{
-  return ui16_adc_battery_voltage_filtered_10b;
-}
-
-void motor_set_adc_battery_voltage_cut_off (uint8_t ui8_value)
-{
-  ui8_adc_battery_voltage_cut_off = ui8_value;
-}
 
 void motor_enable_pwm(void)
 {

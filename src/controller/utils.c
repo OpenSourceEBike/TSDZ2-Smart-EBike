@@ -56,44 +56,19 @@ void ui8_limit_max (uint8_t *ui8_p_value, uint8_t ui8_max_value)
   if (*ui8_p_value > ui8_max_value) { *ui8_p_value = ui8_max_value; }
 }
 
-uint8_t ui8_filter(uint8_t ui8_new_value, uint8_t ui8_old_value, uint8_t ui8_alpha)
+void ui8_filter(uint8_t *ui8_new_value, uint8_t *ui8_old_value, uint8_t ui8_alpha)
 {
   if (ui8_alpha > 10) { ui8_alpha = 10; }
   
-  return (((ui8_alpha * ui8_new_value) + ((10 - ui8_alpha) * ui8_old_value)) / 10);
+  *ui8_old_value = (((ui8_alpha * *ui8_new_value) + ((10 - ui8_alpha) * *ui8_old_value)) + 5) / 10;
 }
 
-uint16_t ui16_filter(uint16_t ui16_new_value, uint16_t ui16_old_value, uint16_t ui16_alpha)
+void ui16_filter(uint16_t *ui16_new_value, uint16_t *ui16_old_value, uint16_t ui16_alpha)
 {
   if (ui16_alpha > 10) { ui16_alpha = 10; }
   
-  return (((ui16_alpha * ui16_new_value) + ((10 - ui16_alpha) * ui16_old_value)) / 10);
+  *ui16_old_value = (((ui16_alpha * *ui16_new_value) + ((10 - ui16_alpha) * *ui16_old_value)) + 5) / 10;
 }
-
-/* void pi_controller (struct_pi_controller_state *pi_controller)
-{
-  int16_t i16_error;
-  int16_t i16_p_term;
-  int16_t i16_temp;
-
-  i16_error = pi_controller->ui8_target_value - pi_controller->ui8_current_value; // 255-0 or 0-255 --> [-255 ; 255]
-  i16_p_term = (i16_error * pi_controller->ui8_kp_dividend) >> pi_controller->ui8_kp_divisor;
-
-  pi_controller->i16_i_term += (i16_error * pi_controller->ui8_ki_dividend) >> pi_controller->ui8_ki_divisor;
-  if (pi_controller->i16_i_term > 255) { pi_controller->i16_i_term = 255; }
-  if (pi_controller->i16_i_term < 0) { pi_controller->i16_i_term = 0; }
-
-  i16_temp = i16_p_term + pi_controller->i16_i_term;
-  // limit to [0 ; 255] as duty_cycle that will be controlled can't have other values than that ones
-  if (i16_temp > 255) { i16_temp = 255; }
-  if (i16_temp < 0) { i16_temp = 0; }
-  pi_controller->ui8_controller_output_value = (uint8_t) i16_temp;
-}
-
-void pi_controller_reset (struct_pi_controller_state *pi_controller)
-{
-  pi_controller->i16_i_term = 0;
-} */
 
 // from here: https://github.com/FxDev/PetitModbus/blob/master/PetitModbus.c
 /*

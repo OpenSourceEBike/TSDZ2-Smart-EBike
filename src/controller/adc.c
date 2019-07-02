@@ -16,12 +16,19 @@
 #include "motor.h"
 #include "utils.h"
 
+
+volatile uint8_t ui8_adc_pedal_torque_offset = 0;
+volatile uint8_t ui8_adc_battery_current_offset = 0;
+volatile uint8_t ui8_g_adc_motor_phase_current_offset = 0;
+
+
 static void adc_trigger (void);
+
 
 void adc_init (void)
 {
   uint16_t ui16_counter;
-  uint8_t ui8_i;
+  uint16_t ui16_i;
 
   //init GPIO for the used ADC pins
   GPIO_Init(GPIOB,
@@ -42,9 +49,9 @@ void adc_init (void)
   ADC1_Cmd(ENABLE);
 
   
-  #define ADC_INITIALIZATION_TIME   100 // 100 -> around 1 second
+  #define ADC_INITIALIZATION_TIME   280 // 280 -> around 2.8 seconds
   
-  for (ui8_i = 0; ui8_i < ADC_INITIALIZATION_TIME; ++ui8_i)
+  for (ui16_i = 0; ui16_i < ADC_INITIALIZATION_TIME; ++ui16_i)
   {
     // set counter for delay
     ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
@@ -59,10 +66,10 @@ void adc_init (void)
     while (!ADC1_GetFlagStatus(ADC1_FLAG_EOC));
     
     // calibrate torque sensor
-    ui8_filter(UI8_ADC_TORQUE_SENSOR, ui8_adc_pedal_torque_offset, 5);
+    ui8_filter(&UI8_ADC_TORQUE_SENSOR, &ui8_adc_pedal_torque_offset, 9);
     
     // calibrate current sensor
-    ui8_filter(UI8_ADC_BATTERY_CURRENT, ui8_adc_battery_current_offset, 5);
+    ui8_filter(&UI8_ADC_BATTERY_CURRENT, &ui8_adc_battery_current_offset, 9);
     ui8_g_adc_motor_phase_current_offset = ui8_adc_battery_current_offset;
   }
 }
@@ -71,7 +78,7 @@ void adc_init (void)
 static void adc_trigger (void)
 {
   // trigger ADC conversion on all channels (scan conversion, buffered)
-  ADC1->CSR &= 0x07; // clear EOC flag first (selected also channel 7)
+  ADC1->CSR &= 0x07; // clear EOC flag first (select channel 7)
   ADC1->CR1 |= ADC1_CR1_ADON; // Start ADC1 conversion
 }
 
