@@ -15,7 +15,7 @@
 #include "main.h"
 #include "lcd.h"
 
-static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
+static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   KEY,
   DEFAULT_VALUE_ASSIST_LEVEL,
   DEFAULT_VALUE_WHEEL_PERIMETER_0,
@@ -37,75 +37,75 @@ static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_BATTERY_CELLS_NUMBER,
   DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0,
   DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1,
-  DEFAULT_VALUE_CONFIG_0,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_1,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_2,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_3,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_4,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_5,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_6,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_7,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_8,
-  DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_9,
-  DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_STATE,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_2,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_3,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_4,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_5,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_6,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_7,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_8,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_9,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_TIME,
-  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FADE_TIME,
-  DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT,
-  DEFAULT_VALUE_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT,
-  DEFAULT_VALUE_BATTERY_VOLTAGE_RESET_WH_COUNTER_X10_0,
-  DEFAULT_VALUE_BATTERY_VOLTAGE_RESET_WH_COUNTER_X10_1,
-  DEFAULT_VALUE_LCD_POWER_OFF_TIME,
-  DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS,                          // 50 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS,                         // 51 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0,                            // 52 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1,                            // 53 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED,                         // 54 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP,                       // 55 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT,                              // 56 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED,                      // 57 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25,                        // 58 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_X10,                                         // 59 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CONFIG_0,                                             // 21 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_FUNCTION_ENABLED,                        // 22 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_1,                                 // 23 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_2,                                 // 24 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_3,                                 // 25 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_4,                                 // 26 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_5,                                 // 27 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_6,                                 // 28 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_7,                                 // 29 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_8,                                 // 30 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_POWER_ASSIST_LEVEL_9,                                 // 31 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS,                              // 32 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED,            // 33 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_STATE,                      // 34 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1,             // 35 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_2,             // 36 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_3,             // 37 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_4,             // 38 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_5,             // 39 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_6,             // 40 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_7,             // 41 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_8,             // 42 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_9,             // 43 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_TIME,                       // 44 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FADE_TIME,                  // 45 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT,                    // 46 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT,                    // 47 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_BATTERY_VOLTAGE_RESET_WH_COUNTER_X10_0,               // 48 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_BATTERY_VOLTAGE_RESET_WH_COUNTER_X10_1,               // 49 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_LCD_POWER_OFF_TIME,                                   // 50 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS,                          // 51 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS,                         // 52 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0,                            // 53 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1,                            // 54 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED,                         // 55 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP,                       // 56 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT,                              // 57 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED,                      // 58 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25,                        // 59 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_ODOMETER_X10,                                         // 60 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_ODOMETER_X10,                                         // 61 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TRIP_X10,                                             // 62 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_X10,                                         // 62 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TRIP_X10,                                             // 63 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TRIP_X10,                                             // 64 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0,                           // 65 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1,                           // 66 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2,                           // 67 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_3,                           // 68 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4,                           // 69 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5,                           // 70 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6,                           // 71 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_MAX_WHEEL_SPEED_IMPERIAL,                             // 72 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE,                         // 73 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TOTAL_SECOND_TTM,                                     // 74 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TOTAL_MINUTE_TTM,                                     // 75 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TOTAL_HOUR_TTM_0,                                     // 76 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TOTAL_HOUR_TTM_1,                                     // 77 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10,                          // 78 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED,                         // 79 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0,                           // 80 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1,                           // 81 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2,                           // 82 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3,                           // 83 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_4,                           // 84 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_5,                           // 85 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_6,                           // 86 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7,                           // 87 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8,                           // 88 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9,                           // 89 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TRIP_X10,                                             // 65 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_0,                           // 66 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_1,                           // 67 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_2,                           // 68 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_3,                           // 69 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_4,                           // 70 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_5,                           // 71 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ODOMETER_SUB_FIELD_STATE_6,                           // 72 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_MAX_WHEEL_SPEED_IMPERIAL,                             // 73 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TIME_MEASUREMENT_FIELD_STATE,                         // 74 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TOTAL_SECOND_TTM,                                     // 75 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TOTAL_MINUTE_TTM,                                     // 76 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TOTAL_HOUR_TTM_0,                                     // 77 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TOTAL_HOUR_TTM_1,                                     // 78 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10,                          // 79 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED,                         // 80 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_1,                                  // 81 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_2,                                  // 82 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_3,                                  // 83 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_4,                                  // 84 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_5,                                  // 85 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_6,                                  // 86 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_7,                                  // 87 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_8,                                  // 88 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WALK_ASSIST_LEVEL_9,                                  // 89 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CRUISE_FUNCTION_ENABLED,                              // 90 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED,             // 91 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CRUISE_FUNCTION_TARGET_SPEED_KPH,                     // 92 + EEPROM_BASE_ADDRESS (Array index)
@@ -143,7 +143,7 @@ void eeprom_init (void)
   if (ui8_data != KEY) // verify if our key exists
   {
     // write default values
-    eeprom_write_array (array_default_values, ((uint8_t) EEPROM_BYTES_STORED));
+    eeprom_write_array(array_default_values, ((uint8_t) EEPROM_BYTES_STORED));
   }
 }
 
@@ -191,7 +191,36 @@ static void eeprom_read_values_to_variables (void)
   struct_configuration_variables *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
 
-  p_configuration_variables->ui8_assist_level = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL);
+  // assist level
+  p_configuration_variables->ui8_assist_level = FLASH_ReadByte(ADDRESS_ASSIST_LEVEL);
+  
+  
+  // number of assist levels
+  p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte(ADDRESS_NUMBER_OF_ASSIST_LEVELS);
+  
+  
+  // power assist
+  p_configuration_variables->ui8_power_assist_function_enabled = FLASH_ReadByte(ADDRESS_POWER_ASSIST_FUNCTION_ENABLED);
+  for (ui8_index = 0; ui8_index < 9; ui8_index++)
+  {
+    p_configuration_variables->ui8_power_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_POWER_ASSIST_LEVEL_1 + ui8_index);
+  }
+  
+  
+  // walk assist
+  p_configuration_variables->ui8_walk_assist_function_enabled = FLASH_ReadByte(ADDRESS_WALK_ASSIST_FUNCTION_ENABLED);
+  for (ui8_index = 0; ui8_index < 10; ui8_index++)
+  {
+    p_configuration_variables->ui8_walk_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_WALK_ASSIST_LEVEL_1 + ui8_index);
+  }
+  
+  
+  // cruise function
+  p_configuration_variables->ui8_cruise_function_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_ENABLED);
+  p_configuration_variables->ui8_cruise_function_set_target_speed_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED);
+  p_configuration_variables->ui8_cruise_function_target_speed_kph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_KPH);
+  p_configuration_variables->ui8_cruise_function_target_speed_mph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_MPH);
+  p_configuration_variables->ui8_show_cruise_function_set_target_speed = FLASH_ReadByte (ADDRESS_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED);    
 
 
   // wheel perimeter
@@ -267,13 +296,6 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 24) >> 3;
   p_configuration_variables->ui8_temperature_field_state = (ui8_temp & 224) >> 5;
 
-  
-  // assist levels
-  p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte (ADDRESS_NUMBER_OF_ASSIST_LEVELS);
-  for (ui8_index = 0; ui8_index < 9; ui8_index++)
-  {
-    p_configuration_variables->ui8_assist_level_factor [ui8_index] = FLASH_ReadByte (ADDRESS_ASSIST_LEVEL_FACTOR_1 + ui8_index);
-  }
 
   p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED);
   p_configuration_variables->ui8_startup_motor_power_boost_state = FLASH_ReadByte (ADDRESS_STARTUP_MOTOR_POWER_BOOST_STATE);
@@ -333,22 +355,6 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_ramp_up_amps_per_second_x10 = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10);
   
   
-  // walk assist function
-  p_configuration_variables->ui8_walk_assist_function_enabled = FLASH_ReadByte (ADDRESS_WALK_ASSIST_FUNCTION_ENABLED);
-  for (ui8_index = 0; ui8_index < 10; ui8_index++)
-  {
-    p_configuration_variables->ui8_walk_assist_level_factor [ui8_index] = FLASH_ReadByte (ADDRESS_WALK_ASSIST_LEVEL_FACTOR_0 + ui8_index);
-  }
-  
-  
-  // cruise function
-  p_configuration_variables->ui8_cruise_function_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_ENABLED);
-  p_configuration_variables->ui8_cruise_function_set_target_speed_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED);
-  p_configuration_variables->ui8_cruise_function_target_speed_kph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_KPH);
-  p_configuration_variables->ui8_cruise_function_target_speed_mph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_MPH);
-  p_configuration_variables->ui8_show_cruise_function_set_target_speed = FLASH_ReadByte (ADDRESS_SHOW_CRUISE_FUNCTION_SET_TARGET_SPEED);    
-  
-  
   // wheel speed measurement
   p_configuration_variables->ui8_wheel_speed_field_state = FLASH_ReadByte (ADDRESS_WHEEL_SPEED_FIELD_STATE);
   
@@ -375,9 +381,9 @@ static void eeprom_read_values_to_variables (void)
 
 void eeprom_write_variables (void)
 {
-  uint8_t array_variables [EEPROM_BYTES_STORED];
-  variables_to_array (array_variables);
-  eeprom_write_array (array_variables, ((uint8_t) EEPROM_BYTES_STORED));
+  uint8_t array_variables[EEPROM_BYTES_STORED];
+  variables_to_array(array_variables);
+  eeprom_write_array(array_variables, ((uint8_t) EEPROM_BYTES_STORED));
 }
 
 
@@ -390,7 +396,7 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write various parameters
   ui8_array [0] = KEY;
-  ui8_array [1] = p_configuration_variables->ui8_assist_level;
+  ui8_array[ADDRESS_ASSIST_LEVEL - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_assist_level;
   ui8_array [2] = p_configuration_variables->ui16_wheel_perimeter & 255;
   ui8_array [3] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
   ui8_array [4] = p_configuration_variables->ui8_wheel_max_speed;
@@ -416,97 +422,103 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [21] = (p_configuration_variables->ui8_motor_type & 3) |
                   ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3) |
                   ((p_configuration_variables->ui8_temperature_field_state & 7) << 5);
-
+                  
+                  
+  // power assist
+  ui8_array[22] = p_configuration_variables->ui8_power_assist_function_enabled;
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    ui8_array [22 + ui8_index] = p_configuration_variables->ui8_assist_level_factor [ui8_index];
+    ui8_array[23 + ui8_index] = p_configuration_variables->ui8_power_assist_level[ui8_index];
   }
-  ui8_array [31] = p_configuration_variables->ui8_number_of_assist_levels;
+  
+  
+  // number of assist levels
+  ui8_array[ADDRESS_NUMBER_OF_ASSIST_LEVELS - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_number_of_assist_levels;
   
   
   // write motor parameters
-  ui8_array [32] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
-  ui8_array [33] = p_configuration_variables->ui8_startup_motor_power_boost_state;
+  ui8_array [33] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
+  ui8_array [34] = p_configuration_variables->ui8_startup_motor_power_boost_state;
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
-    ui8_array [34 + ui8_index] = p_configuration_variables->ui8_startup_motor_power_boost_factor [ui8_index];
+    ui8_array [35 + ui8_index] = p_configuration_variables->ui8_startup_motor_power_boost_factor [ui8_index];
   }
-  ui8_array [43] = p_configuration_variables->ui8_startup_motor_power_boost_time;
-  ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
-  ui8_array [45] = p_configuration_variables->ui8_motor_temperature_min_value_to_limit;
-  ui8_array [46] = p_configuration_variables->ui8_motor_temperature_max_value_to_limit;
+  ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_time;
+  ui8_array [45] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
+  ui8_array [46] = p_configuration_variables->ui8_motor_temperature_min_value_to_limit;
+  ui8_array [47] = p_configuration_variables->ui8_motor_temperature_max_value_to_limit;
   
   
   // write battery parameters
-  ui8_array [47] = p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 & 255;
-  ui8_array [48] = (p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 >> 8) & 255;
+  ui8_array [48] = p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 & 255;
+  ui8_array [49] = (p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 >> 8) & 255;
   
   
   // write display parameters
-  ui8_array [49] = p_configuration_variables->ui8_lcd_power_off_time_minutes;
-  ui8_array [50] = p_configuration_variables->ui8_lcd_backlight_on_brightness;
-  ui8_array [51] = p_configuration_variables->ui8_lcd_backlight_off_brightness;
+  ui8_array [50] = p_configuration_variables->ui8_lcd_power_off_time_minutes;
+  ui8_array [51] = p_configuration_variables->ui8_lcd_backlight_on_brightness;
+  ui8_array [52] = p_configuration_variables->ui8_lcd_backlight_off_brightness;
 
 
   // write battery parameters
-  ui8_array [52] = p_configuration_variables->ui16_battery_pack_resistance_x1000 & 255;
-  ui8_array [53] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
+  ui8_array [53] = p_configuration_variables->ui16_battery_pack_resistance_x1000 & 255;
+  ui8_array [54] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
 
 
   // write street mode parameters
-  ui8_array [54] = p_configuration_variables->ui8_street_mode_function_enabled;
-  ui8_array [55] = p_configuration_variables->ui8_street_mode_enabled_on_startup;
-  ui8_array [56] = p_configuration_variables->ui8_street_mode_speed_limit;
-  ui8_array [57] = p_configuration_variables->ui8_street_mode_power_limit_enabled;
-  ui8_array [58] = p_configuration_variables->ui8_street_mode_power_limit_div25;
+  ui8_array [55] = p_configuration_variables->ui8_street_mode_function_enabled;
+  ui8_array [56] = p_configuration_variables->ui8_street_mode_enabled_on_startup;
+  ui8_array [57] = p_configuration_variables->ui8_street_mode_speed_limit;
+  ui8_array [58] = p_configuration_variables->ui8_street_mode_power_limit_enabled;
+  ui8_array [59] = p_configuration_variables->ui8_street_mode_power_limit_div25;
   
   
   // write odometer variable
-  ui8_array [59] = p_configuration_variables->ui32_odometer_x10 & 255;
-  ui8_array [60] = (p_configuration_variables->ui32_odometer_x10 >> 8) & 255;
-  ui8_array [61] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
+  ui8_array [60] = p_configuration_variables->ui32_odometer_x10 & 255;
+  ui8_array [61] = (p_configuration_variables->ui32_odometer_x10 >> 8) & 255;
+  ui8_array [62] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
   
   
   // write trip distance variable
-  ui8_array [62] = p_configuration_variables->ui32_trip_x10 & 255;
-  ui8_array [63] = (p_configuration_variables->ui32_trip_x10 >> 8) & 255;
-  ui8_array [64] = (p_configuration_variables->ui32_trip_x10 >> 16) & 255;
+  ui8_array [63] = p_configuration_variables->ui32_trip_x10 & 255;
+  ui8_array [64] = (p_configuration_variables->ui32_trip_x10 >> 8) & 255;
+  ui8_array [65] = (p_configuration_variables->ui32_trip_x10 >> 16) & 255;
 
 
   // write sub menu states so user can resume since last power on
-  ui8_array [65] = p_configuration_variables->ui8_odometer_sub_field_state_0;
-  ui8_array [66] = p_configuration_variables->ui8_odometer_sub_field_state_1;
-  ui8_array [67] = p_configuration_variables->ui8_odometer_sub_field_state_2;
-  ui8_array [68] = p_configuration_variables->ui8_odometer_sub_field_state_3;
-  ui8_array [69] = p_configuration_variables->ui8_odometer_sub_field_state_4;
-  ui8_array [70] = p_configuration_variables->ui8_odometer_sub_field_state_5;
-  ui8_array [71] = p_configuration_variables->ui8_odometer_sub_field_state_6;
+  ui8_array [66] = p_configuration_variables->ui8_odometer_sub_field_state_0;
+  ui8_array [67] = p_configuration_variables->ui8_odometer_sub_field_state_1;
+  ui8_array [68] = p_configuration_variables->ui8_odometer_sub_field_state_2;
+  ui8_array [69] = p_configuration_variables->ui8_odometer_sub_field_state_3;
+  ui8_array [70] = p_configuration_variables->ui8_odometer_sub_field_state_4;
+  ui8_array [71] = p_configuration_variables->ui8_odometer_sub_field_state_5;
+  ui8_array [72] = p_configuration_variables->ui8_odometer_sub_field_state_6;
   
   
   // write max wheel speed in imperial units
-  ui8_array [72] = p_configuration_variables->ui8_wheel_max_speed_imperial;
+  ui8_array [73] = p_configuration_variables->ui8_wheel_max_speed_imperial;
   
   
   // write time measurement field state
-  ui8_array [73] = p_configuration_variables->ui8_time_measurement_field_state;
+  ui8_array [74] = p_configuration_variables->ui8_time_measurement_field_state;
 
 
   // write time measurement values
-  ui8_array [74] = p_configuration_variables->ui8_total_second_TTM;
-  ui8_array [75] = p_configuration_variables->ui8_total_minute_TTM;
-  ui8_array [76] = p_configuration_variables->ui16_total_hour_TTM & 255;
-  ui8_array [77] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
+  ui8_array [75] = p_configuration_variables->ui8_total_second_TTM;
+  ui8_array [76] = p_configuration_variables->ui8_total_minute_TTM;
+  ui8_array [77] = p_configuration_variables->ui16_total_hour_TTM & 255;
+  ui8_array [78] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
   
   
   // write ramp up amps per second
-  ui8_array [78] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+  ui8_array [79] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
   
   
   // write walk assist function variables
-  ui8_array [79] = p_configuration_variables->ui8_walk_assist_function_enabled;
+  ui8_array[80] = p_configuration_variables->ui8_walk_assist_function_enabled;
   for (ui8_index = 0; ui8_index < 10; ui8_index++)
   {
-    ui8_array [80 + ui8_index] = p_configuration_variables->ui8_walk_assist_level_factor [ui8_index];
+    ui8_array[81 + ui8_index] = p_configuration_variables->ui8_walk_assist_level[ui8_index];
   }
   
   

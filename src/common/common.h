@@ -9,14 +9,14 @@
 #ifndef COMMON_COMMON_H_
 #define COMMON_COMMON_H_
 
-// system modes
-#define NO_ACTIVE_MODE          0
-#define POWER_ASSIST_MODE       1
-#define TORQUE_ASSIST_MODE      2
-#define CADENCE_ASSIST_MODE     3
-#define eMTB_MODE               4
-#define WALK_ASSIST_MODE        5
-#define CRUISE_MODE             6
+// riding modes
+#define OFF_MODE                                0
+#define POWER_ASSIST_MODE                       1
+#define TORQUE_ASSIST_MODE                      2
+#define CADENCE_ASSIST_MODE                     3
+#define eMTB_MODE                               4
+#define WALK_ASSIST_MODE                        5
+#define CRUISE_MODE                             6
 
 // error codes
 #define NO_ERROR                                0
@@ -33,7 +33,7 @@
 // cruise
 #define CRUISE_THRESHOLD_SPEED_X10              90 // 90 -> 9.0 kph, this is the minimum speed limit from which cruise can be activated
 
-// optional ADC channel function
+// optional ADC function
 #define NOT_IN_USE                              0
 #define TEMPERATURE_CONTROL                     1
 #define THROTTLE_CONTROL                        2

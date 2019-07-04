@@ -57,17 +57,18 @@
 
 
 
-// default values for assist levels
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_0                         0   // 0
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_1                         3   // 0.3
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_2                         6   // 0.6
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_3                         9
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_4                         12
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_5                         15
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_6                         18
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_7                         21
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_8                         24
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_9                         30
+// default values for power assist
+#define DEFAULT_VALUE_POWER_ASSIST_FUNCTION_ENABLED                 1
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_0                          0   // 0
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_1                          3   // 0.3
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_2                          6   // 0.6
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_3                          9
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_4                          12
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_5                          15
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_6                          18
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_7                          21
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_8                          24
+#define DEFAULT_VALUE_POWER_ASSIST_LEVEL_9                          30
 
 
 
@@ -156,16 +157,15 @@
 
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_0                    0   // target duty cycle (PWM) for walk assist
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_1                    25
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_2                    30
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_3                    35
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_4                    40
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_5                    45
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_6                    50
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_7                    55
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_8                    60
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_FACTOR_9                    65
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_1                           20
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_2                           22
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_3                           24
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_4                           26
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_5                           28
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_6                           30
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_7                           32
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_8                           34
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_9                           36
 
 
 

@@ -15,14 +15,14 @@
 
 
 // motor 
-#define PWM_CYCLES_COUNTER_MAX                              3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
-#define PWM_CYCLES_SECOND                                   15625L  // 1 / 64us(PWM period)
-#define PWM_DUTY_CYCLE_MAX                                  254
-#define PWM_DUTY_CYCLE_MIN                                  0
-#define MIDDLE_PWM_DUTY_CYCLE_MAX                           127     // PWM_DUTY_CYCLE_MAX / 2
+#define PWM_CYCLES_COUNTER_MAX                                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
+#define PWM_CYCLES_SECOND                                         15625L  // 1 / 64us(PWM period)
+#define PWM_DUTY_CYCLE_MAX                                        254
+#define PWM_DUTY_CYCLE_MIN                                        0
+#define MIDDLE_PWM_DUTY_CYCLE_MAX                                 127     // PWM_DUTY_CYCLE_MAX / 2
 
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                 60      // 60 -> 60 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP               25      // 25 -> 25 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       60      // 60 -> 60 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     25      // 25 -> 25 * 64 us for every duty cycle increment
 
 /*---------------------------------------------------------
   NOTE: regarding duty cycle (PWM) ramping
@@ -36,13 +36,13 @@
 
 
 
-#define MOTOR_ROTOR_OFFSET_ANGLE                            10
-#define MOTOR_ROTOR_ANGLE_90                                73      // (63  + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_150                               116     // (106 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_210                               158     // (148 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_270                               201     // (191 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_330                               243     // (233 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_30                                30      // (20  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_OFFSET_ANGLE                                  10
+#define MOTOR_ROTOR_ANGLE_90                                      73      // (63  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_150                                     116     // (106 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_210                                     158     // (148 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_270                                     201     // (191 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_330                                     243     // (233 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_30                                      30      // (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 /*---------------------------------------------------------
   NOTE: regarding motor rotor offset 
@@ -55,9 +55,9 @@
 
 
 
-#define ADC_MOTOR_PHASE_CURRENT_MAX                         48      // 30 amps (0.625 amps each unit)
+#define ADC_MOTOR_PHASE_CURRENT_MAX                               48      // 30 amps (0.625 amps each unit)
 
-#define ADC_BATTERY_CURRENT_MAX                             29      // 18 amps (0.625 amps each step)
+#define ADC_BATTERY_CURRENT_MAX                                   29      // 18 amps (0.625 amps each step)
 
 /*---------------------------------------------------------
   NOTE: regarding ADC_BATTERY_CURRENT_MAX
@@ -68,10 +68,10 @@
   controller is 16 A and it should not be exceeded.
 ---------------------------------------------------------*/
 
-#define MOTOR_OVER_SPEED_ERPS                               520     // motor max speed, protection max value | 30 points for the sinewave at max speed
-#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                  700     // experimental motor speed to allow a higher cadence
+#define MOTOR_OVER_SPEED_ERPS                                     520     // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700     // experimental motor speed to allow a higher cadence
 
-#define MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES     10
+#define MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES           10
 
 /*---------------------------------------------------------
   NOTE: regarding motor start interpolation
@@ -177,6 +177,7 @@
 // ADC battery current measurement
 #define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  102
 #define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X10                   2
+#define BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10                    8
 
 /*---------------------------------------------------------
   NOTE: regarding default value battery current ADC

@@ -15,9 +15,9 @@
 
 typedef struct _motor_controller_data
 {
+  uint8_t ui8_riding_mode;
   uint16_t ui16_battery_voltage_x1000;
   uint8_t ui8_battery_current_x10;
-  uint8_t ui8_motor_controller_state_1;
   uint8_t ui8_adc_throttle;
   uint8_t ui8_throttle;
   uint8_t ui8_adc_pedal_torque_sensor;
@@ -29,8 +29,6 @@ typedef struct _motor_controller_data
   uint8_t ui8_pedal_cadence_RPM;
   uint8_t ui8_lights;
   uint8_t ui8_street_mode_enabled;
-  uint8_t ui8_walk_assist_enabled;
-  uint8_t ui8_cruise_enabled;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
   uint8_t ui8_temperature_current_limiting_value;
@@ -45,6 +43,16 @@ typedef struct _configuration_variables
 {
   uint8_t ui8_assist_level;
   uint8_t ui8_number_of_assist_levels;
+  uint8_t ui8_power_assist_function_enabled;
+  uint8_t ui8_power_assist_level[9];
+  uint8_t ui8_walk_assist_function_enabled;
+  uint8_t ui8_walk_assist_level[9];
+  uint8_t ui8_torque_assist_function_enabled;
+  uint8_t ui8_eMTB_function_enabled;
+  uint8_t ui8_cruise_function_enabled;
+  uint8_t ui8_cruise_function_set_target_speed_enabled;
+  uint8_t ui8_cruise_function_target_speed_kph;
+  uint8_t ui8_cruise_function_target_speed_mph;
   uint16_t ui16_wheel_perimeter;
   uint8_t ui8_wheel_max_speed;
   uint8_t ui8_wheel_max_speed_imperial;
@@ -73,12 +81,11 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
   uint8_t ui8_cadence_rpm_min;
-  uint8_t ui8_assist_level_factor [9];
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_startup_motor_power_boost_factor [9];
+  uint8_t ui8_startup_motor_power_boost_factor[9];
   uint16_t ui16_adc_motor_temperature_10b;
   uint8_t ui8_temperature_limit_feature_enabled;
   uint8_t ui8_motor_temperature_min_value_to_limit;
@@ -97,12 +104,6 @@ typedef struct _configuration_variables
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
   uint8_t ui8_ramp_up_amps_per_second_x10;
-  uint8_t ui8_walk_assist_function_enabled;
-  uint8_t ui8_walk_assist_level_factor[10];
-  uint8_t ui8_cruise_function_enabled;
-  uint8_t ui8_cruise_function_set_target_speed_enabled;
-  uint8_t ui8_cruise_function_target_speed_kph;
-  uint8_t ui8_cruise_function_target_speed_mph;
   uint8_t ui8_show_cruise_function_set_target_speed;
   uint8_t ui8_wheel_speed_field_state;
   uint8_t ui8_show_distance_data_odometer_field;

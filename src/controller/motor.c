@@ -356,16 +356,11 @@ uint16_t ui16_PWM_cycles_counter_total = 0xffff;
 
 uint16_t ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
 static volatile uint16_t ui16_motor_speed_erps = 0;
-uint8_t ui8_svm_table_index = 0;
 uint8_t ui8_motor_rotor_absolute_angle;
 uint8_t ui8_motor_rotor_angle;
 
 
-uint8_t ui8_interpolation_angle = 0;
-uint16_t ui16_foc_angle_accumulated = 0;
-
 uint8_t ui8_motor_commutation_type = BLOCK_COMMUTATION;
-
 uint8_t ui8_hall_sensors_state = 0;
 uint8_t ui8_hall_sensors_state_last = 0;
 
@@ -426,6 +421,7 @@ void motor_controller (void)
 // runs every 64us (PWM frequency)
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
+  static uint8_t ui8_svm_table_index;
   static uint8_t ui8_adc_motor_phase_current;
   static uint8_t ui8_temp;
   
@@ -475,9 +471,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // read hall sensors signal pins and mask other pins
   // hall sensors sequence with motor forward rotation: 4, 6, 2, 3, 1, 5
   ui8_hall_sensors_state = ((HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN) >> 5) |
-  ((HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN) >> 1) |
-  ((HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN) >> 3);
-  
+                           ((HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN) >> 1) |
+                           ((HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN) >> 3);
+                           
   // make sure we run next code only when there is a change on the hall sensors signal
   if (ui8_hall_sensors_state != ui8_hall_sensors_state_last)
   {
@@ -584,6 +580,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   // - calc interpolation angle and sinewave table index
+  
+  static uint8_t ui8_interpolation_angle;
+  
 #define DO_INTERPOLATION 1 // may be useful to disable interpolation when debugging
 #if DO_INTERPOLATION == 1
   // calculate the interpolation angle (and it doesn't work when motor starts and at very low speeds)
@@ -1017,7 +1016,6 @@ void read_battery_current (void)
 void calc_foc_angle (void)
 {
   uint16_t ui16_temp;
-  uint32_t ui32_temp;
   uint16_t ui16_e_phase_voltage;
   uint32_t ui32_i_phase_current_x2;
   uint32_t ui32_l_x1048576;
@@ -1035,7 +1033,7 @@ void calc_foc_angle (void)
   // angle between phase current and rotor magnetic flux (BEMF) is kept at 0 (max torque per amp)
 
   // calc E phase voltage
-  ui16_temp = ui16_adc_battery_voltage_filtered * BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512;
+  ui16_temp = ((uint16_t) ui16_adc_battery_voltage_filtered) * BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512;
   ui16_temp = (ui16_temp >> 8) * ui8_g_duty_cycle;
   ui16_e_phase_voltage = ui16_temp >> 9;
 
@@ -1091,7 +1089,7 @@ void calc_foc_angle (void)
     break;
     
     case 3: // experimental high cadence mode for 36 volt motor
-      ui32_l_x1048576 = 115; // confirmed working with the 36 V motor (only) by user jbalat so far
+      ui32_l_x1048576 = 115;
       ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL;
     break;
 
@@ -1102,14 +1100,13 @@ void calc_foc_angle (void)
   }
 
   // calc IwL
-  ui32_temp = ui32_i_phase_current_x2 * ui32_l_x1048576;
-  ui32_temp *= ui32_w_angular_velocity_x16;
-  ui16_iwl_128 = ui32_temp >> 18;
+  ui16_iwl_128 = (ui32_i_phase_current_x2 * ui32_w_angular_velocity_x16 * ui32_l_x1048576) >> 18;
 
   // calc FOC angle
   ui8_g_foc_angle = asin_table (ui16_iwl_128 / ui16_e_phase_voltage);
 
   // low pass filter FOC angle
+  static uint16_t ui16_foc_angle_accumulated;
   ui16_foc_angle_accumulated -= ui16_foc_angle_accumulated >> 4;
   ui16_foc_angle_accumulated += ui8_g_foc_angle;
   ui8_g_foc_angle = ui16_foc_angle_accumulated >> 4;
