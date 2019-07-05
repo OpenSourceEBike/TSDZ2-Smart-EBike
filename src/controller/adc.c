@@ -49,7 +49,7 @@ void adc_init (void)
   ADC1_Cmd(ENABLE);
 
   
-  #define ADC_INITIALIZATION_TIME   280 // 280 -> around 2.8 seconds
+  #define ADC_INITIALIZATION_TIME   290 // 290 -> around 2.9 seconds
   
   for (ui16_i = 0; ui16_i < ADC_INITIALIZATION_TIME; ++ui16_i)
   {

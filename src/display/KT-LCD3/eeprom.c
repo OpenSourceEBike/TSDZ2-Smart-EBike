@@ -122,7 +122,18 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD,                      // 103 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED,                       // 104 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED,                         // 105 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CADENCE_RPM_MIN                                       // 106 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_RPM_MIN,                                      // 106 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED,                         // 107 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED,                       // 108 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1,                                // 109 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2,                                // 110 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3,                                // 111 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4,                                // 112 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_5,                                // 113 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6,                                // 114 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7,                                // 115 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8,                                // 116 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                                 // 117 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -190,32 +201,46 @@ static void eeprom_read_values_to_variables (void)
 
   struct_configuration_variables *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
-
+  
+  // riding mode variables
+  
   // assist level
   p_configuration_variables->ui8_assist_level = FLASH_ReadByte(ADDRESS_ASSIST_LEVEL);
-  
   
   // number of assist levels
   p_configuration_variables->ui8_number_of_assist_levels = FLASH_ReadByte(ADDRESS_NUMBER_OF_ASSIST_LEVELS);
   
-  
   // power assist
   p_configuration_variables->ui8_power_assist_function_enabled = FLASH_ReadByte(ADDRESS_POWER_ASSIST_FUNCTION_ENABLED);
+  
+  // power assist levels
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
     p_configuration_variables->ui8_power_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_POWER_ASSIST_LEVEL_1 + ui8_index);
   }
   
+  // torque assist
+  p_configuration_variables->ui8_torque_assist_function_enabled = FLASH_ReadByte(ADDRESS_TORQUE_ASSIST_FUNCTION_ENABLED);
+  
+  // torque assist levels
+  for (ui8_index = 0; ui8_index < 9; ui8_index++)
+  {
+    p_configuration_variables->ui8_torque_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_TORQUE_ASSIST_LEVEL_1 + ui8_index);
+  }
+  
+  // eMTB assist
+  p_configuration_variables->ui8_eMTB_assist_function_enabled = FLASH_ReadByte(ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED);
   
   // walk assist
   p_configuration_variables->ui8_walk_assist_function_enabled = FLASH_ReadByte(ADDRESS_WALK_ASSIST_FUNCTION_ENABLED);
+  
+  // walk assist levels
   for (ui8_index = 0; ui8_index < 10; ui8_index++)
   {
     p_configuration_variables->ui8_walk_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_WALK_ASSIST_LEVEL_1 + ui8_index);
   }
   
-  
-  // cruise function
+  // cruise
   p_configuration_variables->ui8_cruise_function_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_ENABLED);
   p_configuration_variables->ui8_cruise_function_set_target_speed_enabled = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_SET_TARGET_SPEED_ENABLED);
   p_configuration_variables->ui8_cruise_function_target_speed_kph = FLASH_ReadByte (ADDRESS_CRUISE_FUNCTION_TARGET_SPEED_KPH);
@@ -290,7 +315,7 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 = ui16_temp;
 
 
-  // motor type, temperature limit enabled, tempereture field state
+  // motor type, temperature limit enabled, temperature field state
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_motor_type = ui8_temp & 3;
   p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 24) >> 3;
@@ -431,9 +456,18 @@ static void variables_to_array (uint8_t *ui8_array)
     ui8_array[23 + ui8_index] = p_configuration_variables->ui8_power_assist_level[ui8_index];
   }
   
+  // torque assist
+  ui8_array[ADDRESS_TORQUE_ASSIST_FUNCTION_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_torque_assist_function_enabled;
+  for (ui8_index = 0; ui8_index < 9; ui8_index++)
+  {
+    ui8_array[ADDRESS_TORQUE_ASSIST_LEVEL_1 - EEPROM_BASE_ADDRESS + ui8_index] = p_configuration_variables->ui8_torque_assist_level[ui8_index];
+  }
   
   // number of assist levels
   ui8_array[ADDRESS_NUMBER_OF_ASSIST_LEVELS - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_number_of_assist_levels;
+  
+  // write eMTB assist function variables
+  ui8_array[ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_eMTB_assist_function_enabled;
   
   
   // write motor parameters
@@ -551,7 +585,7 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [105] = p_configuration_variables->ui8_street_mode_throttle_enabled;
 
   // write cadence min
-  ui8_array [106] = p_configuration_variables->ui8_cadence_rpm_min;
+  ui8_array[ADDRESS_CADENCE_RPM_MIN - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_rpm_min;
 }
 
 

@@ -122,7 +122,18 @@
 #define ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED                              104 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_THROTTLE_ENABLED                                105 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_RPM_MIN                                             106 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 107
+#define ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED                                107 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_FUNCTION_ENABLED                              108 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_1                                       109 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_2                                       110 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_3                                       111 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_4                                       112 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_5                                       113 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_6                                       114 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_7                                       115 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_8                                       116 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TORQUE_ASSIST_LEVEL_9                                       117 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 118
 
 
 

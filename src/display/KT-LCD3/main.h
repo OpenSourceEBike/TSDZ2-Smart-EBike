@@ -22,7 +22,7 @@
 
 
 // default values for assist levels
-#define DEFAULT_VALUE_ASSIST_LEVEL                                  3
+#define DEFAULT_VALUE_ASSIST_LEVEL                                  0
 #define DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS                       5
 
 
@@ -151,7 +151,7 @@
 
 
 // default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50  // 5.0 amps per second ramp up
+#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50
 
 
 
@@ -201,7 +201,26 @@
 
 
 // default value for minimum cadence
-#define DEFAULT_VALUE_CADENCE_RPM_MIN                               0
+#define DEFAULT_VALUE_CADENCE_RPM_MIN                               2
+
+
+
+// default value for torque assist
+#define DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED                0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_5                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                         0
+
+
+
+// default value for eMTB assist
+#define DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED                  0
 
 
 

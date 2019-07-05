@@ -211,6 +211,19 @@ void uart_data_clock (void)
           }
           
         break;
+
+        case TORQUE_ASSIST_MODE:
+        
+          if (p_configuration_variables->ui8_assist_level > 0)
+          {
+            ui8_tx_buffer[3] = p_configuration_variables->ui8_torque_assist_level[p_configuration_variables->ui8_assist_level - 1];
+          }
+          else
+          {
+            ui8_tx_buffer[3] = 0;
+          }
+          
+        break;
         
         case WALK_ASSIST_MODE:
         
