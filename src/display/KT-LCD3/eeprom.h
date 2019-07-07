@@ -133,7 +133,17 @@
 #define ADDRESS_TORQUE_ASSIST_LEVEL_7                                       115 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TORQUE_ASSIST_LEVEL_8                                       116 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TORQUE_ASSIST_LEVEL_9                                       117 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 118
+#define ADDRESS_CADENCE_ASSIST_FUNCTION_ENABLED                             118 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_1                                      119 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_2                                      120 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_3                                      121 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_4                                      122 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_5                                      123 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_6                                      124 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_7                                      125 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_8                                      126 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_ASSIST_LEVEL_9                                      127 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 128
 
 
 

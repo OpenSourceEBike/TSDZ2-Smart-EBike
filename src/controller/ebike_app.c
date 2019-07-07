@@ -112,8 +112,8 @@ static void get_battery_current_filtered(void);
 static void apply_boost();
 static void apply_power_assist();
 static void apply_torque_assist();
-static void apply_emtb();
 static void apply_cadence_assist();
+static void apply_emtb();
 static void apply_virtual_throttle();
 static void apply_walk_assist();
 static void apply_cruise();
@@ -269,7 +269,11 @@ static void apply_power_assist()
     uint16_t ui16_battery_current_target_x10 = (ui32_power_assist_x100 * 100) / ui16_battery_voltage_filtered_x1000;
     
     // round up and set battery current target in ADC steps
-    ui8_adc_battery_current_target = (ui16_battery_current_target_x10 + 5) / BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10;
+    uint16_t ui16_adc_battery_current_target = (ui16_battery_current_target_x10 + 5) / BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10;
+    
+    // set battery current target
+    if (ui16_adc_battery_current_target > ui8_adc_battery_current_max) { ui8_adc_battery_current_target = ui8_adc_battery_current_max; }
+    else { ui8_adc_battery_current_target = ui16_adc_battery_current_target; }
     
     // set duty cycle target
     if (ui8_adc_battery_current_target) { ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX; }
@@ -284,13 +288,13 @@ static void apply_torque_assist()
   if (ui8_riding_mode == TORQUE_ASSIST_MODE)
   {
     #define TORQUE_THRESHOLD                    1   // minimum torque to be applied for torque assist operation
-    #define TORQUE_ASSIST_FACTOR_DENOMINATOR    50  // scale the torque assist factor
+    #define TORQUE_ASSIST_FACTOR_DENOMINATOR    60  // scale the torque assist factor
     
     uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter;
     uint16_t ui16_adc_battery_current_target_torque_assist = 0;
     
     // calculate torque assist target current
-    if ((ui8_adc_pedal_torque) > (ui8_adc_pedal_torque_offset + TORQUE_THRESHOLD))
+    if (((ui8_adc_pedal_torque) > (ui8_adc_pedal_torque_offset + TORQUE_THRESHOLD)) && (ui8_pedal_cadence_RPM))
     {
       ui16_adc_battery_current_target_torque_assist = ((uint16_t) (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset - TORQUE_THRESHOLD) * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
     }
@@ -302,6 +306,15 @@ static void apply_torque_assist()
     // set duty cycle target
     if (ui8_adc_battery_current_target) { ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX; }
     else { ui8_duty_cycle_target = 0; }
+  }
+}
+
+
+
+static void apply_cadence_assist()
+{
+  if (ui8_riding_mode == CADENCE_ASSIST_MODE) 
+  {
   }
 }
 
@@ -324,13 +337,13 @@ static void apply_walk_assist()
     #define WALK_ASSIST_DUTY_CYCLE_MAX                    80
     
     uint8_t ui8_walk_assist_duty_cycle_target = ui8_riding_mode_parameter;
-
-    // limit acceleration
-    ui16_duty_cycle_ramp_up_inverse_step = WALK_ASSIST_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
-
+    
     // check so that walk assist level factor is not too large (too powerful), if it is -> limit the value
     if (ui8_walk_assist_duty_cycle_target > WALK_ASSIST_DUTY_CYCLE_MAX) { ui8_walk_assist_duty_cycle_target = WALK_ASSIST_DUTY_CYCLE_MAX; }
     
+    // limit acceleration
+    ui16_duty_cycle_ramp_up_inverse_step = WALK_ASSIST_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
+
     // set battery current target
     ui8_adc_battery_current_target = ui8_adc_battery_current_max;
     
@@ -359,9 +372,6 @@ static void apply_cruise()
     static int16_t i16_derivative;
     static int16_t i16_control_output;
     static uint16_t ui16_wheel_speed_target_x10;
-    
-    // limit acceleration
-    ui16_duty_cycle_ramp_up_inverse_step = CRUISE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
     
     // initialize cruise PID controller
     if (!ui8_cruise_PID_initialized)
@@ -421,6 +431,9 @@ static void apply_cruise()
     
     // limit control output to the maximum value
     if (i16_control_output > 1000) { i16_control_output = 1000; }
+    
+    // limit acceleration
+    ui16_duty_cycle_ramp_up_inverse_step = CRUISE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
     
     // set battery current target
     ui8_adc_battery_current_target = ui8_adc_battery_current_max;
@@ -598,7 +611,7 @@ static void check_brakes()
 static void check_system()
 {
   #define MOTOR_BLOCKED_COUNTER_THRESHOLD               10    // 10  =>  1.0 second
-  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X10   60    // 60  =>  6.0 amps
+  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X10   50    // 50  =>  5.0 amps
   #define MOTOR_BLOCKED_ERPS_THRESHOLD                  10    // 10 ERPS
   #define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD         100   // 100  =>  10 seconds
   
@@ -770,12 +783,9 @@ static void uart_receive_package(void)
           // wheel perimeter
           m_configuration_variables.ui16_wheel_perimeter = (((uint16_t) ui8_rx_buffer [6]) << 8) + ((uint16_t) ui8_rx_buffer [5]);
           
-          // max battery current
-          m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer [7];
-          
-          // set max battery current
-          ui8_adc_battery_current_max = (uint8_t) ((m_configuration_variables.ui8_battery_max_current * 10) / BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10);
-          
+          // motor temperature limit function or throttle
+          m_configuration_variables.ui8_optional_ADC = ui8_rx_buffer [7];
+
         break;
 
         case 2:
@@ -822,23 +832,25 @@ static void uart_receive_package(void)
 
         case 5:
         
-          // motor temperature limit function or throttle
-          m_configuration_variables.ui8_optional_ADC = ui8_rx_buffer [5];
-          
           // motor assistance without pedal rotation
-          m_configuration_variables.ui8_cadence_rpm_min = ui8_rx_buffer [6];
+          m_configuration_variables.ui8_cadence_rpm_min = ui8_rx_buffer [5];
+          
+          // max battery current
+          m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer [6];
           
           // battery power limit
           m_configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer [7];
           
-          // set max battery current from power limit but do not set limit higher than max battery current
-          if (m_configuration_variables.ui8_target_battery_max_power_div25 > 0)
-          {
-            uint32_t ui32_battery_current_max_x10 = ((uint32_t) m_configuration_variables.ui8_target_battery_max_power_div25 * 250000) / ui16_battery_voltage_filtered_x1000;
-            uint8_t ui8_adc_battery_current_max_temp = ((ui32_battery_current_max_x10 + 5) / BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10);
-            ui8_adc_battery_current_max = ui8_min(ui8_adc_battery_current_max, ui8_adc_battery_current_max_temp);
-          }
+          // calculate max battery current in ADC steps from the received max battery current          
+          uint8_t ui8_adc_battery_current_max_temp_1 = ((m_configuration_variables.ui8_battery_max_current * 10) / BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10);
           
+          // calculate max battery current in ADC steps from the received max power limit
+          uint32_t ui32_battery_current_max_x10 = ((uint32_t) m_configuration_variables.ui8_target_battery_max_power_div25 * 250000) / ui16_battery_voltage_filtered_x1000;
+          uint8_t ui8_adc_battery_current_max_temp_2 = ((ui32_battery_current_max_x10 + 5) / BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10);
+          
+          // set max battery current
+          ui8_adc_battery_current_max = ui8_min(ui8_adc_battery_current_max_temp_1, ui8_adc_battery_current_max_temp_2);
+        
         break;
 
         default:

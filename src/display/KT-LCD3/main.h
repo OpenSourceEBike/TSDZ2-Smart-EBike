@@ -207,15 +207,29 @@
 
 // default value for torque assist
 #define DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED                0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_5                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8                         0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                         0
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         10
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2                         20
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3                         30
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4                         40
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_5                         50
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6                         60
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7                         70
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8                         80
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                         90
+
+
+
+// default value for cadence assist
+#define DEFAULT_VALUE_CADENCE_ASSIST_FUNCTION_ENABLED               0
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_1                        10
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_2                        20
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_3                        30
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_4                        40
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_5                        50
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6                        60
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7                        70
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8                        80
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                        90
 
 
 

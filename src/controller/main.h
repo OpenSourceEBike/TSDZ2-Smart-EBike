@@ -19,7 +19,7 @@
 #define PWM_CYCLES_SECOND                                         15625L  // 1 / 64us(PWM period)
 #define PWM_DUTY_CYCLE_MAX                                        254
 #define PWM_DUTY_CYCLE_MIN                                        0
-#define MIDDLE_PWM_DUTY_CYCLE_MAX                                 127     // PWM_DUTY_CYCLE_MAX / 2
+#define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
 
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       60      // 60 -> 60 * 64 us for every duty cycle increment
 #define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     25      // 25 -> 25 * 64 us for every duty cycle increment
@@ -37,12 +37,12 @@
 
 
 #define MOTOR_ROTOR_OFFSET_ANGLE                                  10
-#define MOTOR_ROTOR_ANGLE_90                                      73      // (63  + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_150                                     116     // (106 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_210                                     158     // (148 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_270                                     201     // (191 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_330                                     243     // (233 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_30                                      30      // (20  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_90                                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_150                                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_210                                     (148 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_270                                     (191 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_330                                     (233 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_30                                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 /*---------------------------------------------------------
   NOTE: regarding motor rotor offset 
@@ -114,10 +114,10 @@
 
 
 // PAS
-#define PAS_NUMBER_MAGNETS                                        20                            // see note below
-#define PAS_NUMBER_MAGNETS_X2                                     40                            // PAS_NUMBER_MAGNETS * 2
-#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  312                           // 6250 / PAS_NUMBER_MAGNETS  |  max hard limit to 150 RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  4688                          // 93750 / PAS_NUMBER_MAGNETS  |  min hard limit to 10 RPM PAS cadence, see note below
+#define PAS_NUMBER_MAGNETS                                        20    // see note below
+#define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
+#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  312   // 6250 / PAS_NUMBER_MAGNETS  |  max hard limit to 150 RPM PAS cadence, see note below
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  9000  // 93750 / PAS_NUMBER_MAGNETS = 4688 -> 10 rpm  |  min hard limit to 10 RPM PAS cadence, see note below
 
 /*---------------------------------------------------------
   NOTE: regarding PAS

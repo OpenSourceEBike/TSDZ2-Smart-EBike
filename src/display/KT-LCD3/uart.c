@@ -225,6 +225,19 @@ void uart_data_clock (void)
           
         break;
         
+        case CADENCE_ASSIST_MODE:
+        
+          if (p_configuration_variables->ui8_assist_level > 0)
+          {
+            ui8_tx_buffer[3] = p_configuration_variables->ui8_cadence_assist_level[p_configuration_variables->ui8_assist_level - 1];
+          }
+          else
+          {
+            ui8_tx_buffer[3] = 0;
+          }
+          
+        break;
+        
         case WALK_ASSIST_MODE:
         
           if (p_configuration_variables->ui8_assist_level > 0)
@@ -287,8 +300,15 @@ void uart_data_clock (void)
           ui8_tx_buffer[5] = (uint8_t) (p_configuration_variables->ui16_wheel_perimeter & 0xff);
           ui8_tx_buffer[6] = (uint8_t) (p_configuration_variables->ui16_wheel_perimeter >> 8);
           
-          // max battery current in amps
-          ui8_tx_buffer[7] = p_configuration_variables->ui8_battery_max_current;
+          // enable/disable motor temperature limit function or throttle
+          if (p_motor_controller_data->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_temperature_limit_feature_enabled == 2)
+          {
+            ui8_tx_buffer[7] = 0;
+          }
+          else
+          {
+            ui8_tx_buffer[7] = p_configuration_variables->ui8_temperature_limit_feature_enabled;
+          }
           
         break;
 
@@ -332,19 +352,12 @@ void uart_data_clock (void)
         break;
 
         case 5:
-        
-          // enable/disable motor temperature limit function or throttle
-          if (p_motor_controller_data->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_temperature_limit_feature_enabled == 2)
-          {
-            ui8_tx_buffer[5] = 0;
-          }
-          else
-          {
-            ui8_tx_buffer[5] = p_configuration_variables->ui8_temperature_limit_feature_enabled;
-          }
           
           // motor assistance without pedal rotation
-          ui8_tx_buffer[6] = p_configuration_variables->ui8_cadence_rpm_min;
+          ui8_tx_buffer[5] = p_configuration_variables->ui8_cadence_rpm_min;
+          
+          // max battery current in amps
+          ui8_tx_buffer[6] = p_configuration_variables->ui8_battery_max_current;
           
           // battery power limit
           if (p_motor_controller_data->ui8_street_mode_enabled && p_configuration_variables->ui8_street_mode_power_limit_enabled)

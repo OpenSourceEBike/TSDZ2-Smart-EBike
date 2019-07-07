@@ -133,7 +133,17 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6,                                // 114 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7,                                // 115 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8,                                // 116 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                                 // 117 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9,                                // 117 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_FUNCTION_ENABLED,                      // 118 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_1,                               // 119 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_2,                               // 120 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_3,                               // 121 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_4,                               // 122 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_5,                               // 123 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6,                               // 124 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7,                               // 125 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8,                               // 126 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                                // 127 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -226,6 +236,15 @@ static void eeprom_read_values_to_variables (void)
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
     p_configuration_variables->ui8_torque_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_TORQUE_ASSIST_LEVEL_1 + ui8_index);
+  }
+  
+  // cadence assist
+  p_configuration_variables->ui8_cadence_assist_function_enabled = FLASH_ReadByte(ADDRESS_CADENCE_ASSIST_FUNCTION_ENABLED);
+  
+  // cadence assist levels
+  for (ui8_index = 0; ui8_index < 9; ui8_index++)
+  {
+    p_configuration_variables->ui8_cadence_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_CADENCE_ASSIST_LEVEL_1 + ui8_index);
   }
   
   // eMTB assist
@@ -461,6 +480,13 @@ static void variables_to_array (uint8_t *ui8_array)
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
     ui8_array[ADDRESS_TORQUE_ASSIST_LEVEL_1 - EEPROM_BASE_ADDRESS + ui8_index] = p_configuration_variables->ui8_torque_assist_level[ui8_index];
+  }
+  
+  // cadence assist
+  ui8_array[ADDRESS_CADENCE_ASSIST_FUNCTION_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_assist_function_enabled;
+  for (ui8_index = 0; ui8_index < 9; ui8_index++)
+  {
+    ui8_array[ADDRESS_CADENCE_ASSIST_LEVEL_1 - EEPROM_BASE_ADDRESS + ui8_index] = p_configuration_variables->ui8_cadence_assist_level[ui8_index];
   }
   
   // number of assist levels

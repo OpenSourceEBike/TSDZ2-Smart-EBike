@@ -49,14 +49,12 @@ uint8_t ui8_max (uint8_t value_a, uint8_t value_b)
  */
 void crc16(uint8_t ui8_data, uint16_t* ui16_crc)
 {
-    unsigned int i;
+  unsigned int i;
 
-    *ui16_crc = *ui16_crc ^(uint16_t) ui8_data;
-    for (i = 8; i > 0; i--)
-    {
-        if (*ui16_crc & 0x0001)
-            *ui16_crc = (*ui16_crc >> 1) ^ 0xA001;
-        else
-            *ui16_crc >>= 1;
-    }
+  *ui16_crc = *ui16_crc ^(uint16_t) ui8_data;
+  for (i = 8; i > 0; i--)
+  {
+    if (*ui16_crc & 0x0001) { *ui16_crc = (*ui16_crc >> 1) ^ 0xA001; }
+    else { *ui16_crc >>= 1; }
+  }
 }

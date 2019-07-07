@@ -47,6 +47,8 @@ typedef struct _configuration_variables
   uint8_t ui8_power_assist_level[9];
   uint8_t ui8_torque_assist_function_enabled;
   uint8_t ui8_torque_assist_level[9];
+  uint8_t ui8_cadence_assist_function_enabled;
+  uint8_t ui8_cadence_assist_level[9];
   uint8_t ui8_eMTB_assist_function_enabled;
   uint8_t ui8_walk_assist_function_enabled;
   uint8_t ui8_walk_assist_level[9];
