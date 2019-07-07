@@ -1966,9 +1966,13 @@ void time_measurement_field(void)
 
 void energy(void)
 {
-  // reset watt-hour value if battery voltage is over threshold set from user
-  if ((motor_controller_data.ui16_battery_voltage_x1000) > (configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 100))
+  // reset watt-hour value if battery voltage is over threshold set from user, but only do this once for every power on
+  
+  static uint8_t ui8_wh_reset;
+  
+  if (((motor_controller_data.ui16_battery_voltage_x1000) > (configuration_variables.ui16_battery_voltage_reset_wh_counter_x10 * 100)) && (!ui8_wh_reset))
   {
+    ui8_wh_reset = 1;
     configuration_variables.ui32_wh_x10_offset = 0;
   }
   
