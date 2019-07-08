@@ -26,7 +26,7 @@
 volatile struct_configuration_variables m_configuration_variables;
 
 // variables for various system functions
-static uint8_t    ui8_riding_mode = POWER_ASSIST_MODE;
+static uint8_t    ui8_riding_mode = OFF_MODE;
 static uint8_t    ui8_riding_mode_parameter = 0;
 static uint8_t    ui8_system_state = NO_ERROR;
 static uint8_t    ui8_brakes_enabled = 0;
@@ -156,6 +156,9 @@ static void ebike_control_motor (void)
   // torque assist
   apply_torque_assist();
   
+  // cadence assist
+  apply_cadence_assist();
+  
   // eMTB
   apply_emtb();
   
@@ -233,7 +236,7 @@ static void calc_crank_power(void)
   // calculate torque on pedals
   if (ui8_adc_pedal_torque > ui8_adc_pedal_torque_offset)
   {
-    ui16_pedal_torque_x100 = (uint16_t) (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset) * (uint16_t) PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100;
+    ui16_pedal_torque_x100 = (uint16_t) (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset) * PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100;
   }
   else
   {
@@ -287,7 +290,7 @@ static void apply_torque_assist()
 {
   if (ui8_riding_mode == TORQUE_ASSIST_MODE)
   {
-    #define TORQUE_THRESHOLD                    1   // minimum torque to be applied for torque assist operation
+    #define TORQUE_THRESHOLD                    2   // minimum torque to be applied for torque assist operation
     #define TORQUE_ASSIST_FACTOR_DENOMINATOR    60  // scale the torque assist factor
     
     uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter;
@@ -315,6 +318,14 @@ static void apply_cadence_assist()
 {
   if (ui8_riding_mode == CADENCE_ASSIST_MODE) 
   {
+    // TESTING MOTOR CURRENT CONTROL THIS IS NOT CADENCE ASSIST
+    
+    // set battery current target
+    if (ui8_riding_mode_parameter > 4) { ui8_adc_battery_current_target = 4; }
+    else { ui8_adc_battery_current_target = ui8_riding_mode_parameter; }
+
+    // set duty cycle target
+    ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX;
   }
 }
 
@@ -324,6 +335,7 @@ static void apply_emtb()
 {
   if (ui8_riding_mode == eMTB_ASSIST_MODE) 
   {
+                                                                  // ADD EMTB CODE FROM EMTB LOC FOLDER
   }
 }
 
@@ -558,16 +570,12 @@ static void calc_cadence(void)
 
 
 static void calc_wheel_speed(void)
-{
-  float f_wheel_speed_x10;
-  
+{ 
   // calc wheel speed in km/h
   if (ui16_wheel_speed_sensor_pwm_cycles_ticks < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS)
   {
-    f_wheel_speed_x10 = ((float) PWM_CYCLES_SECOND) / ((float) ui16_wheel_speed_sensor_pwm_cycles_ticks); // rps
-    f_wheel_speed_x10 *= m_configuration_variables.ui16_wheel_perimeter; // millimeters per second
-    f_wheel_speed_x10 *= 0.036; // ((3600 / (1000 * 1000)) * 10) kms per hour * 10
-    ui16_wheel_speed_x10 = (uint16_t) f_wheel_speed_x10;
+    float f_wheel_speed_x10 = (float) PWM_CYCLES_SECOND / ui16_wheel_speed_sensor_pwm_cycles_ticks; // rps
+    ui16_wheel_speed_x10 = (uint16_t) (f_wheel_speed_x10 * m_configuration_variables.ui16_wheel_perimeter * 0.036); // rps * millimeters per second * ((3600 / (1000 * 1000)) * 10) kms per hour * 10
   }
   else
   {
@@ -664,7 +672,7 @@ static void check_system()
   
   
   // check if user applied force on the pedals during torque sensor calibration
-  if (ui8_adc_pedal_torque_offset > 54)
+  if (ui8_adc_pedal_torque_offset > 64)
   {
     // set error code
     ui8_system_state = ERROR_TORQUE_APPLIED_DURING_POWER_ON;
@@ -913,14 +921,14 @@ static void uart_send_package(void)
 /*   // ADC torque_sensor with torque offset
   if (ui8_adc_pedal_torque > ui8_adc_pedal_torque_offset)
   {
-    ui8_tx_buffer[10] = (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset);                                                            // test test test test test test remove remove remove
+    ui8_tx_buffer[10] = (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset);
   }
   else
   {
     ui8_tx_buffer[10] = 0; 
   } */
   
-  ui8_tx_buffer[10] = ui8_adc_pedal_torque_offset;
+  ui8_tx_buffer[10] = ui8_adc_pedal_torque_offset;                                                            // test test test test test test remove remove remove
 
   // pedal cadence
   ui8_tx_buffer[11] = ui8_pedal_cadence_RPM;

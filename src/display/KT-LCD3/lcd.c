@@ -323,7 +323,7 @@ void lcd_execute_main_screen (void)
   // power off if...
   if (ONOFF_LONG_CLICK) 
   {
-    lcd_power_off (1); 
+    lcd_power_off(1); 
   }
 }
 
@@ -495,7 +495,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
         lcd_var_number.ui8_odometer_field = WHEEL_SPEED_FIELD;
         lcd_configurations_print_number(&lcd_var_number);
         
-        lcd_enable_mph_symbol (1);
+        lcd_enable_mph_symbol(1);
         
         // convert max wheel speed in imperial units to metric units and save to ui8_wheel_max_speed
         configuration_variables.ui8_wheel_max_speed = configuration_variables.ui8_wheel_max_speed_imperial * 1.6;
@@ -512,7 +512,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
         lcd_var_number.ui8_odometer_field = WHEEL_SPEED_FIELD;        
         lcd_configurations_print_number(&lcd_var_number);
         
-        lcd_enable_kmh_symbol (1);
+        lcd_enable_kmh_symbol(1);
       }
       
     break;
@@ -571,8 +571,8 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       }
       
       // set backlight brightness after user has configured settings, looks nicer this way
-      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
-      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
+      if (ui8_lights_state == 0) { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_off_brightness); }
+      else { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_on_brightness); }
       
     break;
     
@@ -594,7 +594,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       configuration_variables.ui8_lcd_backlight_off_brightness = ui32_temp / 5;
       
       // show user the chosen backlight brightness, looks nicer this way
-      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness);
+      lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_off_brightness);
       
     break;
 
@@ -616,7 +616,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       configuration_variables.ui8_lcd_backlight_on_brightness = ui32_temp / 5;
       
       // show user the chosen backlight brightness, looks nicer this way
-      lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness);
+      lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_on_brightness);
       
     break;
 
@@ -633,8 +633,8 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       lcd_configurations_print_number(&lcd_var_number);
       
       // set backlight brightness after user has configured settings, looks nicer this way
-      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
-      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
+      if (ui8_lights_state == 0) { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_off_brightness); }
+      else { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_on_brightness); }
       
     break;
 
@@ -656,7 +656,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
         eeprom_erase_key_value();
 
         // Turn off LCD
-        lcd_power_off (0);
+        lcd_power_off(0);
       }
       
     break;
@@ -672,7 +672,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
 
 
 
-void lcd_execute_menu_config_submenu_battery (void)
+void lcd_execute_menu_config_submenu_battery(void)
 {
   var_number_t lcd_var_number;
   
@@ -728,7 +728,7 @@ void lcd_execute_menu_config_submenu_battery (void)
 
     // battery voltage SOC adjusted with internal resistance
     case 4:
-      lcd_print (ui16_battery_SOC_voltage_x100 / 10, ODOMETER_FIELD, 1);
+      lcd_print(ui16_battery_SOC_voltage_x100 / 10, ODOMETER_FIELD, 1);
       lcd_enable_vol_symbol(1);
     break;
     
@@ -846,7 +846,7 @@ void lcd_execute_menu_config_submenu_power_assist(void)
     
     if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
-      lcd_enable_assist_symbol (1);
+      lcd_enable_assist_symbol(1);
     }
     
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -921,7 +921,7 @@ void lcd_execute_menu_config_submenu_torque_assist(void)
     
     if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
-      lcd_enable_assist_symbol (1);
+      lcd_enable_assist_symbol(1);
     }
     
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -996,7 +996,7 @@ void lcd_execute_menu_config_submenu_cadence_assist(void)
     
     if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
-      lcd_enable_assist_symbol (1);
+      lcd_enable_assist_symbol(1);
     }
     
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -1030,21 +1030,49 @@ void lcd_execute_menu_config_submenu_cadence_assist(void)
 void lcd_execute_menu_config_submenu_eMTB_assist(void)
 {
   var_number_t lcd_var_number;
-
-  // enable/disable eMTB assist function
-  lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_function_enabled;
-  lcd_var_number.ui8_size = 8;
-  lcd_var_number.ui8_decimal_digit = 0;
-  lcd_var_number.ui32_max_value = 1;
-  lcd_var_number.ui32_min_value = 0;
-  lcd_var_number.ui32_increment_step = 1;
-  lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-  lcd_configurations_print_number(&lcd_var_number);
   
-  if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
+  switch (ui8_lcd_menu_config_submenu_state)
   {
-    lcd_enable_E_symbol(1);
-    lcd_enable_assist_symbol(1);
+    // enable eMTB mode
+    case 0:
+    
+      lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_function_enabled;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_enable_E_symbol(1);
+        lcd_enable_assist_symbol(1);
+      }
+      
+    break;
+    
+    // set eMTB assist factor
+    case 1:
+    
+      lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_factor_x10;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 255;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      lcd_enable_E_symbol(1);
+      
+      if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
+      }
+      
+    break;
   }
   
   submenu_state_controller(1);
@@ -1052,7 +1080,7 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
 
 
 
-void lcd_execute_menu_config_submenu_walk_assist (void)
+void lcd_execute_menu_config_submenu_walk_assist(void)
 {
   var_number_t lcd_var_number;
 
@@ -1098,7 +1126,7 @@ void lcd_execute_menu_config_submenu_walk_assist (void)
 
 
 
-void lcd_execute_menu_config_submenu_cruise (void)
+void lcd_execute_menu_config_submenu_cruise(void)
 {
   var_number_t lcd_var_number;
   
@@ -1211,7 +1239,7 @@ void lcd_execute_menu_config_submenu_cruise (void)
 
 
 
-void lcd_execute_menu_config_main_screen_setup (void)
+void lcd_execute_menu_config_main_screen_setup(void)
 {
   var_number_t lcd_var_number;
 
@@ -1360,7 +1388,7 @@ void lcd_execute_menu_config_main_screen_setup (void)
 
 
 
-void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
+void lcd_execute_menu_config_submenu_motor_startup_power_boost(void)
 {
   var_number_t lcd_var_number;
   uint8_t ui8_temp;
@@ -1462,7 +1490,7 @@ void lcd_execute_menu_config_submenu_motor_startup_power_boost (void)
 
 
 
-void lcd_execute_menu_config_submenu_controller_setup (void)
+void lcd_execute_menu_config_submenu_controller_setup(void)
 {
   var_number_t lcd_var_number;
   uint16_t ui16_temp;
@@ -3653,10 +3681,8 @@ void filter_variables()
 
 void calc_distance (void)
 {
-  uint32_t ui32_temp;
-  
   // calculate how many revolutions since last reset and convert to distance traveled
-  ui32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * configuration_variables.ui16_wheel_perimeter;
+  uint32_t ui32_temp = (motor_controller_data.ui32_wheel_speed_sensor_tick_counter - motor_controller_data.ui32_wheel_speed_sensor_tick_counter_offset) * configuration_variables.ui16_wheel_perimeter;
   
   // if traveled distance is more than 100 meters update all distance variables and reset
   if (ui32_temp >= 100000) // 100000 -> 100000 mm -> 0.1 km
