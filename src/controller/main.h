@@ -22,7 +22,7 @@
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
 
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       60      // 60 -> 60 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     20      // 20 -> 20 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     25      // 25 -> 25 * 64 us for every duty cycle increment
 
 /*---------------------------------------------------------
   NOTE: regarding duty cycle (PWM) ramping
@@ -116,7 +116,7 @@
 #define PAS_NUMBER_MAGNETS                                        20    // see note below
 #define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
 #define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  312   // 6250 / PAS_NUMBER_MAGNETS  |  max hard limit to 150 RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  10000 // 93750 / PAS_NUMBER_MAGNETS = 4688 -> 10 rpm  |  min hard limit to 10 RPM PAS cadence, see note below
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  11000 // 93750 / PAS_NUMBER_MAGNETS = 4688 -> 10 rpm  |  min hard limit to 10 RPM PAS cadence, see note below
 
 /*---------------------------------------------------------
   NOTE: regarding PAS
@@ -187,7 +187,7 @@
 
 
 // ADC torque sensor
-#define PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100                      253
+#define PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100                      267
 
 /*---------------------------------------------------------
 
@@ -197,7 +197,7 @@
   
   One torque sensor ADC 10 bit step is equal to 0.38 kg
   
-  One torque sensor ADC 8 bit step is equal to 1.52 kg
+  One torque sensor ADC 8 bit step is equal to 1.6 kg
   
   Force (Nm) = 1 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/
