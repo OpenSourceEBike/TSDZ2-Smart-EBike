@@ -24,8 +24,6 @@
 
 
 extern volatile uint8_t ui8_adc_pedal_torque_offset;
-extern volatile uint8_t ui8_adc_battery_current_offset;
-extern volatile uint8_t ui8_g_adc_motor_phase_current_offset;
 
 
 void adc_init (void);

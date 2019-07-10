@@ -364,9 +364,8 @@ uint8_t ui8_half_erps_flag = 0;
 
 
 // power variables
-volatile uint8_t ui8_adc_motor_phase_current_max;
 volatile uint16_t ui16_adc_battery_current = 0;
-volatile uint8_t ui8_adc_battery_current = 0;
+volatile uint8_t ui8_controller_adc_battery_current = 0;
 volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
 volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP;
 volatile uint8_t ui8_g_duty_cycle = 0;
@@ -388,17 +387,17 @@ uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
 
 
-void read_battery_voltage (void);
-void read_battery_current (void);
-void calc_foc_angle (void);
-uint8_t asin_table (uint8_t ui8_inverted_angle_x128);
+void read_battery_voltage(void);
+void read_battery_current(void);
+void calc_foc_angle(void);
+uint8_t asin_table(uint8_t ui8_inverted_angle_x128);
 
 
-void motor_controller (void)
+void motor_controller(void)
 {
-  read_battery_voltage ();
-  read_battery_current ();
-  calc_foc_angle ();
+  read_battery_voltage();
+  read_battery_current();
+  calc_foc_angle();
 }
 
 
@@ -427,7 +426,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   while (!(ADC1->CSR & ADC1_FLAG_EOC));     // wait for end of conversion
   
   ui16_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
-  ui8_adc_battery_current = UI8_ADC_BATTERY_CURRENT;
+  ui8_controller_adc_battery_current = UI8_ADC_BATTERY_CURRENT;
 
   // calculate motor phase current ADC value
   if (ui8_g_duty_cycle > 0)
@@ -625,8 +624,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   else // adjust duty cycle to target duty cycle, include ramping
   {
     if ((ui8_controller_duty_cycle_target < ui8_g_duty_cycle) ||
-        (ui8_adc_battery_current > ui8_controller_adc_battery_current_target) ||
-        (ui8_adc_motor_phase_current > ui8_adc_motor_phase_current_max))
+        (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
+        (ui8_adc_motor_phase_current > ADC_MOTOR_PHASE_CURRENT_MAX))
     {
       ui16_counter_duty_cycle_ramp_up = 0;
       
@@ -946,11 +945,6 @@ void hall_sensor_init(void)
   GPIO_Init (HALL_SENSOR_A__PORT, (GPIO_Pin_TypeDef) HALL_SENSOR_A__PIN, GPIO_MODE_IN_FL_NO_IT);
   GPIO_Init (HALL_SENSOR_B__PORT, (GPIO_Pin_TypeDef) HALL_SENSOR_B__PIN, GPIO_MODE_IN_FL_NO_IT);
   GPIO_Init (HALL_SENSOR_C__PORT, (GPIO_Pin_TypeDef) HALL_SENSOR_C__PIN, GPIO_MODE_IN_FL_NO_IT);
-}
-
-void motor_init(void)
-{
-  ui8_adc_motor_phase_current_max = ui8_g_adc_motor_phase_current_offset + ADC_MOTOR_PHASE_CURRENT_MAX;
 }
 
 

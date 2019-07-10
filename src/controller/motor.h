@@ -28,7 +28,6 @@ extern volatile uint8_t ui8_adc_battery_voltage_cut_off;
 
 
 void hall_sensor_init (void); // must be called before using the motor
-void motor_init (void); // must be called before using the motor
 void motor_enable_PWM (void);
 void motor_disable_PWM (void);
 void motor_enable_pwm(void);

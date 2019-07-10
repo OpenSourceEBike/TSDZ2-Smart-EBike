@@ -51,6 +51,7 @@ uint8_t           ui8_pedal_cadence_RPM = 0;
 volatile uint8_t  ui8_adc_pedal_torque = 0;
 uint16_t          ui16_pedal_power_x10 = 0;
 uint16_t          ui16_pedal_torque_x100 = 0;
+uint16_t          ui16_pedal_torque_per_8_bit_ADC_step_x100 = PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100;
 
 
 // variables for the throttle function
@@ -125,25 +126,25 @@ static void apply_temperature_limiting();
 
 void ebike_app_controller (void)
 {
-  get_battery_voltage_filtered();
-  get_battery_current_filtered();
+  get_battery_voltage_filtered(); // get filtered voltage from FOC calculations
+  get_battery_current_filtered(); // get filtered current from FOC calculations
   
   calc_cadence();
   calc_crank_power();
   calc_wheel_speed();
   
-  check_system();
-  check_brakes();
+  check_system();                 // check if there are any errors for motor control 
+  check_brakes();                 // check if brakes are enabled for motor control
   
-  communications_controller();
-  ebike_control_motor();
+  communications_controller();    // get data to use for motor control and then send new data
+  ebike_control_motor();          // use received data and sensor input to control motor 
 }
 
 
 
 static void ebike_control_motor (void)
 {
-  // reset control variables
+  // reset control variables (safety)
   ui8_adc_battery_current_target = 0;
   ui8_duty_cycle_target = 0;
   
@@ -213,7 +214,7 @@ static void ebike_control_motor (void)
     if (ui8_duty_cycle_target > PWM_DUTY_CYCLE_MAX) { ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX; }
     
     // set controller target current with offset from ADC calibration
-    ui8_controller_adc_battery_current_target = ui8_adc_battery_current_target + ui8_adc_battery_current_offset;
+    ui8_controller_adc_battery_current_target = ui8_adc_battery_current_target;
     
     // set controller target duty cycle
     ui8_controller_duty_cycle_target = ui8_duty_cycle_target;
@@ -236,7 +237,7 @@ static void calc_crank_power(void)
   // calculate torque on pedals
   if (ui8_adc_pedal_torque > ui8_adc_pedal_torque_offset)
   {
-    ui16_pedal_torque_x100 = (uint16_t) (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset) * PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100;
+    ui16_pedal_torque_x100 = (uint16_t) (ui8_adc_pedal_torque - ui8_adc_pedal_torque_offset) * ui16_pedal_torque_per_8_bit_ADC_step_x100;
   }
   else
   {
@@ -733,7 +734,10 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
 static void communications_controller (void)
 {
 #ifndef DEBUG_UART
-
+  
+  // reset riding mode (safety)
+  ui8_riding_mode = OFF_MODE;
+  
   uart_receive_package ();
 
   uart_send_package ();
@@ -943,7 +947,7 @@ static void uart_send_package(void)
   ui8_tx_buffer[14] = (uint8_t) (ui16_temp >> 8);
   
   // FOC angle
-  ui8_tx_buffer[15] = ui8_g_foc_angle;
+  ui8_tx_buffer[15] = UI8_ADC_BATTERY_CURRENT; //ui8_g_foc_angle; // test test test test test test remove remove remove
   
   // system state
   ui8_tx_buffer[16] = ui8_system_state;
@@ -957,8 +961,9 @@ static void uart_send_package(void)
   ui8_tx_buffer[20] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 16) & 0xff);
 
   // pedal torque x100
-  ui8_tx_buffer[21] = (uint8_t) (ui16_pedal_torque_x100 & 0xff);
-  ui8_tx_buffer[22] = (uint8_t) (ui16_pedal_torque_x100 >> 8);
+  ui16_temp = ui16_pedal_torque_x100;
+  ui8_tx_buffer[21] = (uint8_t) (ui16_temp & 0xff);
+  ui8_tx_buffer[22] = (uint8_t) (ui16_temp >> 8);
 
   // ui16_pedal_power_x10
   ui8_tx_buffer[23] = (uint8_t) (ui16_pedal_power_x10 & 0xff);

@@ -18,8 +18,6 @@
 
 
 volatile uint8_t ui8_adc_pedal_torque_offset = 0;
-volatile uint8_t ui8_adc_battery_current_offset = 0;
-volatile uint8_t ui8_g_adc_motor_phase_current_offset = 0;
 
 
 static void adc_trigger (void);
@@ -31,32 +29,30 @@ void adc_init (void)
   uint16_t ui16_i;
 
   //init GPIO for the used ADC pins
-  GPIO_Init(GPIOB,
-	    (GPIO_PIN_7 | GPIO_PIN_6 | GPIO_PIN_5 | GPIO_PIN_3),
-	    GPIO_MODE_IN_FL_NO_IT);
+  GPIO_Init(GPIOB, (GPIO_PIN_7 | GPIO_PIN_6 | GPIO_PIN_5 | GPIO_PIN_3), GPIO_MODE_IN_FL_NO_IT);
 
   //init ADC1 peripheral
   ADC1_Init(ADC1_CONVERSIONMODE_SINGLE,
-      ADC1_CHANNEL_7,
-      ADC1_PRESSEL_FCPU_D2,
-      ADC1_EXTTRIG_TIM,
-      DISABLE,
-      ADC1_ALIGN_LEFT,
-      (ADC1_SCHMITTTRIG_CHANNEL3 | ADC1_SCHMITTTRIG_CHANNEL5 | ADC1_SCHMITTTRIG_CHANNEL6 | ADC1_SCHMITTTRIG_CHANNEL7),
+            ADC1_CHANNEL_7,
+            ADC1_PRESSEL_FCPU_D2,
+            ADC1_EXTTRIG_TIM,
+            DISABLE,
+            ADC1_ALIGN_LEFT,
+            (ADC1_SCHMITTTRIG_CHANNEL3 | ADC1_SCHMITTTRIG_CHANNEL5 | ADC1_SCHMITTTRIG_CHANNEL6 | ADC1_SCHMITTTRIG_CHANNEL7),
             DISABLE);
 
   ADC1_ScanModeCmd(ENABLE);
   ADC1_Cmd(ENABLE);
 
   
-  #define ADC_INITIALIZATION_TIME   290 // 290 -> around 2.9 seconds
+  #define ADC_INITIALIZATION_TIME   300 // 300 -> around 3.0 seconds
   
   for (ui16_i = 0; ui16_i < ADC_INITIALIZATION_TIME; ++ui16_i)
   {
     // set counter for delay
-    ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
+    ui16_counter = TIM3_GetCounter() + 10; // delay ~10 ms
     
-    // delay ~10ms
+    // wait for delay
     while (TIM3_GetCounter() < ui16_counter);
     
     // trigger ADC conversion on all channels (scan conversion, buffered)
@@ -67,10 +63,6 @@ void adc_init (void)
     
     // calibrate torque sensor
     ui8_filter(&UI8_ADC_TORQUE_SENSOR, &ui8_adc_pedal_torque_offset, 9);
-    
-    // calibrate current sensor
-    ui8_filter(&UI8_ADC_BATTERY_CURRENT, &ui8_adc_battery_current_offset, 9);
-    ui8_g_adc_motor_phase_current_offset = ui8_adc_battery_current_offset;
   }
 }
 

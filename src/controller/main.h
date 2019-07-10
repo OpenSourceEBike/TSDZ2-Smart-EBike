@@ -54,9 +54,9 @@
 ---------------------------------------------------------*/
 
 
-
-#define ADC_MOTOR_PHASE_CURRENT_MAX                               48      // 30 amps (0.625 amps each unit)
 #define ADC_BATTERY_CURRENT_MAX                                   29      // 18 amps (0.625 amps each step)
+#define ADC_MOTOR_PHASE_CURRENT_MAX                               48      // 30 amps (0.625 amps each unit)
+
 
 /*---------------------------------------------------------
   NOTE: regarding ADC_BATTERY_CURRENT_MAX
@@ -193,7 +193,7 @@
 
   NOTE: regarding the torque sensor output values
 
-  Torque (force) value found experimentaly.
+  Torque (force) value needs to be found experimentaly.
   
   One torque sensor ADC 10 bit step is equal to 0.38 kg
   

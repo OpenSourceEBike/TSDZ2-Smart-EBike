@@ -64,7 +64,7 @@ int main (void)
 
   uint16_t ui16_temp = 0, ui16_throttle_value_filtered = 0;
 
-  //set clock at the max 16MHz
+  // set clock at the max 16 MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
 
   brake_init();
@@ -80,7 +80,6 @@ int main (void)
   wheel_speed_sensor_init();
   hall_sensor_init();
   pwm_init_bipolar_4q();
-  motor_init();
   eeprom_init_variables();
   enableInterrupts();
 
