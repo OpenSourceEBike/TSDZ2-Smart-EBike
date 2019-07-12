@@ -150,8 +150,9 @@
 #define DEFAULT_VALUE_TOTAL_HOUR_TTM_1                              0
 
 
-// default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10                   50
+
+// default values motor acceleration
+#define DEFAULT_VALUE_MOTOR_ACCELERATION                            70
 
 
 
@@ -200,8 +201,8 @@
 
 
 
-// default value for minimum cadence
-#define DEFAULT_VALUE_CADENCE_RPM_MIN                               2
+// default value pedal torque conversion
+#define DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100         67
 
 
 
@@ -223,13 +224,13 @@
 #define DEFAULT_VALUE_CADENCE_ASSIST_FUNCTION_ENABLED               0
 #define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_1                        10
 #define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_2                        20
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_3                        30
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_4                        40
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_5                        50
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6                        60
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7                        70
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8                        80
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                        90
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_3                        40
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_4                        80
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_5                        120
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6                        160
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7                        190
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8                        200
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                        220
 
 
 

@@ -95,7 +95,7 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_TOTAL_MINUTE_TTM,                                     // 76 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TOTAL_HOUR_TTM_0,                                     // 77 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TOTAL_HOUR_TTM_1,                                     // 78 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10,                          // 79 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_MOTOR_ACCELERATION,                                   // 79 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED,                         // 80 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WALK_ASSIST_LEVEL_1,                                  // 81 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WALK_ASSIST_LEVEL_2,                                  // 82 + EEPROM_BASE_ADDRESS (Array index)
@@ -122,7 +122,7 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD,                      // 103 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED,                       // 104 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED,                         // 105 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CADENCE_RPM_MIN,                                      // 106 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100,                // 106 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED,                         // 107 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED,                       // 108 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1,                                // 109 + EEPROM_BASE_ADDRESS (Array index)
@@ -395,12 +395,12 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui32_trip_x10 = ui32_temp;
   
   
-  // ramp up amps per second
-  p_configuration_variables->ui8_ramp_up_amps_per_second_x10 = FLASH_ReadByte (ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10);
+  // motor acceleration
+  p_configuration_variables->ui8_motor_acceleration = FLASH_ReadByte(ADDRESS_MOTOR_ACCELERATION);
   
   
   // wheel speed measurement
-  p_configuration_variables->ui8_wheel_speed_field_state = FLASH_ReadByte (ADDRESS_WHEEL_SPEED_FIELD_STATE);
+  p_configuration_variables->ui8_wheel_speed_field_state = FLASH_ReadByte(ADDRESS_WHEEL_SPEED_FIELD_STATE);
   
   
   // show variables in odometer field
@@ -418,8 +418,8 @@ static void eeprom_read_values_to_variables (void)
   p_configuration_variables->ui8_main_screen_power_menu_enabled = FLASH_ReadByte(ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED);
   
   
-  // cadence rpm min
-  p_configuration_variables->ui8_cadence_rpm_min = FLASH_ReadByte(ADDRESS_CADENCE_RPM_MIN);
+  // pedal torque conversion
+  p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
 }
 
 
@@ -570,8 +570,8 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [78] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
   
   
-  // write ramp up amps per second
-  ui8_array [79] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+  // write motor acceleration
+  ui8_array [ADDRESS_MOTOR_ACCELERATION - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_acceleration;
   
   
   // write walk assist function variables
@@ -610,8 +610,8 @@ static void variables_to_array (uint8_t *ui8_array)
   // write street mode parameters
   ui8_array [105] = p_configuration_variables->ui8_street_mode_throttle_enabled;
 
-  // write cadence min
-  ui8_array[ADDRESS_CADENCE_RPM_MIN - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_rpm_min;
+  // write pedal torque conversion
+  ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
 }
 
 

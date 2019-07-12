@@ -28,7 +28,7 @@
 #define ADDRESS_WHEEL_PERIMETER_1                           8 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WHEEL_SPEED_MAX                             9 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MOTOR_TYPE                                  10 + EEPROM_BASE_ADDRESS
-#define ADDRESS_CADENCE_RPM_MIN                             11 + EEPROM_BASE_ADDRESS
+#define ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100       11 + EEPROM_BASE_ADDRESS
 #define EEPROM_BYTES_STORED                                 12
 
 

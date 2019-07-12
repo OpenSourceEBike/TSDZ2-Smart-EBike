@@ -11,11 +11,13 @@
 
 #include <stdint.h>
 
+
 // motor states
 #define BLOCK_COMMUTATION 			                1
 #define SINEWAVE_INTERPOLATION_60_DEGREES 	    2
 
 
+// power variables
 extern volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step;
 extern volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 extern volatile uint8_t ui8_g_duty_cycle;
@@ -25,6 +27,16 @@ extern volatile uint8_t ui8_g_foc_angle;
 extern volatile uint8_t ui8_controller_adc_battery_current_target;
 extern volatile uint8_t ui8_controller_duty_cycle_target;
 extern volatile uint8_t ui8_adc_battery_voltage_cut_off;
+
+
+// cadence sensor
+extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
+extern volatile uint8_t ui8_g_pedaling_direction;
+
+
+// wheel speed sensor
+extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
+extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
 
 void hall_sensor_init (void); // must be called before using the motor

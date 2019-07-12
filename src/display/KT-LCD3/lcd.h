@@ -20,8 +20,7 @@ typedef struct _motor_controller_data
   uint8_t ui8_battery_current_x10;
   uint8_t ui8_adc_throttle;
   uint8_t ui8_throttle;
-  uint8_t ui8_adc_pedal_torque_sensor;
-  uint8_t ui8_pedal_torque_sensor;
+  uint16_t ui16_adc_pedal_torque_sensor;
   uint8_t ui8_duty_cycle;
   uint8_t ui8_controller_system_state;
   uint16_t ui16_wheel_speed_x10;
@@ -84,7 +83,7 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_voltage_reset_wh_counter_x10;
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
-  uint8_t ui8_cadence_rpm_min;
+  uint8_t ui8_pedal_torque_per_10_bit_ADC_step_x100;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_state;
   uint8_t ui8_startup_motor_power_boost_time;
@@ -107,7 +106,7 @@ typedef struct _configuration_variables
   uint16_t ui16_distance_since_power_on_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
-  uint8_t ui8_ramp_up_amps_per_second_x10;
+  uint8_t ui8_motor_acceleration;
   uint8_t ui8_show_cruise_function_set_target_speed;
   uint8_t ui8_wheel_speed_field_state;
   uint8_t ui8_show_distance_data_odometer_field;

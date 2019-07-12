@@ -23,7 +23,7 @@ typedef struct _configuration_variables
   uint8_t ui8_lights;
   uint8_t ui8_wheel_speed_max;
   uint8_t ui8_motor_type;
-  uint8_t ui8_cadence_rpm_min;
+  uint8_t ui8_pedal_torque_per_10_bit_ADC_step_x100;
   uint8_t ui8_target_battery_max_power_div25;
   uint8_t configuration_variables;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
@@ -39,12 +39,6 @@ typedef struct _configuration_variables
   uint16_t ui16_motor_temperature_x2;
   uint8_t ui8_motor_temperature;
 } struct_configuration_variables;
-
-
-extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
-extern volatile uint8_t ui8_g_pedaling_direction;
-extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
-extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
 
 void ebike_app_controller (void);

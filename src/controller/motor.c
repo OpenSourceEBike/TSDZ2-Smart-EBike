@@ -378,13 +378,16 @@ volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff;
 
 
 // cadence sensor
-uint8_t ui8_pas_after_first_pulse = 0;
-uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+volatile uint16_t ui16_pas_pwm_cycles_ticks = PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+volatile uint8_t  ui8_g_pedaling_direction = 0;
+volatile uint16_t ui16_pas_counter = PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 
 
 // wheel speed sensor
-uint8_t ui8_wheel_speed_sensor_state = 1;
-uint8_t ui8_wheel_speed_sensor_state_old = 1;
+volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks = WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
+volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
+volatile uint8_t ui8_wheel_speed_sensor_state = 1;
+volatile uint8_t ui8_wheel_speed_sensor_state_old = 1;
 
 
 void read_battery_voltage(void);
@@ -425,8 +428,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ADC1->CR1 |= ADC1_CR1_ADON;               // start ADC1 conversion
   while (!(ADC1->CSR & ADC1_FLAG_EOC));     // wait for end of conversion
   
-  ui16_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
-  ui8_controller_adc_battery_current = UI8_ADC_BATTERY_CURRENT;
+  ui8_controller_adc_battery_current = ui16_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
 
   // calculate motor phase current ADC value
   if (ui8_g_duty_cycle > 0)
@@ -625,7 +627,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     if ((ui8_controller_duty_cycle_target < ui8_g_duty_cycle) ||
         (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
-        (ui8_adc_motor_phase_current > ADC_MOTOR_PHASE_CURRENT_MAX))
+        (ui8_adc_motor_phase_current > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX))
     {
       ui16_counter_duty_cycle_ramp_up = 0;
       
@@ -741,13 +743,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   static uint8_t ui8_pas_state;
   static uint8_t ui8_pas_state_old;
+  static uint8_t ui8_pas_after_first_pulse;
 
   // calc PAS timming between each positive pulses, in PWM cycles ticks
   // calc PAS on and off timming of each pulse, in PWM cycles ticks
   ui16_pas_counter++;
 
   // detect PAS signal changes
-  if((PAS1__PORT->IDR & PAS1__PIN) == 0)
+  if ((PAS1__PORT->IDR & PAS1__PIN) == 0)
   {
     ui8_pas_state = 0;
   }
@@ -757,15 +760,15 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
 
   // PAS signal did change
-  if(ui8_pas_state != ui8_pas_state_old)
+  if (ui8_pas_state != ui8_pas_state_old)
   {
     ui8_pas_state_old = ui8_pas_state;
 
-    // consider only when PAS signal transition from 0 to 1
-    if(ui8_pas_state == 1)
+    // consider only when PAS signal transitions from 0 to 1
+    if (ui8_pas_state == 1)
     {
       // keep track of first pulse
-      if(!ui8_pas_after_first_pulse)
+      if (!ui8_pas_after_first_pulse)
       {
         ui8_pas_after_first_pulse = 1;
         ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
@@ -774,7 +777,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       {
         // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
         // also PAS cadence should be zero if rotating backwards
-        if(ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
+        if (ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
         {
           ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
         }
@@ -798,7 +801,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     else
     {
       // keep track of first pulse
-      if(ui8_pas_after_first_pulse)
+      if (ui8_pas_after_first_pulse)
       {
         // see the direction
         if ((PAS2__PORT->IDR & PAS2__PIN) != 0)

@@ -18,7 +18,6 @@
 #define PWM_CYCLES_COUNTER_MAX                                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
 #define PWM_CYCLES_SECOND                                         15625L  // 1 / 64us(PWM period)
 #define PWM_DUTY_CYCLE_MAX                                        254
-#define PWM_DUTY_CYCLE_MIN                                        0
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
 
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       60      // 60 -> 60 * 64 us for every duty cycle increment
@@ -54,18 +53,20 @@
 ---------------------------------------------------------*/
 
 
-#define ADC_BATTERY_CURRENT_MAX                                   29      // 18 amps (0.625 amps each step)
-#define ADC_MOTOR_PHASE_CURRENT_MAX                               48      // 30 amps (0.625 amps each unit)
 
+#define ADC_10_BIT_BATTERY_CURRENT_MAX                            90      // 18 amps (0.2 amps per 10 bit ADC step)
+#define ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX                        150     // 30 amps (0.2 amps per 10 bit ADC step)
 
 /*---------------------------------------------------------
-  NOTE: regarding ADC_BATTERY_CURRENT_MAX
+  NOTE: regarding ADC battery current max
   
   This is the maximum current in ADC steps that the motor 
   will be able to draw from the battery. A higher value 
   will give higher torque figures but the limit of the 
   controller is 16 A and it should not be exceeded.
 ---------------------------------------------------------*/
+
+
 
 #define MOTOR_OVER_SPEED_ERPS                                     520     // motor max speed, protection max value | 30 points for the sinewave at max speed
 #define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700     // experimental motor speed to allow a higher cadence
@@ -116,7 +117,7 @@
 #define PAS_NUMBER_MAGNETS                                        20    // see note below
 #define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
 #define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  312   // 6250 / PAS_NUMBER_MAGNETS  |  max hard limit to 150 RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  11000 // 93750 / PAS_NUMBER_MAGNETS = 4688 -> 10 rpm  |  min hard limit to 10 RPM PAS cadence, see note below
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  10000 // 93750 / PAS_NUMBER_MAGNETS = 4688 -> 10 rpm  |  min hard limit to 10 RPM PAS cadence, see note below
 
 /*---------------------------------------------------------
   NOTE: regarding PAS
@@ -149,7 +150,6 @@
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                           8
 #define DEFAULT_VALUE_WHEEL_SPEED_MAX                             50  // 50 km/h
 #define DEFAULT_VALUE_MOTOR_TYPE                                  0
-#define DEFAULT_VALUE_CADENCE_RPM_MIN                             0
 
 
 
@@ -179,15 +179,15 @@
 #define BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10                    8
 
 /*---------------------------------------------------------
-  NOTE: regarding default value battery current ADC
+  NOTE: regarding battery current ADC
 
-  1 A per 5 steps of ADC_10bits
+  1 A per 5 steps of ADC 10 bits
 ---------------------------------------------------------*/
 
 
 
 // ADC torque sensor
-#define PEDAL_TORQUE_PER_8_BIT_ADC_STEP_X100                      267
+#define DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100       67
 
 /*---------------------------------------------------------
 
@@ -196,8 +196,6 @@
   Torque (force) value needs to be found experimentaly.
   
   One torque sensor ADC 10 bit step is equal to 0.38 kg
-  
-  One torque sensor ADC 8 bit step is equal to 1.6 kg
   
   Force (Nm) = 1 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/

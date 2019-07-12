@@ -28,6 +28,8 @@ int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t 
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+
+
 int32_t map_inverse(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {
   // if input is smaller/bigger than expected return the min/max out ranges value
@@ -39,11 +41,15 @@ int32_t map_inverse(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, 
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+
+
 uint8_t ui8_min(uint8_t value_a, uint8_t value_b)
 {
   if (value_a < value_b) return value_a;
   else return value_b;
 }
+
+
 
 uint8_t ui8_max(uint8_t value_a, uint8_t value_b)
 {
@@ -51,10 +57,14 @@ uint8_t ui8_max(uint8_t value_a, uint8_t value_b)
   else return value_b;
 }
 
+
+
 void ui8_limit_max(uint8_t *ui8_p_value, uint8_t ui8_max_value)
 {
   if (*ui8_p_value > ui8_max_value) { *ui8_p_value = ui8_max_value; }
 }
+
+
 
 void ui8_filter(uint8_t *ui8_new_value, uint8_t *ui8_old_value, uint8_t ui8_alpha)
 {
@@ -63,12 +73,16 @@ void ui8_filter(uint8_t *ui8_new_value, uint8_t *ui8_old_value, uint8_t ui8_alph
   *ui8_old_value = (((ui8_alpha * *ui8_new_value) + ((10 - ui8_alpha) * *ui8_old_value)) + 5) / 10;
 }
 
+
+
 void ui16_filter(uint16_t *ui16_new_value, uint16_t *ui16_old_value, uint16_t ui16_alpha)
 {
   if (ui16_alpha > 10) { ui16_alpha = 10; }
   
   *ui16_old_value = (((ui16_alpha * *ui16_new_value) + ((10 - ui16_alpha) * *ui16_old_value)) + 5) / 10;
 }
+
+
 
 // from here: https://github.com/FxDev/PetitModbus/blob/master/PetitModbus.c
 /*

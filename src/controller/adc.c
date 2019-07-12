@@ -17,7 +17,7 @@
 #include "utils.h"
 
 
-volatile uint8_t ui8_adc_pedal_torque_offset = 0;
+volatile uint16_t ui16_adc_pedal_torque_offset = 0;
 
 
 static void adc_trigger (void);
@@ -61,8 +61,11 @@ void adc_init (void)
     // wait for end of conversion
     while (!ADC1_GetFlagStatus(ADC1_FLAG_EOC));
     
-    // calibrate torque sensor
-    ui8_filter(&UI8_ADC_TORQUE_SENSOR, &ui8_adc_pedal_torque_offset, 9);
+    // read ADC torque sensor value
+    uint16_t ui16_temp = UI16_ADC_10_BIT_TORQUE_SENSOR;
+    
+    // filter the ADC torque sensor value and set to offset variable
+    ui16_filter(&ui16_temp, &ui16_adc_pedal_torque_offset, 9);
   }
 }
 

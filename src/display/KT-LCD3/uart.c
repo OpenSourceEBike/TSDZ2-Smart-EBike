@@ -144,11 +144,8 @@ void uart_data_clock (void)
         p_motor_controller_data->ui8_throttle = ui8_rx_buffer[8];
       }
       
-      // ADC torque_sensor
-      p_motor_controller_data->ui8_adc_pedal_torque_sensor = ui8_rx_buffer[9];
-      
-      // ADC torque sensor with offset
-      p_motor_controller_data->ui8_pedal_torque_sensor = ui8_rx_buffer[10];
+      // ADC pedal torque
+      p_motor_controller_data->ui16_adc_pedal_torque_sensor = (((uint16_t) ui8_rx_buffer [10]) << 8) + ((uint16_t) ui8_rx_buffer [9]);
       
       // pedal cadence in RPM
       p_motor_controller_data->ui8_pedal_cadence_RPM = ui8_rx_buffer[11];
@@ -174,7 +171,7 @@ void uart_data_clock (void)
       // pedal torque x100
       p_motor_controller_data->ui16_pedal_torque_x100 = (((uint16_t) ui8_rx_buffer [22]) << 8) + ((uint16_t) ui8_rx_buffer [21]);
       
-      // ui16_pedal_power_x10
+      // pedal power x10
       p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [24]) << 8) + ((uint16_t) ui8_rx_buffer [23]);
 
       // flag that we processed the full package
@@ -235,6 +232,12 @@ void uart_data_clock (void)
           {
             ui8_tx_buffer[3] = 0;
           }
+          
+        break;
+        
+        case eMTB_ASSIST_MODE:
+        
+          ui8_tx_buffer[3] = p_configuration_variables->ui8_eMTB_assist_factor_x10;
           
         break;
         
@@ -346,15 +349,15 @@ void uart_data_clock (void)
           // boost enabled
           ui8_tx_buffer[6] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
           
-          // ramp up
-          ui8_tx_buffer[7] = p_configuration_variables->ui8_ramp_up_amps_per_second_x10;
+          // motor acceleration
+          ui8_tx_buffer[7] = p_configuration_variables->ui8_motor_acceleration;
 
         break;
 
         case 5:
           
-          // motor assistance without pedal rotation
-          ui8_tx_buffer[5] = p_configuration_variables->ui8_cadence_rpm_min;
+          // pedal torque conversion
+          ui8_tx_buffer[5] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
           
           // max battery current in amps
           ui8_tx_buffer[6] = p_configuration_variables->ui8_battery_max_current;

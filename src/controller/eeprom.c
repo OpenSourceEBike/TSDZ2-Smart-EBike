@@ -14,17 +14,17 @@
 
 static uint8_t array_default_values [EEPROM_BYTES_STORED] = {
     KEY,
-    DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10,              // 1 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_CONFIG_0,                             // 2 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_BATTERY_MAX_CURRENT,                  // 3 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10,         // 4 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0,    // 5 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1,    // 6 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_WHEEL_PERIMETER_0,                    // 7 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_WHEEL_PERIMETER_1,                    // 8 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_WHEEL_SPEED_MAX,                      // 9 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_MOTOR_TYPE,                           // 10 + EEPROM_BASE_ADDRESS
-    DEFAULT_VALUE_CADENCE_RPM_MIN                       // 11 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10,                // 1 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_CONFIG_0,                               // 2 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_BATTERY_MAX_CURRENT,                    // 3 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10,           // 4 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0,      // 5 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1,      // 6 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_WHEEL_PERIMETER_0,                      // 7 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_WHEEL_PERIMETER_1,                      // 8 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_WHEEL_SPEED_MAX,                        // 9 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_MOTOR_TYPE,                             // 10 + EEPROM_BASE_ADDRESS
+    DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100   // 11 + EEPROM_BASE_ADDRESS
   };
 
 
@@ -105,7 +105,7 @@ static void eeprom_read_values_to_variables (void)
 
   p_configuration_variables->ui8_motor_type = FLASH_ReadByte(ADDRESS_MOTOR_TYPE);
   
-  p_configuration_variables->ui8_cadence_rpm_min = FLASH_ReadByte(ADDRESS_CADENCE_RPM_MIN);
+  p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
 }
 
 
@@ -123,17 +123,17 @@ static void variables_to_array (uint8_t *ui8_array)
   p_configuration_variables = get_configuration_variables ();
 
   ui8_array [0] = KEY;
-  ui8_array [1] = p_configuration_variables->ui8_assist_level_factor_x10;
-  ui8_array [2] = p_configuration_variables->ui8_lights;
-  ui8_array [3] = p_configuration_variables->ui8_battery_max_current;
-  ui8_array [4] = p_configuration_variables->ui8_motor_power_x10;
-  ui8_array [5] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
-  ui8_array [6] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
-  ui8_array [7] = p_configuration_variables->ui16_wheel_perimeter & 255;
-  ui8_array [8] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
-  ui8_array [9] = p_configuration_variables->ui8_wheel_speed_max;
-  ui8_array [10] = p_configuration_variables->ui8_motor_type;
-  ui8_array [11] = p_configuration_variables->ui8_cadence_rpm_min;
+  ui8_array [ADDRESS_ASSIST_LEVEL_FACTOR_X10 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_assist_level_factor_x10;
+  ui8_array [ADDRESS_CONFIG_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_lights;
+  ui8_array [ADDRESS_BATTERY_MAX_CURRENT - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_battery_max_current;
+  ui8_array [ADDRESS_MOTOR_POWER_X10 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_power_x10;
+  ui8_array [ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
+  ui8_array [ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
+  ui8_array [ADDRESS_WHEEL_PERIMETER_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_wheel_perimeter & 255;
+  ui8_array [ADDRESS_WHEEL_PERIMETER_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
+  ui8_array [ADDRESS_WHEEL_SPEED_MAX - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_wheel_speed_max;
+  ui8_array [ADDRESS_MOTOR_TYPE - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_type;
+  ui8_array [ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
 }
 
 

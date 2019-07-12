@@ -82,6 +82,7 @@ static uint16_t   ui16_battery_voltage_filtered_x1000;
 static uint16_t   ui16_battery_current_filtered_x10;
 static uint16_t   ui16_battery_power_filtered_x10;
 static uint16_t   ui16_pedal_torque_filtered = 0;
+static uint16_t   ui16_weight_on_pedal_x10 = 0;
 static uint16_t   ui16_pedal_power_filtered = 0;
 static uint8_t    ui8_pedal_cadence_RPM_filtered = 0;
 static volatile uint32_t ui32_wh_sum_x10 = 0;
@@ -806,9 +807,9 @@ void lcd_execute_menu_config_submenu_power_assist(void)
 {
   var_number_t lcd_var_number;
 
-  // enable/disable power assist function
   if (ui8_lcd_menu_config_submenu_state == 0)
   {
+    // enable/disable power assist function
     lcd_var_number.p_var_number = &configuration_variables.ui8_power_assist_function_enabled;
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 0;
@@ -837,26 +838,22 @@ void lcd_execute_menu_config_submenu_power_assist(void)
     // number of assist levels
     lcd_var_number.p_var_number = &configuration_variables.ui8_number_of_assist_levels;
     lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
+    lcd_var_number.ui8_decimal_digit = 0;
     lcd_var_number.ui32_max_value = 9;
     lcd_var_number.ui32_min_value = 1;
     lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ASSIST_LEVEL_FIELD;
+    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
     lcd_configurations_print_number(&lcd_var_number);
-    
-    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-    {
-      lcd_enable_assist_symbol(1);
-    }
     
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
     }
   }
-  else // value of each power assist level factor
+  else
   {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_power_assist_level[(ui8_lcd_menu_config_submenu_state - 2)];
+    // value of each power assist level factor
+    lcd_var_number.p_var_number = &configuration_variables.ui8_power_assist_level[ui8_lcd_menu_config_submenu_state - 2];
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 1;
     lcd_var_number.ui32_max_value = 255;
@@ -868,7 +865,7 @@ void lcd_execute_menu_config_submenu_power_assist(void)
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_enable_assist_symbol(1);
-      lcd_print(ui8_lcd_menu_config_submenu_state, ASSIST_LEVEL_FIELD, 1);
+      lcd_print(ui8_lcd_menu_config_submenu_state - 1, ASSIST_LEVEL_FIELD, 1);
     }
   }
   
@@ -881,9 +878,9 @@ void lcd_execute_menu_config_submenu_torque_assist(void)
 {
   var_number_t lcd_var_number;
 
-  // enable/disable torque assist function
   if (ui8_lcd_menu_config_submenu_state == 0)
   {
+    // enable/disable torque assist function
     lcd_var_number.p_var_number = &configuration_variables.ui8_torque_assist_function_enabled;
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 0;
@@ -912,26 +909,22 @@ void lcd_execute_menu_config_submenu_torque_assist(void)
     // number of assist levels
     lcd_var_number.p_var_number = &configuration_variables.ui8_number_of_assist_levels;
     lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
+    lcd_var_number.ui8_decimal_digit = 0;
     lcd_var_number.ui32_max_value = 9;
     lcd_var_number.ui32_min_value = 1;
     lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ASSIST_LEVEL_FIELD;
+    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
     lcd_configurations_print_number(&lcd_var_number);
-    
-    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-    {
-      lcd_enable_assist_symbol(1);
-    }
     
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
     }
   }
-  else // value of each torque assist level factor
+  else
   {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_torque_assist_level[(ui8_lcd_menu_config_submenu_state - 2)];
+    // value of each torque assist level factor
+    lcd_var_number.p_var_number = &configuration_variables.ui8_torque_assist_level[ui8_lcd_menu_config_submenu_state - 2];
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 1;
     lcd_var_number.ui32_max_value = 255;
@@ -943,7 +936,7 @@ void lcd_execute_menu_config_submenu_torque_assist(void)
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_enable_assist_symbol(1);
-      lcd_print(ui8_lcd_menu_config_submenu_state, ASSIST_LEVEL_FIELD, 1);
+      lcd_print(ui8_lcd_menu_config_submenu_state - 1, ASSIST_LEVEL_FIELD, 1);
     }
   }
   
@@ -956,9 +949,9 @@ void lcd_execute_menu_config_submenu_cadence_assist(void)
 {
   var_number_t lcd_var_number;
 
-  // enable/disable cadence assist function
   if (ui8_lcd_menu_config_submenu_state == 0)
   {
+    // enable/disable cadence assist function
     lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_assist_function_enabled;
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 0;
@@ -987,29 +980,25 @@ void lcd_execute_menu_config_submenu_cadence_assist(void)
     // number of assist levels
     lcd_var_number.p_var_number = &configuration_variables.ui8_number_of_assist_levels;
     lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
+    lcd_var_number.ui8_decimal_digit = 0;
     lcd_var_number.ui32_max_value = 9;
     lcd_var_number.ui32_min_value = 1;
     lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ASSIST_LEVEL_FIELD;
+    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
     lcd_configurations_print_number(&lcd_var_number);
-    
-    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-    {
-      lcd_enable_assist_symbol(1);
-    }
     
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
     }
   }
-  else // value of each cadence assist level factor
+  else
   {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_assist_level[(ui8_lcd_menu_config_submenu_state - 2)];
+    // value of each cadence assist level factor
+    lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_assist_level[ui8_lcd_menu_config_submenu_state - 2];
     lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
-    lcd_var_number.ui32_max_value = 255;
+    lcd_var_number.ui8_decimal_digit = 0;
+    lcd_var_number.ui32_max_value = 254;
     lcd_var_number.ui32_min_value = 0;
     lcd_var_number.ui32_increment_step = 1;
     lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -1018,7 +1007,7 @@ void lcd_execute_menu_config_submenu_cadence_assist(void)
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_enable_assist_symbol(1);
-      lcd_print(ui8_lcd_menu_config_submenu_state, ASSIST_LEVEL_FIELD, 1);
+      lcd_print(ui8_lcd_menu_config_submenu_state - 1, ASSIST_LEVEL_FIELD, 1);
     }
   }
   
@@ -1033,9 +1022,9 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
   
   switch (ui8_lcd_menu_config_submenu_state)
   {
-    // enable eMTB mode
     case 0:
     
+      // enable eMTB mode
       lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_function_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1053,9 +1042,9 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
       
     break;
     
-    // set eMTB assist factor
     case 1:
-    
+      
+      // set eMTB assist factor
       lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_factor_x10;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1064,8 +1053,6 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-      
-      lcd_enable_E_symbol(1);
       
       if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
       {
@@ -1084,9 +1071,9 @@ void lcd_execute_menu_config_submenu_walk_assist(void)
 {
   var_number_t lcd_var_number;
 
-  // enable/disable walk assist function
   if (ui8_lcd_menu_config_submenu_state == 0)
   {
+    // enable/disable walk assist function
     lcd_var_number.p_var_number = &configuration_variables.ui8_walk_assist_function_enabled;
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 0;
@@ -1101,8 +1088,9 @@ void lcd_execute_menu_config_submenu_walk_assist(void)
       lcd_enable_walk_symbol(1);
     }
   }
-  else // value of each walk assist power value
+  else
   {
+    // value of each walk assist power value
     lcd_var_number.p_var_number = &configuration_variables.ui8_walk_assist_level[(ui8_lcd_menu_config_submenu_state - 1)];
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 0;
@@ -1539,32 +1527,42 @@ void lcd_execute_menu_config_submenu_controller_setup(void)
 
     break;
   
-    // ramp up
+    // motor acceleration
     case 2:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_ramp_up_amps_per_second_x10;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_acceleration;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 255;
-      lcd_var_number.ui32_min_value = 15;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-    
-    // motor assistance startup without pedal rotation
-    case 3:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_rpm_min;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 10;
+      lcd_var_number.ui32_max_value = 100;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
     break;
     
-    // limit motor temperature or throttle enable/disable 
+    case 3:
+      // pedal torque conversion
+      lcd_var_number.p_var_number = &configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 255;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
     case 4:
+    
+    // weight on pedal from pedal torque conversion
+    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+    {
+      lcd_print(ui16_weight_on_pedal_x10, ODOMETER_FIELD, 1);
+    }
+    
+    break;
+    
+    // limit motor temperature or throttle enable/disable 
+    case 5:
       lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_limit_feature_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1576,7 +1574,7 @@ void lcd_execute_menu_config_submenu_controller_setup(void)
     break;
 
     // motor temperature limit min
-    case 5:
+    case 6:
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_min_value_to_limit;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1591,7 +1589,7 @@ void lcd_execute_menu_config_submenu_controller_setup(void)
     break;
 
     // motor temperature limit max
-    case 6:
+    case 7:
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_max_value_to_limit;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1606,7 +1604,7 @@ void lcd_execute_menu_config_submenu_controller_setup(void)
     break;
   }
 
-  submenu_state_controller(6);
+  submenu_state_controller(7);
 
   if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
@@ -1732,11 +1730,10 @@ void lcd_execute_menu_config_submenu_technical (void)
     break;
 
     case 2:
-      lcd_print(motor_controller_data.ui8_adc_pedal_torque_sensor, ODOMETER_FIELD, 0);
+      lcd_print(motor_controller_data.ui16_adc_pedal_torque_sensor, ODOMETER_FIELD, 0);
     break;
 
     case 3:
-      lcd_print(motor_controller_data.ui8_pedal_torque_sensor, ODOMETER_FIELD, 0);
     break;
 
     case 4:
@@ -1862,7 +1859,7 @@ void power_off_timer (void)
 void temperature_field(void)
 {
   // if motor current is being limited due to temperature, force showing temperature!!
-  if (motor_controller_data.ui8_temperature_current_limiting_value < 255)
+  if (motor_controller_data.ui8_temperature_current_limiting_value < 254)
   {
     if (ui8_lcd_menu_flash_state_temperature)
     {
@@ -2173,7 +2170,7 @@ void riding_mode_controller(void)
     {
       if (configuration_variables.ui8_eMTB_assist_function_enabled)
       {
-        configuration_variables.ui8_assist_level = configuration_variables.ui8_number_of_assist_levels + 1; 
+        configuration_variables.ui8_assist_level = configuration_variables.ui8_number_of_assist_levels + 1;
       }
       else
       {
@@ -2187,7 +2184,6 @@ void riding_mode_controller(void)
     // decrement assist level
     if (configuration_variables.ui8_assist_level > 0)
     {
-      // set assist level to zero
       --configuration_variables.ui8_assist_level;
     }
   }
@@ -2208,7 +2204,7 @@ void riding_mode_controller(void)
     // set cadence assist riding mode
     if (configuration_variables.ui8_cadence_assist_function_enabled) { motor_controller_data.ui8_riding_mode = CADENCE_ASSIST_MODE; }
   }
-  else
+  else if (configuration_variables.ui8_assist_level == configuration_variables.ui8_number_of_assist_levels + 1)
   {
     // set eMTB assist riding mode
     if (configuration_variables.ui8_eMTB_assist_function_enabled) { motor_controller_data.ui8_riding_mode = eMTB_ASSIST_MODE; }
@@ -3589,6 +3585,17 @@ void filter_variables()
   ui8_pedal_cadence_RPM_filtered = motor_controller_data.ui8_pedal_cadence_RPM;
   
   ui16_pedal_torque_filtered = motor_controller_data.ui16_pedal_torque_x100 / 100;
+  
+  ui16_weight_on_pedal_x10 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 10) / 167;
+  
+  /*---------------------------------------------------------
+    
+    NOTE: regarding the weight on pedal calculation
+    
+    Force (Nm) = Weight (Kg) * 9.81 * 0.17 (0.17 = arm cranks size)
+    
+    Weight (kg) = Force (Nm) / 9.81 * 0.17 (0.17 = arm cranks size)
+  ---------------------------------------------------------*/
   
   ui16_pedal_power_filtered = motor_controller_data.ui16_pedal_power_x10 / 10;
 }

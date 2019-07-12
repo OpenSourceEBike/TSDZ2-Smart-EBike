@@ -94,7 +94,7 @@
 #define ADDRESS_TOTAL_MINUTE_TTM                                            76 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_HOUR_TTM_0                                            77 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TOTAL_HOUR_TTM_1                                            78 + EEPROM_BASE_ADDRESS
-#define ADDRESS_RAMP_UP_AMPS_PER_SECOND_X10                                 79 + EEPROM_BASE_ADDRESS
+#define ADDRESS_MOTOR_ACCELERATION                                          79 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WALK_ASSIST_FUNCTION_ENABLED                                80 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WALK_ASSIST_LEVEL_1                                         81 + EEPROM_BASE_ADDRESS
 #define ADDRESS_WALK_ASSIST_LEVEL_2                                         82 + EEPROM_BASE_ADDRESS
@@ -121,7 +121,7 @@
 #define ADDRESS_SHOW_BATTERY_SOC_ODOMETER_FIELD                             103 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MAIN_SCREEN_POWER_MENU_ENABLED                              104 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_THROTTLE_ENABLED                                105 + EEPROM_BASE_ADDRESS
-#define ADDRESS_CADENCE_RPM_MIN                                             106 + EEPROM_BASE_ADDRESS
+#define ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100                       106 + EEPROM_BASE_ADDRESS
 #define ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED                                107 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TORQUE_ASSIST_FUNCTION_ENABLED                              108 + EEPROM_BASE_ADDRESS
 #define ADDRESS_TORQUE_ASSIST_LEVEL_1                                       109 + EEPROM_BASE_ADDRESS
