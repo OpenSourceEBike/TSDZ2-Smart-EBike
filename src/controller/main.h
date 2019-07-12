@@ -74,7 +74,8 @@
 
 
 // torque sensor
-#define ADC_STEP_PEDAL_TORQUE_X100                         120
+//#define ADC_STEP_PEDAL_TORQUE_X100                         267
+#define ADC_STEP_PEDAL_TORQUE_X100                         128
 
 /*---------------------------------------------------------
   NOTE: regarding torque sensor
@@ -82,12 +83,15 @@
   Torque (force) value found experimentaly.
   
   Measured with a cheap digital hook scale, we found that
-  each ADC 8 bits step measures 0.77kgs.
-  Full ADC range of 10 bits, it can measure as low as 0.19 kgs.
+  each ADC 8 bits step measures 1.6kgs.
+  Full ADC range of 10 bits, it can measure as low as 0.4 kgs.
 
-  Force (Nm) = 0.77 Kg * 9.18 * 0.17 (0.17 = arm cranks size)
-  Force per each ADC 8 bits step = 1.2 Nm
+  Force (Nm) = 1.6 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
+  Force per each ADC 8 bits step = 2.67 Nm
 ---------------------------------------------------------*/
+
+// Pat bici: 13 ADC steps per 10 kgs
+// Force (Nm) = 0.77 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 
 
 

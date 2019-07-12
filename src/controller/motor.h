@@ -26,6 +26,8 @@ extern volatile uint8_t ui8_g_duty_cycle;
 extern volatile uint8_t ui8_g_adc_motor_phase_current_offset;
 extern volatile uint8_t ui8_g_adc_battery_current;
 extern volatile uint8_t ui8_g_foc_angle;
+extern volatile uint8_t ui8_g_adc_torque_sensor_max_value_per_rotation;
+extern volatile uint8_t ui8_g_adc_torque_sensor_max_value_per_rotation_1;
 
 /***************************************************************************************/
 // Motor interface

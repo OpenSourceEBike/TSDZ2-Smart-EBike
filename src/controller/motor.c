@@ -411,11 +411,10 @@ uint8_t ui8_pas_state_old;
 uint8_t ui8_pas_after_first_pulse = 0;
 uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 
-volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
-uint8_t ui8_torque_sensor_pas_signal_change_counter = 0;
-uint16_t ui16_torque_sensor_throttle_max_value = 0;
-uint16_t ui16_torque_sensor_throttle_value;
-
+volatile uint8_t ui8_g_adc_torque_sensor_max_value_per_rotation = 0;
+volatile uint8_t ui8_g_adc_torque_sensor_max = 0;
+volatile uint8_t ui8_g_adc_torque_sensor_max_counter = 0;
+volatile uint8_t ui8_g_adc_torque_sensor_max_temp = 0;
 
 // wheel speed
 uint8_t ui8_wheel_speed_sensor_state = 1;
@@ -792,8 +791,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
 
-
-
   // calc PAS timming between each positive pulses, in PWM cycles ticks
   // calc PAS on and off timming of each pulse, in PWM cycles ticks
   ui16_pas_counter++;
@@ -864,28 +861,38 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       }
     }
 
-    // NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
-    // but lets save this because we may want to use it in future
-//    // filter the torque signal, by saving the max value of each one pedal rotation
-//    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
-//    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
-//
-//    ui8_torque_sensor_pas_signal_change_counter++;
-//    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
-//    {
-//      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
-//      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
-//      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
-//    }
-//    else
-//    {
-//      // store the max value
-//      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
-//      {
-//        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
-//      }
-//    }
+    /****************************************************************************/
+    // on the next block of code, let's save the torque sensor max value on each pedal full rotation
 
+    ui8_g_adc_torque_sensor_max_temp = UI8_ADC_TORQUE_SENSOR;
+
+    // remove the offset
+    // make sure readed value is higher than the offset
+    if(ui8_g_adc_torque_sensor_max_temp >= ui8_g_adc_torque_sensor_min_value)
+    {
+      ui8_g_adc_torque_sensor_max_temp = ui8_g_adc_torque_sensor_max_temp - ui8_g_adc_torque_sensor_min_value;
+    }
+    // offset is higher, something is wrong so just keep at 0 value
+    else
+    {
+      ui8_g_adc_torque_sensor_max_temp = 0;
+    }
+
+    // store the max value
+    if(ui8_g_adc_torque_sensor_max_temp > ui8_g_adc_torque_sensor_max)
+    {
+      ui8_g_adc_torque_sensor_max = ui8_g_adc_torque_sensor_max_temp;
+    }
+
+    ui8_g_adc_torque_sensor_max_counter++;
+    if(ui8_g_adc_torque_sensor_max_counter >= (PAS_NUMBER_MAGNETS_X2)) // PAS_NUMBER_MAGNETS_X2 means a full pedal rotation
+    {
+      ui8_g_adc_torque_sensor_max_counter = 0;
+      ui8_g_adc_torque_sensor_max_value_per_rotation = ui8_g_adc_torque_sensor_max; // store the max value on the output variable of this algorithm
+      ui8_g_adc_torque_sensor_max = 0;
+      ui8_g_adc_torque_sensor_max_temp = 0; // reset the max value
+    }
+    /****************************************************************************/
   }
 
   // limit min PAS cadence
@@ -896,13 +903,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_pas_after_first_pulse = 0;
     ui8_g_pedaling_direction = 0;
 
-//    ui16_torque_sensor_throttle_processed_value = 0;
+    // reset max value when cadence will be 0
+    ui8_g_adc_torque_sensor_max_value_per_rotation = 0;
   }
-
-
-
   /****************************************************************************/
-  
   
   
   // calc wheel speed sensor timming between each positive pulses, in PWM cycles ticks
