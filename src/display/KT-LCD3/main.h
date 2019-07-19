@@ -206,6 +206,11 @@
 
 
 
+// default value cadence sensor magnet pulse width
+#define DEFAULT_VALUE_CADENCE_SENSOR_MAGNET_PULSE_WIDTH             200
+
+
+
 // default value for torque assist
 #define DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED                0
 #define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         10

@@ -143,7 +143,8 @@
 #define ADDRESS_CADENCE_ASSIST_LEVEL_7                                      125 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_ASSIST_LEVEL_8                                      126 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_ASSIST_LEVEL_9                                      127 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 128
+#define ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH                           128 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 129
 
 
 

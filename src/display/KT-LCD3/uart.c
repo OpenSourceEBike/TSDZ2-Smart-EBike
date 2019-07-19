@@ -17,7 +17,7 @@
 
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   24  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_NUMBER_DATA_BYTES_TO_SEND      7   // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
-#define UART_MAX_NUMBER_MESSAGE_ID          5   // change this value depending on how many different packages there is to send
+#define UART_MAX_NUMBER_MESSAGE_ID          6   // change this value depending on how many different packages there is to send
 
 volatile uint8_t  ui8_received_package_flag = 0;
 volatile uint8_t  ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
@@ -371,6 +371,17 @@ void uart_data_clock (void)
           {
             ui8_tx_buffer[7] = p_configuration_variables->ui8_target_max_battery_power_div25;
           }
+
+        break;
+        
+        case 6:
+        
+          // cadence sensor magnet pulse width
+          ui8_tx_buffer[5] = p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width;
+          
+          ui8_tx_buffer[6] = 0;
+          
+          ui8_tx_buffer[7] = 0;
 
         break;
         

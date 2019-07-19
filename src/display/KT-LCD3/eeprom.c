@@ -143,7 +143,8 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6,                               // 124 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7,                               // 125 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8,                               // 126 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                                // 127 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9,                               // 127 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_SENSOR_MAGNET_PULSE_WIDTH                     // 128 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -420,6 +421,9 @@ static void eeprom_read_values_to_variables (void)
   
   // pedal torque conversion
   p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
+  
+  // cadence sensor magnet pulse width
+  p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH);
 }
 
 
@@ -612,6 +616,9 @@ static void variables_to_array (uint8_t *ui8_array)
 
   // write pedal torque conversion
   ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
+  
+  // write cadence sensor magnet pulse width
+  ui8_array[ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width;
 }
 
 

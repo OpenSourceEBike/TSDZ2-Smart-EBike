@@ -30,13 +30,17 @@ extern volatile uint8_t ui8_adc_battery_voltage_cut_off;
 
 
 // cadence sensor
-extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
-extern volatile uint8_t ui8_g_pedaling_direction;
+extern volatile uint16_t ui16_cadence_sensor_ticks;
+extern volatile uint16_t ui16_cadence_sensor_high_ticks_counter_min;
+extern volatile uint16_t ui16_cadence_sensor_low_ticks_counter_min;
+extern volatile uint16_t ui16_cadence_sensor_high_conversion_x100;
+extern volatile uint16_t ui16_cadence_sensor_low_conversion_x100;
+extern volatile uint16_t ui16_cadence_sensor_conversion_x100;
 
 
 // wheel speed sensor
-extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
-extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
+extern volatile uint16_t ui16_wheel_speed_sensor_ticks;
+extern volatile uint32_t ui32_wheel_speed_sensor_ticks_total;
 
 
 void hall_sensor_init (void); // must be called before using the motor

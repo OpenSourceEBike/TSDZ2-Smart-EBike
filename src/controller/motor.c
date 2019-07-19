@@ -378,16 +378,17 @@ volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff;
 
 
 // cadence sensor
-volatile uint16_t ui16_pas_pwm_cycles_ticks = PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-volatile uint8_t  ui8_g_pedaling_direction = 0;
-volatile uint16_t ui16_pas_counter = PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+volatile uint16_t ui16_cadence_sensor_ticks = 0;
+volatile uint16_t ui16_cadence_sensor_high_ticks_counter_min = CADENCE_SENSOR_TICKS_COUNTER_MIN;
+volatile uint16_t ui16_cadence_sensor_low_ticks_counter_min = CADENCE_SENSOR_TICKS_COUNTER_MIN;
+volatile uint16_t ui16_cadence_sensor_high_conversion_x100 = 100;
+volatile uint16_t ui16_cadence_sensor_low_conversion_x100 = 100;
+volatile uint16_t ui16_cadence_sensor_conversion_x100 = 100;
 
 
 // wheel speed sensor
-volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks = WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
-volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
-volatile uint8_t ui8_wheel_speed_sensor_state = 1;
-volatile uint8_t ui8_wheel_speed_sensor_state_old = 1;
+volatile uint16_t ui16_wheel_speed_sensor_ticks = 0;
+volatile uint32_t ui32_wheel_speed_sensor_ticks_total = 0;
 
 
 void read_battery_voltage(void);
@@ -414,9 +415,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   static uint8_t ui8_svm_table_index;
   static uint8_t ui8_adc_motor_phase_current;
-  
-  struct_configuration_variables *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
 
 
   /****************************************************************************/
@@ -738,174 +736,142 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
 
   /****************************************************************************/
-
-
-
-  static uint8_t ui8_pas_state;
-  static uint8_t ui8_pas_state_old;
-  static uint8_t ui8_pas_after_first_pulse;
-
-  // calc PAS timming between each positive pulses, in PWM cycles ticks
-  // calc PAS on and off timming of each pulse, in PWM cycles ticks
-  ui16_pas_counter++;
-
-  // detect PAS signal changes
-  if ((PAS1__PORT->IDR & PAS1__PIN) == 0)
+  
+  
+  #define CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD    500 // software based Schmitt trigger to stop motor jitter when at resolution limits
+  
+  static uint16_t ui16_cadence_sensor_ticks_counter;
+  static uint16_t ui16_cadence_sensor_ticks_counter_min;
+  static uint8_t ui8_cadence_sensor_ticks_counter_started;
+  static uint8_t ui8_cadence_sensor_pin_state_old;
+  
+  // check cadence sensor pins state
+  volatile uint8_t ui8_cadence_sensor_pin_1_state = PAS2__PORT->IDR & PAS2__PIN; // PAS2__PIN is leading on all controllers
+  volatile uint8_t ui8_cadence_sensor_pin_2_state = PAS1__PORT->IDR & PAS1__PIN; // PAS1__PIN is following on all controllers
+  
+  // check if cadence sensor pin state has changed
+  if (ui8_cadence_sensor_pin_1_state != ui8_cadence_sensor_pin_state_old)
   {
-    ui8_pas_state = 0;
-  }
-  else
-  {
-    ui8_pas_state = 1;
-  }
-
-  // PAS signal did change
-  if (ui8_pas_state != ui8_pas_state_old)
-  {
-    ui8_pas_state_old = ui8_pas_state;
-
-    // consider only when PAS signal transitions from 0 to 1
-    if (ui8_pas_state == 1)
+    // update old cadence sensor pin state
+    ui8_cadence_sensor_pin_state_old = ui8_cadence_sensor_pin_1_state;
+    
+    // set the ticks counter limit and conversion depending on pin state
+    if (ui8_cadence_sensor_pin_1_state)
     {
-      // keep track of first pulse
-      if (!ui8_pas_after_first_pulse)
+      // set counter limit depending on current pin state
+      ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_high_ticks_counter_min;
+      
+      // set conversion depending on previous pin state
+      ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_low_conversion_x100;
+    }
+    else
+    {
+      // set counter limit depending on current pin state
+      ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_low_ticks_counter_min;
+      
+      // set conversion depending on previous pin state
+      ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_high_conversion_x100;
+    }
+    
+    // check if first or second transition
+    if (!ui8_cadence_sensor_ticks_counter_started) 
+    {
+      // start cadence sensor ticks counter as this is the first transition
+      ui8_cadence_sensor_ticks_counter_started = 1;
+    }
+    else // second transition
+    {
+      // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
+      if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_TICKS_COUNTER_MAX) || 
+          (ui8_cadence_sensor_pin_1_state == ui8_cadence_sensor_pin_2_state))
       {
-        ui8_pas_after_first_pulse = 1;
-        ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+        ui16_cadence_sensor_ticks = 0;
+        ui16_cadence_sensor_ticks_counter = 0;
+        ui8_cadence_sensor_ticks_counter_started = 0;
       }
       else
       {
-        // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
-        // also PAS cadence should be zero if rotating backwards
-        if (ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
-        {
-          ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
-        }
-        else
-        {
-          ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
-          ui16_pas_counter = 0;
-        }
-
-        // see the direction
-        if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
-        {
-          ui8_g_pedaling_direction = 2;
-        }
-        else
-        {
-          ui8_g_pedaling_direction = 1;
-        }
+        // set the cadence sensor ticks between two transitions
+        ui16_cadence_sensor_ticks = ui16_cadence_sensor_ticks_counter;
+        ui16_cadence_sensor_ticks_counter = 0;
+        
+        // software based Schmitt trigger to stop motor jitter when at resolution limits
+        ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD;
       }
     }
-    else
-    {
-      // keep track of first pulse
-      if (ui8_pas_after_first_pulse)
-      {
-        // see the direction
-        if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
-        {
-          ui8_g_pedaling_direction = 2;
-        }
-        else
-        {
-          ui8_g_pedaling_direction = 1;
-        }
-      }
-    }
-
-    // NOTE: next block of code calculates the max torque signal during one pedal rotation, lets save this because we may want to use it in future
-    /*   
-    volatile uint16_t ui16_torque_sensor_throttle_processed_value = 0;
-    static uint8_t ui8_torque_sensor_pas_signal_change_counter = 0;
-    static uint16_t ui16_torque_sensor_throttle_max_value = 0;
-    static uint16_t ui16_torque_sensor_throttle_value;
-
-    // filter the torque signal, by saving the max value of each one pedal rotation
-    ui16_torque_sensor_throttle_value = ui16_adc_read_torque_sensor_10b () - 184;
-    
-    if (ui16_torque_sensor_throttle_value > 800) ui16_torque_sensor_throttle_value = 0;
-
-    ui8_torque_sensor_pas_signal_change_counter++;
-    
-    if (ui8_torque_sensor_pas_signal_change_counter > (PAS_NUMBER_MAGNETS << 1)) // PAS_NUMBER_MAGNETS*2 means a full pedal rotation
-    {
-      ui8_torque_sensor_pas_signal_change_counter = 1; // this is the first cycle
-      ui16_torque_sensor_throttle_processed_value = ui16_torque_sensor_throttle_max_value; // store the max value on the output variable of this algorithm
-      ui16_torque_sensor_throttle_max_value = 0; // reset the max value
-    }
-    else
-    {
-      // store the max value
-      if (ui16_torque_sensor_throttle_value > ui16_torque_sensor_throttle_max_value)
-      {
-        ui16_torque_sensor_throttle_max_value = ui16_torque_sensor_throttle_value;
-      }
-    }
-    */
   }
-
-  // limit min PAS cadence
-  if (ui16_pas_counter > ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
-  {
-    ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-    ui16_pas_counter = 0;
-    ui8_pas_after_first_pulse = 0;
-    ui8_g_pedaling_direction = 0;
-    // ui16_torque_sensor_throttle_processed_value = 0;
-  }
-
-
-
-  /****************************************************************************/
   
-  static uint16_t ui16_wheel_speed_sensor_counter;
-  static uint8_t ui8_wheel_speed_sensor_change_counter;
-  
-  // calc wheel speed sensor timming between each positive pulses, in PWM cycles ticks
-  ui16_wheel_speed_sensor_counter++;
-
-  // limit min wheel speed
-  if (ui16_wheel_speed_sensor_counter > ((uint16_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS))
+  // increment and also limit the ticks counter
+  if ((ui8_cadence_sensor_ticks_counter_started) && (ui16_cadence_sensor_ticks_counter < ui16_cadence_sensor_ticks_counter_min)) 
   {
-    ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS;
-    ui16_wheel_speed_sensor_counter = 0;
-    ui8_wheel_speed_sensor_change_counter = 0;
+    ++ui16_cadence_sensor_ticks_counter;
   }
-  // let´s look if signal state changed
   else
   {
-    // detect wheel speed sensor signal changes
-    if (WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN)
+    ui16_cadence_sensor_ticks = 0;
+    ui16_cadence_sensor_ticks_counter = 0;
+    ui8_cadence_sensor_ticks_counter_started = 0;
+  }
+  
+  
+  
+  /****************************************************************************/
+  
+  
+  
+  static uint16_t ui16_wheel_speed_sensor_ticks_counter;
+  static uint8_t ui8_wheel_speed_sensor_ticks_counter_started;
+  static uint8_t ui8_wheel_speed_sensor_pin_state_old;
+  
+  // check wheel speed sensor pin state
+  uint8_t ui8_wheel_speed_sensor_pin_state = WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN;
+  
+  // check if wheel speed sensor pin state has changed
+  if (ui8_wheel_speed_sensor_pin_state != ui8_wheel_speed_sensor_pin_state_old)
+  {
+    // update old wheel speed sensor pin state
+    ui8_wheel_speed_sensor_pin_state_old = ui8_wheel_speed_sensor_pin_state;
+    
+    // only consider the 0 -> 1 transition
+    if (ui8_wheel_speed_sensor_pin_state)
     {
-      ui8_wheel_speed_sensor_state = 1;
-    }
-    else
-    {
-      ui8_wheel_speed_sensor_state = 0;
-    }
-
-    if (ui8_wheel_speed_sensor_state != ui8_wheel_speed_sensor_state_old) // wheel speed sensor signal did change
-    {
-      ui8_wheel_speed_sensor_state_old = ui8_wheel_speed_sensor_state;
-
-      if (ui8_wheel_speed_sensor_state == 1) // consider only when wheel speed sensor signal transition from 0 to 1
+      // check if first or second transition
+      if (!ui8_wheel_speed_sensor_ticks_counter_started) 
       {
-        // Here we are trying to count 2 consecutive wheel speed signal changes, other way we will have erroneus values on the first
-        // signal change. The correct time needs to be measured between 2 consecutive signal changes.
-        ui8_wheel_speed_sensor_change_counter++;
-
-        if (ui8_wheel_speed_sensor_change_counter >= 2)
+        // start wheel speed sensor ticks counter as this is the first transition
+        ui8_wheel_speed_sensor_ticks_counter_started = 1;
+      }
+      else // second transition
+      {
+        // check if wheel speed sensor ticks counter is out of bounds
+        if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS)
         {
-          ui16_wheel_speed_sensor_pwm_cycles_ticks = ui16_wheel_speed_sensor_counter;
-          ui16_wheel_speed_sensor_counter = 0;
-          ui32_wheel_speed_sensor_tick_counter++;
-          ui8_wheel_speed_sensor_change_counter = 1; // keep this counter as 1, meaning we just counted one previous change
+          ui16_wheel_speed_sensor_ticks = 0;
+          ui16_wheel_speed_sensor_ticks_counter = 0;
+          ui8_wheel_speed_sensor_ticks_counter_started = 0;
+        }
+        else
+        {
+          ui16_wheel_speed_sensor_ticks = ui16_wheel_speed_sensor_ticks_counter;
+          ui16_wheel_speed_sensor_ticks_counter = 0;
+          ++ui32_wheel_speed_sensor_ticks_total;
         }
       }
     }
   }
+  
+  // increment and also limit the ticks counter
+  if ((ui8_wheel_speed_sensor_ticks_counter_started) && (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS))
+  {
+    ++ui16_wheel_speed_sensor_ticks_counter;
+  }
+  else
+  {
+    ui16_wheel_speed_sensor_ticks = 0;
+    ui16_wheel_speed_sensor_ticks_counter = 0;
+    ui8_wheel_speed_sensor_ticks_counter_started = 0;
+  }
+
 
 
   /****************************************************************************/

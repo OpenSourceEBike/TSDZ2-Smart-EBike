@@ -21,7 +21,7 @@
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
 
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       60      // 60 -> 60 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     25      // 25 -> 25 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     20      // 18 -> 18 * 64 us for every duty cycle increment
 
 /*---------------------------------------------------------
   NOTE: regarding duty cycle (PWM) ramping
@@ -113,23 +113,50 @@
 
 
 
-// PAS
-#define PAS_NUMBER_MAGNETS                                        20    // see note below
-#define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
-#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  312   // 6250 / PAS_NUMBER_MAGNETS  |  max hard limit to 150 RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  10000 // 93750 / PAS_NUMBER_MAGNETS = 4688 -> 10 rpm  |  min hard limit to 10 RPM PAS cadence, see note below
+// cadence sensor
+#define CADENCE_SENSOR_NUMBER_MAGNETS                             20    // see note below
+#define CADENCE_SENSOR_NUMBER_MAGNETS_X2                          (CADENCE_SENSOR_NUMBER_MAGNETS * 2)
+#define CADENCE_SENSOR_TICKS_COUNTER_MAX                          150   // see note below
+#define CADENCE_SENSOR_TICKS_COUNTER_MIN                          4900  // see note below
 
-/*---------------------------------------------------------
-  NOTE: regarding PAS
+/*-------------------------------------------------------------------------------
+  NOTE: regarding the cadence sensor
   
-  PAS_NUMBER_MAGNETS = 20, was validated on August 2018 
-  by Casainho and jbalat
-
+  CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
+  the cadence sensor. Was validated on August 2018 by Casainho and jbalat
+  
   x = (1/(150RPM/60)) / (0.000064)
   
-  PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS = 
-  (x / PAS_NUMBER_MAGNETS)
----------------------------------------------------------*/
+  6250 / CADENCE_SENSOR_NUMBER_MAGNETS ≈ 313 -> 150 RPM
+  
+  93750 / CADENCE_SENSOR_NUMBER_MAGNETS ≈ 4688 -> 10 RPM
+  
+  CADENCE_SENSOR_TICKS_COUNTER_MAX = x / CADENCE_SENSOR_NUMBER_MAGNETS
+  
+  
+  
+  
+  CADENCE_SENSOR_NUMBER_MAGNETS_X2 = 40, this is the number of transitions 
+  in one crank revolution
+  
+  x = (1/(150RPM/60)) / (0.000064)
+  
+  6250 / CADENCE_SENSOR_NUMBER_MAGNETS_X2 ≈ 156 -> 150 RPM
+  
+  93750 / CADENCE_SENSOR_NUMBER_MAGNETS_X2 ≈ 2344 -> 10 RPM, or 5 RPM if set to around 4600
+  
+  CADENCE_SENSOR_TICKS_COUNTER_MAX = x / CADENCE_SENSOR_NUMBER_MAGNETS_X2
+  
+  
+  
+  
+  Cadence is calculated by counting how much time passes between two 
+  transitions. Going from either 1 -> 0 or 0 -> 1. Depending on transistion 
+  it is important to adjust for the different spacings between the transitions.
+  
+  The conversion factors are determined from measurements.
+  
+-------------------------------------------------------------------------------*/
 
 
 

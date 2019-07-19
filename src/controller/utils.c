@@ -13,11 +13,8 @@
 
 int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {
-  // if input is smaller/bigger than expected return the min/max out ranges value
-  if (x < in_min)
-    return out_min;
-  else if (x > in_max)
-    return out_max;
+  if (x < in_min) { return out_min; }       // if input min is smaller than output min, return the output min value
+  else if (x > in_max) { return out_max; }  // if input max is bigger than output max, return the output max value
 
   // map the input to the output range.
   // round up if mapping bigger ranges to smaller ranges

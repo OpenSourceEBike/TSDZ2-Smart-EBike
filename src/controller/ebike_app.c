@@ -43,6 +43,7 @@ static uint8_t    ui8_duty_cycle_target = 0;
 
 // variables for the cadence sensor
 static uint8_t    ui8_pedal_cadence_RPM = 0;
+static uint8_t    ui8_cadence_sensor_magnet_pulse_width = 200;
 
 
 // variables for the torque sensor
@@ -99,7 +100,7 @@ static void ebike_control_motor(void);
 static void check_system(void);
 static void check_brakes(void);
 
-static void calc_cadence(void);
+static void get_cadence(void);
 static void calc_crank_power(void);
 static void calc_wheel_speed(void);
 static void get_battery_voltage_filtered(void);
@@ -126,9 +127,9 @@ void ebike_app_controller (void)
   get_battery_current_filtered(); // get filtered current from FOC calculations
   get_adc_pedal_torque();         // get 10 bit ADC pedal torque 
   
-  calc_cadence();
-  calc_crank_power();
   calc_wheel_speed();
+  get_cadence();
+  calc_crank_power();
   
   check_system();                 // check if there are any errors for motor control 
   check_brakes();                 // check if brakes are enabled for motor control
@@ -286,7 +287,7 @@ static void apply_torque_assist()
   if (ui8_riding_mode == TORQUE_ASSIST_MODE)
   {
     #define ADC_TORQUE_THRESHOLD                6     // minimum ADC torque to be applied for torque assist operation
-    #define TORQUE_ASSIST_FACTOR_DENOMINATOR    120   // scale the torque assist factor
+    #define TORQUE_ASSIST_FACTOR_DENOMINATOR    110   // scale the torque assist factor
     
     uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter;
     uint16_t ui16_adc_battery_current_target_torque_assist = 0;
@@ -313,7 +314,7 @@ static void apply_cadence_assist()
 {
   if (ui8_riding_mode == CADENCE_ASSIST_MODE) 
   {
-    #define CADENCE_ASSIST_DUTY_CYCLE_RAMP_UP_INVERSE_STEP   120
+    #define CADENCE_ASSIST_DUTY_CYCLE_RAMP_UP_INVERSE_STEP   200
     
     uint8_t ui8_cadence_assist_duty_cycle_target = ui8_riding_mode_parameter;
     
@@ -573,23 +574,8 @@ static void apply_temperature_limiting()
   }
   else
   {
-    // keep ui8_temperature_current_limiting_value = 255 because 255 means no current limiting happening, otherwise temperature symbol on display will be blinking
+    // keep ui8_temperature_current_limiting_value = 254 because 254 means no current limiting happening, otherwise temperature symbol on display will be blinking
     m_configuration_variables.ui8_temperature_current_limiting_value = PWM_DUTY_CYCLE_MAX;
-  }
-}
-
-
-
-static void calc_cadence(void)
-{
-  // if cadence is too low or direction of pedal rotation is not forward
-  if ((ui16_pas_pwm_cycles_ticks > PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS) || (ui8_g_pedaling_direction != 1))
-  {
-    ui8_pedal_cadence_RPM = 0; 
-  }
-  else
-  {
-    ui8_pedal_cadence_RPM = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064)); // cadence in RPM = 60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
   }
 }
 
@@ -598,15 +584,78 @@ static void calc_cadence(void)
 static void calc_wheel_speed(void)
 { 
   // calc wheel speed in km/h
-  if (ui16_wheel_speed_sensor_pwm_cycles_ticks < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS)
+  if (ui16_wheel_speed_sensor_ticks)
   {
-    float f_wheel_speed_x10 = (float) PWM_CYCLES_SECOND / ui16_wheel_speed_sensor_pwm_cycles_ticks; // rps
+    float f_wheel_speed_x10 = (float) PWM_CYCLES_SECOND / ui16_wheel_speed_sensor_ticks; // rps
     ui16_wheel_speed_x10 = (uint16_t) (f_wheel_speed_x10 * m_configuration_variables.ui16_wheel_perimeter * 0.036); // rps * millimeters per second * ((3600 / (1000 * 1000)) * 10) kms per hour * 10
   }
   else
   {
     ui16_wheel_speed_x10 = 0;
   }
+}
+
+
+
+static void get_cadence(void)
+{
+  #define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED    1000
+  
+  // scale cadence sensor ticks counter min depending on wheel speed
+  uint16_t ui16_cadence_sensor_ticks_counter_min_temp = map ((uint32_t) ui16_wheel_speed_x10,
+                                                             (uint32_t) 40,
+                                                             (uint32_t) 300,
+                                                             (uint32_t) CADENCE_SENSOR_TICKS_COUNTER_MIN,
+                                                             (uint32_t) CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
+                                                             
+  // set parameters for cadence calculation
+  if (ui8_cadence_sensor_magnet_pulse_width > 199)
+  {
+    
+  }
+  else
+  {
+    // limit magnet pulse width and avoid zero division
+    if (ui8_cadence_sensor_magnet_pulse_width < 1) { ui8_cadence_sensor_magnet_pulse_width = 1; }
+    
+    // set the magnet pulse width in ticks
+    ui16_cadence_sensor_high_ticks_counter_min = ((uint32_t) ui8_cadence_sensor_magnet_pulse_width * ui16_cadence_sensor_ticks_counter_min_temp) / 100;
+    ui16_cadence_sensor_low_ticks_counter_min = ((uint32_t) (200 - ui8_cadence_sensor_magnet_pulse_width) * ui16_cadence_sensor_ticks_counter_min_temp) / 100;
+    
+    // set the conversion ratio adjusting for double the transitions and magnet pulse width
+    ui16_cadence_sensor_high_conversion_x100 = (uint16_t) 20000 / ui8_cadence_sensor_magnet_pulse_width;
+    ui16_cadence_sensor_low_conversion_x100 = (uint16_t) 20000 / (200 - ui8_cadence_sensor_magnet_pulse_width);
+  }
+  
+  // calculate cadence in RPM and avoid zero division
+  if (ui16_cadence_sensor_ticks)
+  {
+    ui8_pedal_cadence_RPM = 4687500 / ((uint32_t) ui16_cadence_sensor_ticks * ui16_cadence_sensor_conversion_x100); // see note below
+  }
+  else
+  {
+    ui8_pedal_cadence_RPM = 0;
+  }
+  
+  /*-------------------------------------------------------------------------------
+  
+    NOTE: regarding the cadence calculation
+    
+    Cadence is calculated by counting how many ticks there are between two 
+    transitions. Usually it is measured from 1 -> 1 or 0 -> 0. But to double the 
+    resoultion and system response it is possible to use the 1 -> 0 and 0 -> 1 
+    transitions. But when doing so it is important to adjust for the different 
+    spacings between the transitions. This is why there is a conversion factor.
+    
+    Formula for calculating the cadence in RPM:
+    
+    (1) Cadence in RPM = 6000 / (ticks * conversion_x100 * CADENCE_SENSOR_NUMBER_MAGNETS * 0.000064)
+    
+    (2) Cadence in RPM = 6000 / (ticks * conversion_x100 * 0.00128)
+    
+    (3) Cadence in RPM = 4687500 / (ticks * conversion_x100)
+    
+  -------------------------------------------------------------------------------*/
 }
 
 
@@ -872,6 +921,7 @@ static void uart_receive_package(void)
           // motor acceleration
           uint8_t ui8_motor_acceleration = ui8_rx_buffer [7];
           
+          // limit motor acceleration
           if (ui8_motor_acceleration > 100) { ui8_motor_acceleration = 100; }
           
           // set duty cycle ramp up inverse step
@@ -899,6 +949,13 @@ static void uart_receive_package(void)
           
           // set max battery current
           ui8_adc_battery_current_max = ui8_min(ui8_adc_battery_current_max_temp_1, ui8_adc_battery_current_max_temp_2);
+        
+        break;
+        
+        case 6:
+          
+          // cadence sensor magnet pulse width
+          ui8_cadence_sensor_magnet_pulse_width = ui8_rx_buffer [5];
         
         break;
 
@@ -952,7 +1009,7 @@ static void uart_send_package(void)
   }
   else
   {
-    // throttle value with offset removed and mapped to 254
+    // throttle value with offset removed and mapped from 0 to 254
     ui8_tx_buffer[8] = ui8_adc_throttle;
   }
 
@@ -978,13 +1035,13 @@ static void uart_send_package(void)
   // system state
   ui8_tx_buffer[16] = ui8_system_state;
   
-  // temperature actual limiting value mapped to 254
+  // temperature actual limiting value mapped from 0 to 254
   ui8_tx_buffer[17] = m_configuration_variables.ui8_temperature_current_limiting_value;
   
   // wheel_speed_sensor_tick_counter
-  ui8_tx_buffer[18] = (uint8_t) (ui32_wheel_speed_sensor_tick_counter & 0xff);
-  ui8_tx_buffer[19] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 8) & 0xff);
-  ui8_tx_buffer[20] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 16) & 0xff);
+  ui8_tx_buffer[18] = (uint8_t) (ui32_wheel_speed_sensor_ticks_total & 0xff);
+  ui8_tx_buffer[19] = (uint8_t) ((ui32_wheel_speed_sensor_ticks_total >> 8) & 0xff);
+  ui8_tx_buffer[20] = (uint8_t) ((ui32_wheel_speed_sensor_ticks_total >> 16) & 0xff);
 
   // pedal torque x100
   ui16_temp = ui16_pedal_torque_x100;
