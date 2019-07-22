@@ -116,11 +116,11 @@
 
 // default values for street mode function
 #define DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED                  0
-#define DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP                0
 #define DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT                       25
 #define DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED               0
 #define DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25                 10  // 10 * 25 = 250 W
 #define DEFAULT_VALUE_STREET_MODE_THROTTLE_ENABLED                  0   // throttle is disabled in street mode by default
+#define DEFAULT_VALUE_STREET_MODE_CRUISE_ENABLED                    0   // cruise is disabled in street mode by default
 
 
 
@@ -241,6 +241,7 @@
 
 // default value for eMTB assist
 #define DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED                  0
+#define DEFAULT_VALUE_EMTB_ASSIST_LEVEL                             100
 
 
 

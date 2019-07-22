@@ -384,6 +384,7 @@ volatile uint16_t ui16_cadence_sensor_low_ticks_counter_min = CADENCE_SENSOR_TIC
 volatile uint16_t ui16_cadence_sensor_high_conversion_x100 = 100;
 volatile uint16_t ui16_cadence_sensor_low_conversion_x100 = 100;
 volatile uint16_t ui16_cadence_sensor_conversion_x100 = 100;
+volatile uint8_t ui8_cadence_sensor_magnet_pulse_width = 200;
 
 
 // wheel speed sensor
@@ -605,65 +606,48 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   static uint16_t ui16_counter_duty_cycle_ramp_up;
   static uint16_t ui16_counter_duty_cycle_ramp_down;
 
-  if (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) // battery voltage under min voltage, immediately reduce duty_cycle
+  if ((ui8_controller_duty_cycle_target < ui8_g_duty_cycle) ||
+      (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
+      (ui8_adc_motor_phase_current > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) ||
+      (ui16_motor_speed_erps > ui16_max_motor_speed_erps) ||
+      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
   {
-    if (ui8_g_duty_cycle > 0)
+    ui16_counter_duty_cycle_ramp_up = 0;
+    
+    // duty cycle ramp down
+    if (++ui16_counter_duty_cycle_ramp_down > ui16_duty_cycle_ramp_down_inverse_step)
     {
+      ui16_counter_duty_cycle_ramp_down = 0;
+      
       // decrement duty cycle
       ui8_g_duty_cycle--;
     }
   }
-  else if (ui16_motor_speed_erps > ui16_max_motor_speed_erps) // motor speed over max motor ERPS, immediately reduce duty_cycle
+  else if (ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
   {
-    if (ui8_g_duty_cycle > 0)
-    {
-      // decrement duty cycle
-      ui8_g_duty_cycle--;
-    }
-  }
-  else // adjust duty cycle to target duty cycle, include ramping
-  {
-    if ((ui8_controller_duty_cycle_target < ui8_g_duty_cycle) ||
-        (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
-        (ui8_adc_motor_phase_current > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX))
+    ui16_counter_duty_cycle_ramp_down = 0;
+    
+    // limit duty cycle ramp up
+    if (ui16_duty_cycle_ramp_up_inverse_step < 20 ) { ui16_duty_cycle_ramp_up_inverse_step = 20; }
+    
+    // duty cycle ramp up
+    if (++ui16_counter_duty_cycle_ramp_up > ui16_duty_cycle_ramp_up_inverse_step)
     {
       ui16_counter_duty_cycle_ramp_up = 0;
       
-      // duty cycle ramp down
-      if (++ui16_counter_duty_cycle_ramp_down > ui16_duty_cycle_ramp_down_inverse_step)
-      {
-        ui16_counter_duty_cycle_ramp_down = 0;
-        
-        // decrement duty cycle
-        ui8_g_duty_cycle--;
-      }
-    }
-    else if (ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
-    {
-      ui16_counter_duty_cycle_ramp_down = 0;
-      
-      // limit duty cycle ramp up
-      if (ui16_duty_cycle_ramp_up_inverse_step < 20 ) { ui16_duty_cycle_ramp_up_inverse_step = 20; }
-      
-      // duty cycle ramp up
-      if (++ui16_counter_duty_cycle_ramp_up > ui16_duty_cycle_ramp_up_inverse_step)
-      {
-        ui16_counter_duty_cycle_ramp_up = 0;
-        
-        // increment duty cycle
-        ui8_g_duty_cycle++;
-      }
-    }
-    else
-    {
-      // duty cycle is where it needs to be so reset ramp counters
-      ui16_counter_duty_cycle_ramp_up = 0;
-      ui16_counter_duty_cycle_ramp_down = 0;
+      // increment duty cycle
+      ui8_g_duty_cycle++;
     }
   }
-
-
-
+  else
+  {
+    // duty cycle is where it needs to be so reset ramp counters
+    ui16_counter_duty_cycle_ramp_up = 0;
+    ui16_counter_duty_cycle_ramp_down = 0;
+  }
+  
+  
+  
   /****************************************************************************/
   
 
@@ -738,7 +722,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
   
   
-  #define CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD    500 // software based Schmitt trigger to stop motor jitter when at resolution limits
+  #define CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD    1000 // software based Schmitt trigger to stop motor jitter when at resolution limits
   
   static uint16_t ui16_cadence_sensor_ticks_counter;
   static uint16_t ui16_cadence_sensor_ticks_counter_min;
@@ -746,15 +730,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   static uint8_t ui8_cadence_sensor_pin_state_old;
   
   // check cadence sensor pins state
-  volatile uint8_t ui8_cadence_sensor_pin_1_state = PAS2__PORT->IDR & PAS2__PIN; // PAS2__PIN is leading on all controllers
-  volatile uint8_t ui8_cadence_sensor_pin_2_state = PAS1__PORT->IDR & PAS1__PIN; // PAS1__PIN is following on all controllers
+  volatile uint8_t ui8_cadence_sensor_pin_1_state = PAS2__PORT->IDR & PAS2__PIN; // PAS2__PIN is leading
+  volatile uint8_t ui8_cadence_sensor_pin_2_state = PAS1__PORT->IDR & PAS1__PIN; // PAS1__PIN is following
   
   // check if cadence sensor pin state has changed
   if (ui8_cadence_sensor_pin_1_state != ui8_cadence_sensor_pin_state_old)
   {
-    // update old cadence sensor pin state
-    ui8_cadence_sensor_pin_state_old = ui8_cadence_sensor_pin_1_state;
-    
     // set the ticks counter limit and conversion depending on pin state
     if (ui8_cadence_sensor_pin_1_state)
     {
@@ -772,14 +753,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       // set conversion depending on previous pin state
       ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_high_conversion_x100;
     }
-    
-    // check if first or second transition
-    if (!ui8_cadence_sensor_ticks_counter_started) 
+
+    // check if first transition and if to consider the 1 -> 0 transition
+    if (!ui8_cadence_sensor_ticks_counter_started && !((ui8_cadence_sensor_magnet_pulse_width > 199) && (ui8_cadence_sensor_pin_state_old)))
     {
       // start cadence sensor ticks counter as this is the first transition
       ui8_cadence_sensor_ticks_counter_started = 1;
     }
-    else // second transition
+    else if (!((ui8_cadence_sensor_magnet_pulse_width > 199) && (ui8_cadence_sensor_pin_state_old)))
     {
       // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
       if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_TICKS_COUNTER_MAX) || 
@@ -791,7 +772,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       }
       else
       {
-        // set the cadence sensor ticks between two transitions
+        // set the cadence sensor ticks between the two transitions
         ui16_cadence_sensor_ticks = ui16_cadence_sensor_ticks_counter;
         ui16_cadence_sensor_ticks_counter = 0;
         
@@ -799,6 +780,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD;
       }
     }
+    
+    // update old cadence sensor pin state
+    ui8_cadence_sensor_pin_state_old = ui8_cadence_sensor_pin_1_state;
   }
   
   // increment and also limit the ticks counter
@@ -835,16 +819,16 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // only consider the 0 -> 1 transition
     if (ui8_wheel_speed_sensor_pin_state)
     {
-      // check if first or second transition
+      // check if first transition
       if (!ui8_wheel_speed_sensor_ticks_counter_started) 
       {
         // start wheel speed sensor ticks counter as this is the first transition
         ui8_wheel_speed_sensor_ticks_counter_started = 1;
       }
-      else // second transition
+      else
       {
         // check if wheel speed sensor ticks counter is out of bounds
-        if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS)
+        if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX)
         {
           ui16_wheel_speed_sensor_ticks = 0;
           ui16_wheel_speed_sensor_ticks_counter = 0;
@@ -861,7 +845,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }
   
   // increment and also limit the ticks counter
-  if ((ui8_wheel_speed_sensor_ticks_counter_started) && (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS))
+  if ((ui8_wheel_speed_sensor_ticks_counter_started) && (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN))
   {
     ++ui16_wheel_speed_sensor_ticks_counter;
   }

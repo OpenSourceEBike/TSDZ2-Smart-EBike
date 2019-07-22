@@ -71,7 +71,7 @@
 #define ADDRESS_BATTERY_PACK_RESISTANCE_0                                   53 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_PACK_RESISTANCE_1                                   54 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_FUNCTION_ENABLED                                55 + EEPROM_BASE_ADDRESS
-#define ADDRESS_STREET_MODE_ENABLED_ON_STARTUP                              56 + EEPROM_BASE_ADDRESS
+#define ADDRESS_STREET_MODE_ENABLED_ON_STARTUP                              56 + EEPROM_BASE_ADDRESS // remove
 #define ADDRESS_STREET_MODE_SPEED_LIMIT                                     57 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_POWER_LIMIT_ENABLED                             58 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_POWER_LIMIT_DIV25                               59 + EEPROM_BASE_ADDRESS
@@ -144,7 +144,9 @@
 #define ADDRESS_CADENCE_ASSIST_LEVEL_8                                      126 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_ASSIST_LEVEL_9                                      127 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH                           128 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 129
+#define ADDRESS_STREET_MODE_CRUISE_ENABLED                                  129 + EEPROM_BASE_ADDRESS
+#define ADDRESS_EMTB_ASSIST_LEVEL                                           130 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 131
 
 
 

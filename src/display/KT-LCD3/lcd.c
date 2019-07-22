@@ -91,7 +91,6 @@ static uint8_t    ui8_config_wh_x10_offset;
 static uint16_t   ui16_battery_SOC_percentage;
 static uint16_t   ui16_battery_SOC_voltage_x100;
 static uint8_t    ui8_lights_state = 0;
-static uint8_t    ui8_street_mode_enabled = 0;
 
 
 // menu variables
@@ -316,7 +315,7 @@ void lcd_execute_main_screen (void)
   }
   
   // enter power menu if...
-  if (ONOFF_UP_LONG_CLICK && configuration_variables.ui8_main_screen_power_menu_enabled && !ui8_street_mode_enabled)
+  if (ONOFF_UP_LONG_CLICK && configuration_variables.ui8_main_screen_power_menu_enabled && !(motor_controller_data.ui8_street_mode_enabled))
   {
     ui8_lcd_menu = POWER_MENU;
   }
@@ -1044,8 +1043,8 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
     
     case 1:
       
-      // set eMTB assist factor
-      lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_factor_x10;
+      // set eMTB assist level
+      lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_level;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 255;
@@ -1633,24 +1632,12 @@ void lcd_execute_menu_config_submenu_street_mode (void)
 
   switch (ui8_lcd_menu_config_submenu_state)
   {
-    // enable/disable street mode
+    // enable/disable and set street mode
     case 0:
       lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_function_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-
-    // enable street mode on system startup
-    case 1:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_enabled_on_startup;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_max_value = 2;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -1658,7 +1645,7 @@ void lcd_execute_menu_config_submenu_street_mode (void)
     break;
 
     // street mode speed limit
-    case 2:
+    case 1:
       lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_speed_limit;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1672,7 +1659,7 @@ void lcd_execute_menu_config_submenu_street_mode (void)
     break;
 
     // enable/disable street mode power limit
-    case 3:
+    case 2:
       lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_power_limit_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1684,7 +1671,7 @@ void lcd_execute_menu_config_submenu_street_mode (void)
     break;
 
     // street mode power limit
-    case 4:
+    case 3:
       ui16_temp = configuration_variables.ui8_street_mode_power_limit_div25 * 25;
       
       lcd_var_number.p_var_number = &ui16_temp;
@@ -1706,9 +1693,21 @@ void lcd_execute_menu_config_submenu_street_mode (void)
       
     break;
     
-    // enable/disable throttle during street mode
-    case 5:
+    // enable/disable throttle in street mode
+    case 4:
       lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_throttle_enabled;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 1;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    // enable/disable Cruise in street mode
+    case 5:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_street_mode_cruise_enabled;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 1;
@@ -2243,11 +2242,11 @@ void riding_mode_controller(void)
     if (buttons_get_down_state ())
     {
       // enable walk assist or cruise if...
-      if (configuration_variables.ui8_walk_assist_function_enabled &&
-          motor_controller_data.ui16_wheel_speed_x10 < WALK_ASSIST_THRESHOLD_SPEED_X10 &&
-          !ui8_cruise_activated &&
-          configuration_variables.ui8_assist_level > 0 &&
-          configuration_variables.ui8_assist_level <= configuration_variables.ui8_number_of_assist_levels)
+      if ((configuration_variables.ui8_walk_assist_function_enabled) &&
+          (motor_controller_data.ui16_wheel_speed_x10 < WALK_ASSIST_THRESHOLD_SPEED_X10) &&
+          !(ui8_cruise_activated) &&
+          (configuration_variables.ui8_assist_level > 0) &&
+          (configuration_variables.ui8_assist_level <= configuration_variables.ui8_number_of_assist_levels))
       {
         // enable walk assist
         lcd_enable_walk_symbol(1);
@@ -2256,9 +2255,10 @@ void riding_mode_controller(void)
         // set flag indicating that walk assist was activated first during this button event
         ui8_walk_assist_activated = 1;
       }
-      else if (configuration_variables.ui8_cruise_function_enabled &&
-               motor_controller_data.ui16_wheel_speed_x10 > CRUISE_THRESHOLD_SPEED_X10 &&
-               !ui8_walk_assist_activated)
+      else if ((configuration_variables.ui8_cruise_function_enabled) &&
+               (motor_controller_data.ui16_wheel_speed_x10 > CRUISE_THRESHOLD_SPEED_X10) &&
+               !(ui8_walk_assist_activated) &&
+               !(configuration_variables.ui8_street_mode_function_enabled && configuration_variables.ui8_street_mode_cruise_enabled))
       {
         // enable cruise
         lcd_enable_cruise_symbol(1);
@@ -2301,7 +2301,7 @@ void assist_level_field(void)
   }
 
   // if street mode is disabled display "assist" symbol
-  if (!ui8_street_mode_enabled)
+  if (!(motor_controller_data.ui8_street_mode_enabled))
   {
     lcd_enable_assist_symbol(1);
   }
@@ -2322,21 +2322,18 @@ void street_mode (void)
     {
       ui8_executed_on_startup = 1;
       
-      if (configuration_variables.ui8_street_mode_enabled_on_startup) 
+      if (configuration_variables.ui8_street_mode_function_enabled > 1) 
       {
-        ui8_street_mode_enabled = 1;
         motor_controller_data.ui8_street_mode_enabled = 1;
       }
     }
     
     if (ONOFF_DOWN_LONG_CLICK)
     {
-      ui8_street_mode_enabled = !ui8_street_mode_enabled;
-      
-      motor_controller_data.ui8_street_mode_enabled = ui8_street_mode_enabled;
+      motor_controller_data.ui8_street_mode_enabled = !(motor_controller_data.ui8_street_mode_enabled);
     }
     
-    if (ui8_street_mode_enabled) 
+    if (motor_controller_data.ui8_street_mode_enabled) 
     {
       if (++ui8_street_mode_assist_symbol_state_counter > 45)
       {

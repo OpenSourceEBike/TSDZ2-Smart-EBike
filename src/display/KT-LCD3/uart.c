@@ -237,7 +237,7 @@ void uart_data_clock (void)
         
         case eMTB_ASSIST_MODE:
         
-          ui8_tx_buffer[3] = p_configuration_variables->ui8_eMTB_assist_factor_x10;
+          ui8_tx_buffer[3] = p_configuration_variables->ui8_eMTB_assist_level;
           
         break;
         

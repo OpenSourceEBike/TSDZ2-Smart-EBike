@@ -41,6 +41,10 @@ typedef struct _configuration_variables
 } struct_configuration_variables;
 
 
+// torque sensor
+extern volatile uint16_t ui16_adc_pedal_torque_offset;
+
+
 void ebike_app_controller (void);
 struct_configuration_variables* get_configuration_variables (void);
 

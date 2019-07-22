@@ -49,7 +49,7 @@ typedef struct _configuration_variables
   uint8_t ui8_cadence_assist_function_enabled;
   uint8_t ui8_cadence_assist_level[9];
   uint8_t ui8_eMTB_assist_function_enabled;
-  uint8_t ui8_eMTB_assist_factor_x10;
+  uint8_t ui8_eMTB_assist_level;
   uint8_t ui8_walk_assist_function_enabled;
   uint8_t ui8_walk_assist_level[9];
   uint8_t ui8_cruise_function_enabled;
@@ -103,6 +103,7 @@ typedef struct _configuration_variables
   uint8_t ui8_street_mode_power_limit_enabled;
   uint8_t ui8_street_mode_power_limit_div25;
   uint8_t ui8_street_mode_throttle_enabled;
+  uint8_t ui8_street_mode_cruise_enabled;
   uint16_t ui16_distance_since_power_on_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;

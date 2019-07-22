@@ -17,11 +17,12 @@
 #define eMTB_ASSIST_MODE                          4
 #define WALK_ASSIST_MODE                          5
 #define CRUISE_MODE                               6
+#define CADENCE_SENSOR_CALIBRATION_MODE           7
 
 // error codes
 #define NO_ERROR                                  0
 #define ERROR_MOTOR_BLOCKED                       1
-#define ERROR_TORQUE_APPLIED_DURING_POWER_ON      2
+#define ERROR_TORQUE_SENSOR                       2
 #define ERROR_BRAKE_APPLIED_DURING_POWER_ON       3
 #define ERROR_THROTTLE_APPLIED_DURING_POWER_ON    4
 #define ERROR_NO_SPEED_SENSOR_DETECTED            5

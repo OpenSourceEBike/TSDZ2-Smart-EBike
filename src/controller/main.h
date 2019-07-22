@@ -151,8 +151,8 @@
   
   
   Cadence is calculated by counting how much time passes between two 
-  transitions. Going from either 1 -> 0 or 0 -> 1. Depending on transistion 
-  it is important to adjust for the different spacings between the transitions.
+  transitions. Depending on transistion it is important to adjust for 
+  the different spacings between the transitions.
   
   The conversion factors are determined from measurements.
   
@@ -161,8 +161,8 @@
 
 
 // Wheel speed sensor
-#define WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS                    135   // something like 200 m/h with a 6'' wheel
-#define WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS                    32767 // could be a bigger number but will make for a slow detection of stopped wheel speed
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX                      135   // something like 200 m/h with a 6'' wheel
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN                      32767 // could be a bigger number but will make for a slow detection of stopped wheel speed
 
 
 

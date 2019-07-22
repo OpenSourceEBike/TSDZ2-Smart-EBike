@@ -72,7 +72,7 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0,                            // 53 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1,                            // 54 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_STREET_MODE_FUNCTION_ENABLED,                         // 55 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_STREET_MODE_ENABLED_ON_STARTUP,                       // 56 + EEPROM_BASE_ADDRESS (Array index)
+  0,                                                                  // 56 + EEPROM_BASE_ADDRESS (Array index)     // remove
   DEFAULT_VALUE_STREET_MODE_SPEED_LIMIT,                              // 57 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_ENABLED,                      // 58 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_STREET_MODE_POWER_LIMIT_DIV25,                        // 59 + EEPROM_BASE_ADDRESS (Array index)
@@ -144,7 +144,9 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7,                               // 125 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8,                               // 126 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9,                               // 127 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CADENCE_SENSOR_MAGNET_PULSE_WIDTH                     // 128 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_SENSOR_MAGNET_PULSE_WIDTH,                    // 128 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_STREET_MODE_CRUISE_ENABLED,                           // 129 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_EMTB_ASSIST_LEVEL                                     // 130 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -250,6 +252,7 @@ static void eeprom_read_values_to_variables (void)
   
   // eMTB assist
   p_configuration_variables->ui8_eMTB_assist_function_enabled = FLASH_ReadByte(ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED);
+  p_configuration_variables->ui8_eMTB_assist_level = FLASH_ReadByte(ADDRESS_EMTB_ASSIST_LEVEL);
   
   // walk assist
   p_configuration_variables->ui8_walk_assist_function_enabled = FLASH_ReadByte(ADDRESS_WALK_ASSIST_FUNCTION_ENABLED);
@@ -371,11 +374,11 @@ static void eeprom_read_values_to_variables (void)
 
   // street mode variables
   p_configuration_variables->ui8_street_mode_function_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_FUNCTION_ENABLED);
-  p_configuration_variables->ui8_street_mode_enabled_on_startup = FLASH_ReadByte (ADDRESS_STREET_MODE_ENABLED_ON_STARTUP);
   p_configuration_variables->ui8_street_mode_speed_limit = FLASH_ReadByte (ADDRESS_STREET_MODE_SPEED_LIMIT);
   p_configuration_variables->ui8_street_mode_power_limit_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_POWER_LIMIT_ENABLED);
   p_configuration_variables->ui8_street_mode_power_limit_div25 = FLASH_ReadByte (ADDRESS_STREET_MODE_POWER_LIMIT_DIV25);
   p_configuration_variables->ui8_street_mode_throttle_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_THROTTLE_ENABLED);
+  p_configuration_variables->ui8_street_mode_cruise_enabled = FLASH_ReadByte (ADDRESS_STREET_MODE_CRUISE_ENABLED);
   
   
   // odometer variable
@@ -421,6 +424,7 @@ static void eeprom_read_values_to_variables (void)
   
   // pedal torque conversion
   p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
+  
   
   // cadence sensor magnet pulse width
   p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH);
@@ -498,6 +502,7 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write eMTB assist function variables
   ui8_array[ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_eMTB_assist_function_enabled;
+  ui8_array[ADDRESS_EMTB_ASSIST_LEVEL - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_eMTB_assist_level;
   
   
   // write motor parameters
@@ -531,10 +536,12 @@ static void variables_to_array (uint8_t *ui8_array)
 
   // write street mode parameters
   ui8_array [55] = p_configuration_variables->ui8_street_mode_function_enabled;
-  ui8_array [56] = p_configuration_variables->ui8_street_mode_enabled_on_startup;
+  ui8_array [56] = 0;
   ui8_array [57] = p_configuration_variables->ui8_street_mode_speed_limit;
   ui8_array [58] = p_configuration_variables->ui8_street_mode_power_limit_enabled;
   ui8_array [59] = p_configuration_variables->ui8_street_mode_power_limit_div25;
+  ui8_array[ADDRESS_STREET_MODE_THROTTLE_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_street_mode_throttle_enabled;
+  ui8_array[ADDRESS_STREET_MODE_CRUISE_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_street_mode_cruise_enabled;
   
   
   // write odometer variable
@@ -610,9 +617,6 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // write main screen power menu enable variable
   ui8_array [104] = p_configuration_variables->ui8_main_screen_power_menu_enabled;
-  
-  // write street mode parameters
-  ui8_array [105] = p_configuration_variables->ui8_street_mode_throttle_enabled;
 
   // write pedal torque conversion
   ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;

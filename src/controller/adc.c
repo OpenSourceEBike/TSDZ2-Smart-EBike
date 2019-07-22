@@ -17,9 +17,6 @@
 #include "utils.h"
 
 
-volatile uint16_t ui16_adc_pedal_torque_offset = 0;
-
-
 static void adc_trigger (void);
 
 
