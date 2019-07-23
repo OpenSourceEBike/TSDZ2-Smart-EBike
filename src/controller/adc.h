@@ -24,6 +24,9 @@
 #define UI16_ADC_10_BIT_TORQUE_SENSOR     (((*(uint8_t*)(0x53E8)) << 2) | (*(uint8_t*)(0x53E9)))
 
 
+extern volatile uint16_t ui16_adc_pedal_torque_offset;
+
+
 void adc_init (void);
 uint16_t ui16_adc_read_battery_current_10b (void);
 uint16_t ui16_adc_read_battery_voltage_10b (void);

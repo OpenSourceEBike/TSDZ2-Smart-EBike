@@ -353,10 +353,8 @@ uint8_t ui8_sin_table [SIN_TABLE_LEN] =
 uint16_t ui16_PWM_cycles_counter = 1;
 uint16_t ui16_PWM_cycles_counter_6 = 1;
 uint16_t ui16_PWM_cycles_counter_total = 0xffff;
-uint16_t ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
+uint16_t ui16_max_motor_speed_erps = MOTOR_OVER_SPEED_ERPS;
 static volatile uint16_t ui16_motor_speed_erps = 0;
-uint8_t ui8_motor_rotor_absolute_angle;
-uint8_t ui8_motor_rotor_angle;
 uint8_t ui8_motor_commutation_type = BLOCK_COMMUTATION;
 uint8_t ui8_hall_sensors_state = 0;
 uint8_t ui8_hall_sensors_state_last = 0;
@@ -414,6 +412,7 @@ void motor_controller(void)
 // runs every 64us (PWM frequency)
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
+  static uint8_t ui8_motor_rotor_absolute_angle;
   static uint8_t ui8_svm_table_index;
   static uint8_t ui8_adc_motor_phase_current;
 
@@ -569,8 +568,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   // - calc interpolation angle and sinewave table index
   
-  static uint8_t ui8_interpolation_angle;
-  
 #define DO_INTERPOLATION 1 // may be useful to disable interpolation when debugging
 #if DO_INTERPOLATION == 1
   // calculate the interpolation angle (and it doesn't work when motor starts and at very low speeds)
@@ -578,8 +575,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     // division by 0: ui16_PWM_cycles_counter_total should never be 0
     // TODO: verifiy if (ui16_PWM_cycles_counter_6 << 8) do not overflow
-    ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations take 4.4us
-    ui8_motor_rotor_angle = ui8_motor_rotor_absolute_angle + ui8_interpolation_angle;
+    uint8_t ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations take 4.4us
+    uint8_t ui8_motor_rotor_angle = ui8_motor_rotor_absolute_angle + ui8_interpolation_angle;
     ui8_svm_table_index = ui8_motor_rotor_angle + ui8_g_foc_angle;
   }
   else
@@ -605,26 +602,29 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   static uint16_t ui16_counter_duty_cycle_ramp_up;
   static uint16_t ui16_counter_duty_cycle_ramp_down;
-
-  if ((ui8_controller_duty_cycle_target < ui8_g_duty_cycle) ||
+  
+  // check if to decrease, increase or maintain duty cycle
+  if ((ui8_g_duty_cycle > ui8_controller_duty_cycle_target) ||
       (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
       (ui8_adc_motor_phase_current > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) ||
       (ui16_motor_speed_erps > ui16_max_motor_speed_erps) ||
       (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
   {
+    // reset duty cycle ramp up counter (filter)
     ui16_counter_duty_cycle_ramp_up = 0;
     
-    // duty cycle ramp down
+    // ramp down duty cycle
     if (++ui16_counter_duty_cycle_ramp_down > ui16_duty_cycle_ramp_down_inverse_step)
     {
       ui16_counter_duty_cycle_ramp_down = 0;
       
       // decrement duty cycle
-      ui8_g_duty_cycle--;
+      if (ui8_g_duty_cycle > 0) { --ui8_g_duty_cycle; }
     }
   }
-  else if (ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
+  else if (ui8_g_duty_cycle < ui8_controller_duty_cycle_target)
   {
+    // reset duty cycle ramp down counter (filter)
     ui16_counter_duty_cycle_ramp_down = 0;
     
     // limit duty cycle ramp up
@@ -636,12 +636,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui16_counter_duty_cycle_ramp_up = 0;
       
       // increment duty cycle
-      ui8_g_duty_cycle++;
+      if (ui8_g_duty_cycle < PWM_DUTY_CYCLE_MAX) { ++ui8_g_duty_cycle; }
     }
   }
   else
   {
-    // duty cycle is where it needs to be so reset ramp counters
+    // duty cycle is where it needs to be so reset ramp counters (filter)
     ui16_counter_duty_cycle_ramp_up = 0;
     ui16_counter_duty_cycle_ramp_down = 0;
   }

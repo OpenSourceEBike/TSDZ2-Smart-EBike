@@ -1869,8 +1869,8 @@ void power_off_timer (void)
 
 void temperature_field(void)
 {
-  // if motor current is being limited due to temperature, force showing temperature!!
-  if (motor_controller_data.ui8_temperature_current_limiting_value < 254)
+  // if motor current is being limited due to temperature, i.e. below 255, force showing temperature
+  if ((configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL) && (motor_controller_data.ui8_temperature_current_limiting_value < 255))
   {
     if (ui8_lcd_menu_flash_state_temperature)
     {
@@ -3689,7 +3689,7 @@ void update_menu_flashing_state(void)
   }
 
   // flash the temperature field when the current is being limited due to motor over temperature
-  if (motor_controller_data.ui8_temperature_current_limiting_value < 255) // flash only if current is being limited, i.e. below 255
+  if ((configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL) && (motor_controller_data.ui8_temperature_current_limiting_value < 255)) // flash only if current is being limited, i.e. below 255
   {
     if (ui8_lcd_menu_flash_state_temperature == 0)
     {

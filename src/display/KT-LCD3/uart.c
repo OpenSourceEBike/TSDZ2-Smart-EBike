@@ -129,19 +129,24 @@ void uart_data_clock (void)
       // brake state
       p_motor_controller_data->ui8_braking = ui8_rx_buffer[6] & 1;
       
-      // throttle value from ADC
+      // value from optional ADC channel
       p_motor_controller_data->ui8_adc_throttle = ui8_rx_buffer[7];
       
-      // adjusted throttle value or temperature limit depending on user setup
-      if (p_configuration_variables->ui8_temperature_limit_feature_enabled == 1)
+      switch (p_configuration_variables->ui8_temperature_limit_feature_enabled)
       {
-        // temperature value
-        p_motor_controller_data->ui8_motor_temperature = ui8_rx_buffer[8];
-      }
-      else
-      {
-        // throttle value with offset removed and mapped to 255
-        p_motor_controller_data->ui8_throttle = ui8_rx_buffer[8];
+        case THROTTLE_CONTROL:
+        
+          // throttle value with offset applied and mapped from 0 to 255
+          p_motor_controller_data->ui8_throttle = ui8_rx_buffer[8];
+        
+        break;
+        
+        case TEMPERATURE_CONTROL:
+        
+          // current limiting mapped from 0 to 255
+          p_motor_controller_data->ui8_temperature_current_limiting_value = ui8_rx_buffer[8];
+        
+        break;
       }
       
       // ADC pedal torque
@@ -162,8 +167,8 @@ void uart_data_clock (void)
       // controller system state
       p_motor_controller_data->ui8_controller_system_state = ui8_rx_buffer[16];
       
-      // temperature actual limiting value
-      p_motor_controller_data->ui8_temperature_current_limiting_value = ui8_rx_buffer[17];
+      // motor temperature
+      p_motor_controller_data->ui8_motor_temperature = ui8_rx_buffer[17];
       
       // wheel_speed_sensor_tick_counter
       p_motor_controller_data->ui32_wheel_speed_sensor_tick_counter = (((uint32_t) ui8_rx_buffer[20]) << 16) + (((uint32_t) ui8_rx_buffer[19]) << 8) + ((uint32_t) ui8_rx_buffer[18]);
