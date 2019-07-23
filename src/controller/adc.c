@@ -14,7 +14,7 @@
 #include "adc.h"
 #include "ebike_app.h"
 #include "motor.h"
-#include "utils.h"
+#include "common.h"
 
 
 volatile uint16_t ui16_adc_pedal_torque_offset = 60;

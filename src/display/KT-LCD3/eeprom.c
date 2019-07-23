@@ -15,7 +15,8 @@
 #include "main.h"
 #include "lcd.h"
 
-static uint8_t array_default_values[EEPROM_BYTES_STORED] = {
+static uint8_t array_default_values[EEPROM_BYTES_STORED] = 
+{
   KEY,
   DEFAULT_VALUE_ASSIST_LEVEL,
   DEFAULT_VALUE_WHEEL_PERIMETER_0,
@@ -166,7 +167,7 @@ void eeprom_init (void)
   ui8_data = FLASH_ReadByte (ADDRESS_KEY);
   if (ui8_data != KEY) // verify if our key exists
   {
-    // write default values
+    // default values
     eeprom_write_array(array_default_values, ((uint8_t) EEPROM_BYTES_STORED));
   }
 }
@@ -225,8 +226,6 @@ static void eeprom_read_values_to_variables (void)
   
   // power assist
   p_configuration_variables->ui8_power_assist_function_enabled = FLASH_ReadByte(ADDRESS_POWER_ASSIST_FUNCTION_ENABLED);
-  
-  // power assist levels
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
     p_configuration_variables->ui8_power_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_POWER_ASSIST_LEVEL_1 + ui8_index);
@@ -234,8 +233,6 @@ static void eeprom_read_values_to_variables (void)
   
   // torque assist
   p_configuration_variables->ui8_torque_assist_function_enabled = FLASH_ReadByte(ADDRESS_TORQUE_ASSIST_FUNCTION_ENABLED);
-  
-  // torque assist levels
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
     p_configuration_variables->ui8_torque_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_TORQUE_ASSIST_LEVEL_1 + ui8_index);
@@ -243,8 +240,6 @@ static void eeprom_read_values_to_variables (void)
   
   // cadence assist
   p_configuration_variables->ui8_cadence_assist_function_enabled = FLASH_ReadByte(ADDRESS_CADENCE_ASSIST_FUNCTION_ENABLED);
-  
-  // cadence assist levels
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
   {
     p_configuration_variables->ui8_cadence_assist_level[ui8_index] = FLASH_ReadByte(ADDRESS_CADENCE_ASSIST_LEVEL_1 + ui8_index);
@@ -341,7 +336,7 @@ static void eeprom_read_values_to_variables (void)
   // motor type, temperature limit enabled, temperature field state
   ui8_temp = FLASH_ReadByte (ADDRESS_CONFIG_0);
   p_configuration_variables->ui8_motor_type = ui8_temp & 3;
-  p_configuration_variables->ui8_temperature_limit_feature_enabled = (ui8_temp & 24) >> 3;
+  p_configuration_variables->ui8_optional_ADC_function = (ui8_temp & 24) >> 3;
   p_configuration_variables->ui8_temperature_field_state = (ui8_temp & 224) >> 5;
 
 
@@ -446,7 +441,7 @@ static void variables_to_array (uint8_t *ui8_array)
   struct_configuration_variables *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
   
-  // write various parameters
+  // various parameters
   ui8_array [0] = KEY;
   ui8_array[ADDRESS_ASSIST_LEVEL - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_assist_level;
   ui8_array [2] = p_configuration_variables->ui16_wheel_perimeter & 255;
@@ -470,9 +465,9 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [20] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
   
   
-  // write motor type, temperature limit enabled, tempereture field state
+  // motor type, temperature limit enabled, tempereture field state
   ui8_array [21] = (p_configuration_variables->ui8_motor_type & 3) |
-                  ((p_configuration_variables->ui8_temperature_limit_feature_enabled & 3) << 3) |
+                  ((p_configuration_variables->ui8_optional_ADC_function & 3) << 3) |
                   ((p_configuration_variables->ui8_temperature_field_state & 7) << 5);
                   
                   
@@ -500,12 +495,12 @@ static void variables_to_array (uint8_t *ui8_array)
   // number of assist levels
   ui8_array[ADDRESS_NUMBER_OF_ASSIST_LEVELS - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_number_of_assist_levels;
   
-  // write eMTB assist function variables
+  // eMTB assist function variables
   ui8_array[ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_eMTB_assist_function_enabled;
   ui8_array[ADDRESS_EMTB_ASSIST_LEVEL - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_eMTB_assist_level;
   
   
-  // write motor parameters
+  // boost
   ui8_array [33] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
   ui8_array [34] = p_configuration_variables->ui8_startup_motor_power_boost_state;
   for (ui8_index = 0; ui8_index < 9; ui8_index++)
@@ -514,27 +509,29 @@ static void variables_to_array (uint8_t *ui8_array)
   }
   ui8_array [44] = p_configuration_variables->ui8_startup_motor_power_boost_time;
   ui8_array [45] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
+  
+  // motor temperature protection
   ui8_array [46] = p_configuration_variables->ui8_motor_temperature_min_value_to_limit;
   ui8_array [47] = p_configuration_variables->ui8_motor_temperature_max_value_to_limit;
   
   
-  // write battery parameters
+  // battery parameters
   ui8_array [48] = p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 & 255;
   ui8_array [49] = (p_configuration_variables->ui16_battery_voltage_reset_wh_counter_x10 >> 8) & 255;
   
   
-  // write display parameters
+  // display parameters
   ui8_array [50] = p_configuration_variables->ui8_lcd_power_off_time_minutes;
   ui8_array [51] = p_configuration_variables->ui8_lcd_backlight_on_brightness;
   ui8_array [52] = p_configuration_variables->ui8_lcd_backlight_off_brightness;
 
 
-  // write battery parameters
+  // battery parameters
   ui8_array [53] = p_configuration_variables->ui16_battery_pack_resistance_x1000 & 255;
   ui8_array [54] = (p_configuration_variables->ui16_battery_pack_resistance_x1000 >> 8) & 255;
 
 
-  // write street mode parameters
+  // street mode parameters
   ui8_array [55] = p_configuration_variables->ui8_street_mode_function_enabled;
   ui8_array [56] = 0;
   ui8_array [57] = p_configuration_variables->ui8_street_mode_speed_limit;
@@ -544,19 +541,19 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array[ADDRESS_STREET_MODE_CRUISE_ENABLED - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_street_mode_cruise_enabled;
   
   
-  // write odometer variable
+  // odometer variable
   ui8_array [60] = p_configuration_variables->ui32_odometer_x10 & 255;
   ui8_array [61] = (p_configuration_variables->ui32_odometer_x10 >> 8) & 255;
   ui8_array [62] = (p_configuration_variables->ui32_odometer_x10 >> 16) & 255;
   
   
-  // write trip distance variable
+  // trip distance variable
   ui8_array [63] = p_configuration_variables->ui32_trip_x10 & 255;
   ui8_array [64] = (p_configuration_variables->ui32_trip_x10 >> 8) & 255;
   ui8_array [65] = (p_configuration_variables->ui32_trip_x10 >> 16) & 255;
 
 
-  // write sub menu states so user can resume since last power on
+  // sub menu states so user can resume since last power on
   ui8_array [66] = p_configuration_variables->ui8_odometer_sub_field_state_0;
   ui8_array [67] = p_configuration_variables->ui8_odometer_sub_field_state_1;
   ui8_array [68] = p_configuration_variables->ui8_odometer_sub_field_state_2;
@@ -566,26 +563,26 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [72] = p_configuration_variables->ui8_odometer_sub_field_state_6;
   
   
-  // write max wheel speed in imperial units
+  // max wheel speed in imperial units
   ui8_array [73] = p_configuration_variables->ui8_wheel_max_speed_imperial;
   
   
-  // write time measurement field state
+  // time measurement field state
   ui8_array [74] = p_configuration_variables->ui8_time_measurement_field_state;
 
 
-  // write time measurement values
+  // time measurement values
   ui8_array [75] = p_configuration_variables->ui8_total_second_TTM;
   ui8_array [76] = p_configuration_variables->ui8_total_minute_TTM;
   ui8_array [77] = p_configuration_variables->ui16_total_hour_TTM & 255;
   ui8_array [78] = (p_configuration_variables->ui16_total_hour_TTM >> 8) & 255;
   
   
-  // write motor acceleration
+  // motor acceleration
   ui8_array [ADDRESS_MOTOR_ACCELERATION - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_acceleration;
   
   
-  // write walk assist function variables
+  // walk assist function variables
   ui8_array[80] = p_configuration_variables->ui8_walk_assist_function_enabled;
   for (ui8_index = 0; ui8_index < 10; ui8_index++)
   {
@@ -593,7 +590,7 @@ static void variables_to_array (uint8_t *ui8_array)
   }
   
   
-  // write cruise function variables
+  // cruise function variables
   ui8_array [90] = p_configuration_variables->ui8_cruise_function_enabled;
   ui8_array [91] = p_configuration_variables->ui8_cruise_function_set_target_speed_enabled;
   ui8_array [92] = p_configuration_variables->ui8_cruise_function_target_speed_kph;
@@ -601,11 +598,11 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [94] = p_configuration_variables->ui8_show_cruise_function_set_target_speed;  
   
   
-  // write wheel speed field state
+  // wheel speed field state
   ui8_array [95] = p_configuration_variables->ui8_wheel_speed_field_state;
   
   
-  // write show odometer variables
+  // show odometer variables
   ui8_array [96] = p_configuration_variables->ui8_show_distance_data_odometer_field;
   ui8_array [97] = p_configuration_variables->ui8_show_battery_state_odometer_field;
   ui8_array [98] = p_configuration_variables->ui8_show_pedal_data_odometer_field;
@@ -615,13 +612,13 @@ static void variables_to_array (uint8_t *ui8_array)
   ui8_array [102] = p_configuration_variables->ui8_show_motor_temperature_odometer_field;
   ui8_array [103] = p_configuration_variables->ui8_show_battery_SOC_odometer_field;
   
-  // write main screen power menu enable variable
+  // main screen power menu enable
   ui8_array [104] = p_configuration_variables->ui8_main_screen_power_menu_enabled;
 
-  // write pedal torque conversion
+  // pedal torque conversion
   ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
   
-  // write cadence sensor magnet pulse width
+  // cadence sensor magnet pulse width
   ui8_array[ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width;
 }
 

@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include "main.h"
-#include "common/common.h"
+
 
 typedef struct _configuration_variables
 {
@@ -32,7 +32,7 @@ typedef struct _configuration_variables
   uint8_t ui8_startup_motor_power_boost_limit_to_max_power;
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_optional_ADC;
+  uint8_t ui8_optional_ADC_function;
   uint8_t ui8_motor_temperature_min_value_to_limit;
   uint8_t ui8_motor_temperature_max_value_to_limit;
   uint8_t ui8_temperature_current_limiting_value;

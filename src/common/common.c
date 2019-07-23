@@ -9,20 +9,22 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "stm8s.h"
-#include "utils.h"
+#include "common.h"
+
 
 int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {
-  if (x < in_min) { return out_min; }       // if input min is smaller than output min, return the output min value
-  else if (x > in_max) { return out_max; }  // if input max is bigger than output max, return the output max value
-
-  // map the input to the output range.
-  // round up if mapping bigger ranges to smaller ranges
-  else  if ((in_max - in_min) > (out_max - out_min))
-    return (x - in_min) * (out_max - out_min + 1) / (in_max - in_min + 1) + out_min;
-  // round down if mapping smaller ranges to bigger ranges
-  else
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  // if input min is smaller than output min, return the output min value
+  if (x < in_min) { return out_min; }
+  
+  // if input max is bigger than output max, return the output max value
+  else if (x > in_max) { return out_max; } 
+  
+  // map the input to the output range, round up if mapping bigger ranges to smaller ranges
+  else  if ((in_max - in_min) > (out_max - out_min)) { return (x - in_min) * (out_max - out_min + 1) / (in_max - in_min + 1) + out_min; }
+  
+  // map the input to the output range, round down if mapping smaller ranges to bigger ranges
+  else { return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min; }
 }
 
 

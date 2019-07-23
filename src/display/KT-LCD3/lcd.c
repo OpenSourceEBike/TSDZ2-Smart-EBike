@@ -20,6 +20,7 @@
 #include "eeprom.h"
 #include "pins.h"
 #include "uart.h"
+#include "common.h"
 
 
 uint8_t ui8_lcd_frame_buffer[LCD_FRAME_BUFFER_SIZE];
@@ -1574,7 +1575,7 @@ void lcd_execute_menu_config_submenu_controller_setup(void)
     
     // limit motor temperature or throttle enable/disable 
     case 6:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_temperature_limit_feature_enabled;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 2;
@@ -1869,8 +1870,8 @@ void power_off_timer (void)
 
 void temperature_field(void)
 {
-  // if motor current is being limited due to temperature, i.e. below 255, force showing temperature
-  if ((configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL) && (motor_controller_data.ui8_temperature_current_limiting_value < 255))
+  // if motor current is being limited due to temperature, i.e. below 255, force showing motor temperature
+  if ((configuration_variables.ui8_optional_ADC_function == TEMPERATURE_CONTROL) && (motor_controller_data.ui8_temperature_current_limiting_value < 255))
   {
     if (ui8_lcd_menu_flash_state_temperature)
     {
@@ -1885,7 +1886,7 @@ void temperature_field(void)
       // show motor temperature
       case 1:
         // if function is enabled -> display motor temperature
-        if (configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL)
+        if (configuration_variables.ui8_optional_ADC_function == TEMPERATURE_CONTROL)
         {
           lcd_print (motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
           lcd_enable_temperature_degrees_symbol (1);
@@ -2928,7 +2929,7 @@ void odometer_field(void)
       case 7:
       
         // check if user has enabled temperature limit function and enabled to show the value in the odometer field
-        if (configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL || configuration_variables.ui8_show_motor_temperature_odometer_field == 0)
+        if (configuration_variables.ui8_optional_ADC_function == TEMPERATURE_CONTROL || configuration_variables.ui8_show_motor_temperature_odometer_field == 0)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -3689,7 +3690,7 @@ void update_menu_flashing_state(void)
   }
 
   // flash the temperature field when the current is being limited due to motor over temperature
-  if ((configuration_variables.ui8_temperature_limit_feature_enabled == TEMPERATURE_CONTROL) && (motor_controller_data.ui8_temperature_current_limiting_value < 255)) // flash only if current is being limited, i.e. below 255
+  if ((configuration_variables.ui8_optional_ADC_function == TEMPERATURE_CONTROL) && (motor_controller_data.ui8_temperature_current_limiting_value < 255)) // flash only if current is being limited, i.e. below 255
   {
     if (ui8_lcd_menu_flash_state_temperature == 0)
     {

@@ -14,14 +14,13 @@
 #include "main.h"
 #include "interrupts.h"
 #include "adc.h"
-#include "utils.h"
 #include "motor.h"
 #include "pwm.h"
 #include "uart.h"
 #include "brake.h"
 #include "eeprom.h"
-#include "utils.h"
 #include "lights.h"
+#include "common.h"
 
 volatile struct_configuration_variables m_configuration_variables;
 
@@ -165,8 +164,8 @@ static void ebike_control_motor (void)
     case CADENCE_SENSOR_CALIBRATION_MODE: apply_cadence_sensor_calibration(); break;
   }
   
-  // select control function for the optional ADC channel
-  switch (m_configuration_variables.ui8_optional_ADC)
+  // select optional ADC function
+  switch (m_configuration_variables.ui8_optional_ADC_function)
   {
     case THROTTLE_CONTROL: apply_throttle(); break;
     
@@ -274,16 +273,16 @@ static void apply_power_assist()
 
 static void apply_torque_assist()
 {
-  #define ADC_TORQUE_THRESHOLD                6     // minimum ADC torque to be applied for torque assist operation
+  #define ADC_PEDAL_TORQUE_THRESHOLD          6     // minimum ADC torque to be applied for torque assist
   #define TORQUE_ASSIST_FACTOR_DENOMINATOR    110   // scale the torque assist factor
   
   uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter;
   uint16_t ui16_adc_battery_current_target_torque_assist = 0;
   
   // calculate torque assist target current
-  if ((ui16_adc_pedal_torque_delta > ADC_TORQUE_THRESHOLD) && (ui8_pedal_cadence_RPM))
+  if ((ui16_adc_pedal_torque_delta > ADC_PEDAL_TORQUE_THRESHOLD) && (ui8_pedal_cadence_RPM))
   {
-    ui16_adc_battery_current_target_torque_assist = ((uint16_t) (ui16_adc_pedal_torque_delta - ADC_TORQUE_THRESHOLD) * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
+    ui16_adc_battery_current_target_torque_assist = ((uint16_t) (ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD) * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
   }
   
   // set battery current target
@@ -331,11 +330,9 @@ static void apply_cadence_assist()
 
 static void apply_emtb_assist()
 {
-/*     // TESTING MOTOR CURRENT CONTROL THIS IS NOT CORRECT
-    ui8_adc_battery_current_target = ui8_riding_mode_parameter;
+  // TESTING MOTOR CURRENT CONTROL THIS IS NOT CORRECT
 
-    // set duty cycle target
-    ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX; */
+
 }
 
 
@@ -888,7 +885,7 @@ static void uart_receive_package(void)
           m_configuration_variables.ui16_wheel_perimeter = (((uint16_t) ui8_rx_buffer [6]) << 8) + ((uint16_t) ui8_rx_buffer [5]);
           
           // motor temperature limit function or throttle
-          m_configuration_variables.ui8_optional_ADC = ui8_rx_buffer [7];
+          m_configuration_variables.ui8_optional_ADC_function = ui8_rx_buffer [7];
 
         break;
 
@@ -1016,7 +1013,7 @@ static void uart_send_package(void)
   // optional ADC channel value
   ui8_tx_buffer[7] = UI8_ADC_THROTTLE;
   
-  switch (m_configuration_variables.ui8_optional_ADC)
+  switch (m_configuration_variables.ui8_optional_ADC_function)
   {
     case THROTTLE_CONTROL:
       

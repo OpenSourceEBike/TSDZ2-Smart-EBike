@@ -13,7 +13,7 @@
 #include "stm8s_uart2.h"
 #include "main.h"
 #include "lcd.h"
-#include "utils.h"
+#include "common.h"
 
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   24  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_NUMBER_DATA_BYTES_TO_SEND      7   // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
@@ -132,7 +132,7 @@ void uart_data_clock (void)
       // value from optional ADC channel
       p_motor_controller_data->ui8_adc_throttle = ui8_rx_buffer[7];
       
-      switch (p_configuration_variables->ui8_temperature_limit_feature_enabled)
+      switch (p_configuration_variables->ui8_optional_ADC_function)
       {
         case THROTTLE_CONTROL:
         
@@ -308,14 +308,14 @@ void uart_data_clock (void)
           ui8_tx_buffer[5] = (uint8_t) (p_configuration_variables->ui16_wheel_perimeter & 0xff);
           ui8_tx_buffer[6] = (uint8_t) (p_configuration_variables->ui16_wheel_perimeter >> 8);
           
-          // enable/disable motor temperature limit function or throttle
-          if (p_motor_controller_data->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_temperature_limit_feature_enabled == 2)
+          // optional ADC function, disable throttle if set to be disabled in Street Mode
+          if (p_motor_controller_data->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_optional_ADC_function == THROTTLE_CONTROL)
           {
             ui8_tx_buffer[7] = 0;
           }
           else
           {
-            ui8_tx_buffer[7] = p_configuration_variables->ui8_temperature_limit_feature_enabled;
+            ui8_tx_buffer[7] = p_configuration_variables->ui8_optional_ADC_function;
           }
           
         break;

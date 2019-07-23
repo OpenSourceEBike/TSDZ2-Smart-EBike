@@ -11,7 +11,6 @@
 
 #include "main.h"
 #include "stm8s_gpio.h"
-#include "common/common.h"
 
 typedef struct _motor_controller_data
 {
@@ -90,7 +89,7 @@ typedef struct _configuration_variables
   uint8_t ui8_startup_motor_power_boost_fade_time;
   uint8_t ui8_startup_motor_power_boost_factor[9];
   uint16_t ui16_adc_motor_temperature_10b;
-  uint8_t ui8_temperature_limit_feature_enabled;
+  uint8_t ui8_optional_ADC_function;
   uint8_t ui8_motor_temperature_min_value_to_limit;
   uint8_t ui8_motor_temperature_max_value_to_limit;
   uint8_t ui8_temperature_field_state;

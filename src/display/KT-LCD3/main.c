@@ -18,6 +18,7 @@
 #include "ht162.h"
 #include "eeprom.h"
 
+
 // With SDCC, interrupt service routine function prototypes must be placed in the file that contains main()
 // in order for an vector for the interrupt to be placed in the the interrupt vector space.  It's acceptable
 // to place the function prototype in a header file as long as the header file is included in the file that
@@ -40,6 +41,7 @@
 // UART2 Receive interrupt
 void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
 void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER);
+
 
 int main (void)
 {
