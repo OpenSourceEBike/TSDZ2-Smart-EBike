@@ -360,17 +360,18 @@ uint8_t ui8_half_erps_flag = 0;
 
 
 // power variables
-volatile uint16_t ui16_adc_battery_current = 0;
-volatile uint8_t ui8_controller_adc_battery_current = 0;
-volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
-volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP;
-volatile uint8_t ui8_g_duty_cycle = 0;
+volatile uint16_t ui16_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
+volatile uint16_t ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
 volatile uint16_t ui16_adc_battery_voltage_filtered = 0;
-volatile uint8_t ui8_adc_battery_current_filtered = 0;
-volatile uint8_t ui8_g_foc_angle = 0;
-volatile uint8_t ui8_controller_adc_battery_current_target = 0;
-volatile uint8_t ui8_controller_duty_cycle_target = 0;
 volatile uint8_t ui8_adc_battery_voltage_cut_off = 0xff;
+volatile uint16_t ui16_adc_battery_current = 0;
+volatile uint8_t ui8_adc_battery_current_filtered = 0;
+volatile uint8_t ui8_controller_adc_battery_current = 0;
+volatile uint8_t ui8_controller_adc_battery_current_target = 0;
+volatile uint8_t ui8_g_duty_cycle = 0;
+volatile uint8_t ui8_controller_duty_cycle_target = 0;
+volatile uint8_t ui8_g_foc_angle = 0;
+
 
 
 // cadence sensor
@@ -413,9 +414,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   static uint8_t ui8_motor_rotor_absolute_angle;
   static uint8_t ui8_svm_table_index;
   static uint8_t ui8_adc_motor_phase_current;
-
+  
+  
 
   /****************************************************************************/
+  
   
   
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
@@ -425,11 +428,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   while (!(ADC1->CSR & ADC1_FLAG_EOC));     // wait for end of conversion
   
   ui8_controller_adc_battery_current = ui16_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
-
+  
   // calculate motor phase current ADC value
   if (ui8_g_duty_cycle > 0)
   {
-    ui8_adc_motor_phase_current = ((ui16_adc_battery_current << 6) / ((uint16_t) ui8_g_duty_cycle));
+    ui8_adc_motor_phase_current = (ui16_adc_battery_current << 6) / ui8_g_duty_cycle;
   }
   else
   {
@@ -477,9 +480,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         ui16_PWM_cycles_counter_total = ui16_PWM_cycles_counter;
         ui16_PWM_cycles_counter = 1;
 
-        // this division takes 4.4us and without the cast (uint16_t) PWM_CYCLES_SECOND, would take 111us!! Verified on 2017.11.20
-        // avoid division by 0
-        if (ui16_PWM_cycles_counter_total > 0) 
+        // this division takes 111 us if PWM_CYCLES_SECOND is a float. But with cast, (uint16_t) PWM_CYCLES_SECOND, it only takes 4.4 us. Verified on 2017.11.20
+        if (ui16_PWM_cycles_counter_total > 0) // avoid division by 0
         {
           ui16_motor_speed_erps = ((uint16_t) PWM_CYCLES_SECOND) / ui16_PWM_cycles_counter_total; 
         }
@@ -543,7 +545,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   // count number of fast loops / PWM cycles and reset some states when motor is near zero speed
-  if (ui16_PWM_cycles_counter < ((uint16_t) PWM_CYCLES_COUNTER_MAX))
+  if (ui16_PWM_cycles_counter < PWM_CYCLES_COUNTER_MAX)
   {
     ui16_PWM_cycles_counter++;
     ui16_PWM_cycles_counter_6++;
@@ -587,7 +589,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ui8_svm_table_index -= 63;
   
   
+  
   /****************************************************************************/
+
 
 
   // PWM duty_cycle controller:
@@ -612,7 +616,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui16_counter_duty_cycle_ramp_up = 0;
     
     // ramp down duty cycle
-    if (++ui16_counter_duty_cycle_ramp_down > ui16_duty_cycle_ramp_down_inverse_step)
+    if (++ui16_counter_duty_cycle_ramp_down > ui16_controller_duty_cycle_ramp_down_inverse_step)
     {
       ui16_counter_duty_cycle_ramp_down = 0;
       
@@ -625,11 +629,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // reset duty cycle ramp down counter (filter)
     ui16_counter_duty_cycle_ramp_down = 0;
     
-    // limit duty cycle ramp up
-    if (ui16_duty_cycle_ramp_up_inverse_step < 20 ) { ui16_duty_cycle_ramp_up_inverse_step = 20; }
-    
     // duty cycle ramp up
-    if (++ui16_counter_duty_cycle_ramp_up > ui16_duty_cycle_ramp_up_inverse_step)
+    if (++ui16_counter_duty_cycle_ramp_up > ui16_controller_duty_cycle_ramp_up_inverse_step)
     {
       ui16_counter_duty_cycle_ramp_up = 0;
       

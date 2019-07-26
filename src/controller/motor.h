@@ -18,15 +18,15 @@
 
 
 // power variables
-extern volatile uint16_t ui16_duty_cycle_ramp_up_inverse_step;
-extern volatile uint16_t ui16_duty_cycle_ramp_down_inverse_step;
-extern volatile uint8_t ui8_g_duty_cycle;
+extern volatile uint16_t ui16_controller_duty_cycle_ramp_up_inverse_step;
+extern volatile uint16_t ui16_controller_duty_cycle_ramp_down_inverse_step;
 extern volatile uint16_t ui16_adc_battery_voltage_filtered;
-extern volatile uint8_t ui8_adc_battery_current_filtered;
-extern volatile uint8_t ui8_g_foc_angle;
-extern volatile uint8_t ui8_controller_adc_battery_current_target;
-extern volatile uint8_t ui8_controller_duty_cycle_target;
 extern volatile uint8_t ui8_adc_battery_voltage_cut_off;
+extern volatile uint8_t ui8_adc_battery_current_filtered;
+extern volatile uint8_t ui8_controller_adc_battery_current_target;
+extern volatile uint8_t ui8_g_duty_cycle;
+extern volatile uint8_t ui8_controller_duty_cycle_target;
+extern volatile uint8_t ui8_g_foc_angle;
 
 
 // cadence sensor

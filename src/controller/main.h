@@ -16,21 +16,28 @@
 
 // motor 
 #define PWM_CYCLES_COUNTER_MAX                                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
-#define PWM_CYCLES_SECOND                                         15625L  // 1 / 64us(PWM period)
+#define PWM_CYCLES_SECOND                                         15625   // 1 / 64us(PWM period)
 #define PWM_DUTY_CYCLE_MAX                                        254
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
 
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       60      // 60 -> 60 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     20      // 18 -> 18 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT               150     // 200 -> 200 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN                   20      // 20 -> 20 * 64 us for every duty cycle increment
+
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT             35      // 20 -> 20 * 64 us for every duty cycle decrement
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN                 15      // 20 -> 20 * 64 us for every duty cycle decrement
 
 /*---------------------------------------------------------
   NOTE: regarding duty cycle (PWM) ramping
   
   Choose appropriate duty cycle (PWM) ramp up/down step. 
-  A higher value will make the motor acceleration slower.
+  A higher value will make the motor acceleration or
+  deacceleration slower.
   
-  For a 24 V battery, 25 for ramp up seems ok. For a 
-  higher voltage battery, this values should be higher.
+  A value of 20 for acceleration is approching the limit
+  for comfortable acceleration at slow speeds around 
+  8 kph. For deacceleration it is possible to have lower
+  values than 20 but it can cause mechanical spikes in
+  the drive line.
 ---------------------------------------------------------*/
 
 
@@ -54,20 +61,6 @@
 
 
 
-#define ADC_10_BIT_BATTERY_CURRENT_MAX                            90      // 18 amps (0.2 amps per 10 bit ADC step)
-#define ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX                        150     // 30 amps (0.2 amps per 10 bit ADC step)
-
-/*---------------------------------------------------------
-  NOTE: regarding ADC battery current max
-  
-  This is the maximum current in ADC steps that the motor 
-  will be able to draw from the battery. A higher value 
-  will give higher torque figures but the limit of the 
-  controller is 16 A and it should not be exceeded.
----------------------------------------------------------*/
-
-
-
 #define MOTOR_OVER_SPEED_ERPS                                     520     // motor max speed, protection max value | 30 points for the sinewave at max speed
 #define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700     // experimental motor speed to allow a higher cadence
 
@@ -80,6 +73,20 @@
   happens from sinewave and no interpolation to 
   interpolation 60 degrees. Must be found experimentally 
   but a value of 25 may be good.
+---------------------------------------------------------*/
+
+
+
+#define ADC_10_BIT_BATTERY_CURRENT_MAX                            90      // 18 amps (0.2 amps per 10 bit ADC step)
+#define ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX                        150     // 30 amps (0.2 amps per 10 bit ADC step)
+
+/*---------------------------------------------------------
+  NOTE: regarding ADC battery current max
+  
+  This is the maximum current in ADC steps that the motor 
+  will be able to draw from the battery. A higher value 
+  will give higher torque figures but the limit of the 
+  controller is 16 A and it should not be exceeded.
 ---------------------------------------------------------*/
 
 
