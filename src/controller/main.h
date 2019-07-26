@@ -39,7 +39,7 @@
 // throttle
 #define THROTTLE_FILTER_COEFFICIENT               1   // see note below
 #define ADC_THROTTLE_THRESHOLD                    10  // value in ADC 8 bits step
-#define ADC_TORQUE_SENSOR_THRESHOLD               6   // value in ADC 8 bits step
+#define ADC_TORQUE_SENSOR_THRESHOLD               24   // value in ADC 12 bits step
 
 /*---------------------------------------------------------
   NOTE: regarding throttle
@@ -72,27 +72,14 @@
 ---------------------------------------------------------*/
 
 
-
 // torque sensor
-//#define ADC_STEP_PEDAL_TORQUE_X100                         267
-#define ADC_STEP_PEDAL_TORQUE_X100                         128
-
 /*---------------------------------------------------------
   NOTE: regarding torque sensor
 
-  Torque (force) value found experimentaly.
-  
-  Measured with a cheap digital hook scale, we found that
-  each ADC 8 bits step measures 1.6kgs.
-  Full ADC range of 10 bits, it can measure as low as 0.4 kgs.
 
-  Force (Nm) = 1.6 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
-  Force per each ADC 8 bits step = 2.67 Nm
+  Force (Nm) = weight Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/
-
-// Pat bici: 13 ADC steps per 10 kgs
-// Force (Nm) = 0.77 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
-
+#define TORQUE_SENSOR_WEIGHT_TO_FORCE_X100  167
 
 
 // PAS

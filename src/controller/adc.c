@@ -74,14 +74,13 @@ void adc_init (void)
   {
     ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
     while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms
-    adc_trigger ();
+    adc_trigger();
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
-    ui16_adc_torque_sensor_offset += UI8_ADC_TORQUE_SENSOR;
+    ui16_adc_torque_sensor_offset += ui16_adc_read_torque_sensor_10b();
   }
   ui16_adc_torque_sensor_offset >>= 4;
 
-  ui8_g_adc_torque_sensor_min_value = ((uint8_t) ui16_adc_torque_sensor_offset) + ADC_TORQUE_SENSOR_THRESHOLD;
-  ui8_g_adc_torque_sensor_max_value = ui8_g_adc_torque_sensor_min_value + 32;
+  ui16_g_adc_torque_sensor_min_value = ui16_adc_torque_sensor_offset + ADC_TORQUE_SENSOR_THRESHOLD;
 }
 
 static void adc_trigger (void)

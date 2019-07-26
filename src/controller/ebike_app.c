@@ -9,6 +9,7 @@
 #include "ebike_app.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include "stm8s.h"
 #include "stm8s_gpio.h"
 #include "main.h"
@@ -52,10 +53,11 @@ uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 static uint8_t ui8_m_motor_enabled = 1;
 static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
-volatile uint8_t  ui8_torque_sensor = 0;
-volatile uint8_t  ui8_torque_sensor_raw = 0;
-volatile uint8_t  ui8_g_adc_torque_sensor_min_value;
-volatile uint8_t  ui8_g_adc_torque_sensor_max_value;
+volatile uint8_t  ui8_m_torque_sensor_weight = 0;
+volatile uint8_t  ui8_m_torque_sensor_weight_max = 0;
+static volatile uint16_t ui16_m_torque_sensor_adc_steps = 0;
+volatile uint16_t  ui16_torque_sensor_raw = 0;
+volatile uint16_t  ui16_g_adc_torque_sensor_min_value;
 volatile uint8_t  ui8_adc_battery_current_offset;
 volatile uint8_t  ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 volatile uint8_t  ui8_adc_target_battery_max_current;
@@ -109,7 +111,8 @@ static void ebike_app_set_target_adc_battery_max_current (uint8_t ui8_value);
 static void check_system(void);
 static void throttle_read (void);
 static void read_pas_cadence (void);
-static void torque_sensor_read (void);
+static void torque_sensor_read(void);
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight);
 static void calc_pedal_force_and_torque (void);
 static void calc_wheel_speed (void);
 static void calc_motor_temperature (void);
@@ -135,6 +138,16 @@ static void     boost_run_statemachine (void);
 static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
+#define TORQUE_SENSOR_LINEARIZE_NR_POINTS 5
+uint16_t ui16_torque_sensor_linearize[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
+{
+  // ADC 10 bits step, steps_per_kg_x100
+  0, 18,
+  260, 20,
+  284, 20,
+  292, 60,
+  324, 210,
+};
 
 
 void ebike_app_init (void)
@@ -587,9 +600,9 @@ static void uart_send_package(void)
 
   // ADC torque_sensor
   ui8_tx_buffer[9] = UI8_ADC_TORQUE_SENSOR;
-  
-  // torque sensor value with offset removed
-  ui8_tx_buffer[10] = ui8_torque_sensor;
+
+  // weight in kgs
+  ui8_tx_buffer[10] = ui8_m_torque_sensor_weight;
   
   // PAS cadence
   ui8_tx_buffer[11] = ui8_pas_cadence_rpm;
@@ -667,15 +680,81 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   if (ui8_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX) { ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX; }
 }
 
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight)
+{
+  uint16_t array[TORQUE_SENSOR_LINEARIZE_NR_POINTS];
+  uint8_t ui8_end = 0;
+  uint16_t ui16_p_torque_sensor_adc_absolute_steps;
+
+  memset(array, 0, TORQUE_SENSOR_LINEARIZE_NR_POINTS * sizeof(array[0]));
+
+  ui16_p_torque_sensor_adc_absolute_steps = *ui16_p_torque_sensor_adc_steps + ui16_g_adc_torque_sensor_min_value;
+
+  if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[2])
+  {
+    array[0] = *ui16_p_torque_sensor_adc_steps;
+    ui8_end = 1;
+  }
+  else
+  {
+    array[0] = ui16_torque_sensor_linearize[2] - ui16_g_adc_torque_sensor_min_value;
+  }
+
+  if(ui8_end == 0)
+  {
+    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[4])
+    {
+      array[1] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[2]);
+      ui8_end = 1;
+    }
+    else
+    {
+      array[1] = ui16_torque_sensor_linearize[4] - ui16_torque_sensor_linearize[2];
+    }
+  }
+
+  if(ui8_end == 0)
+  {
+    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[6])
+    {
+      array[2] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[4]);
+      ui8_end = 1;
+    }
+    else
+    {
+      array[2] = ui16_torque_sensor_linearize[6] - ui16_torque_sensor_linearize[4];
+    }
+  }
+
+  if(ui8_end == 0)
+  {
+    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[8])
+    {
+      array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[4]);
+      ui8_end = 1;
+    }
+    else
+    {
+      array[3] = ui16_torque_sensor_linearize[8] - ui16_torque_sensor_linearize[6];
+    }
+  }
+
+  if(ui8_end == 0)
+  {
+    array[4] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[8];
+  }
+
+  *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize[1] +
+      array[1] * ui16_torque_sensor_linearize[3] +
+      array[2] * ui16_torque_sensor_linearize[5] +
+      array[3] * ui16_torque_sensor_linearize[7] +
+      array[4] * ui16_torque_sensor_linearize[9]) / 100;
+}
 
 static void calc_pedal_force_and_torque(void)
 {
   uint16_t ui16_pedal_torque_x100;
   uint16_t ui16_pedal_torque_max_x100;
-
-  // calculate torque on pedals
-  ui16_pedal_torque_x100 = (uint16_t) ui8_torque_sensor * (uint16_t) ADC_STEP_PEDAL_TORQUE_X100;
-  ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
 
   // calculate power on pedals
   // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
@@ -697,11 +776,16 @@ static void calc_pedal_force_and_torque(void)
   For a quick hack, we can just reduce actual value to 0.637.
 
   */
+  // linearize and calculate weight on pedals
+  linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_adc_steps, &ui8_m_torque_sensor_weight);
+  ui16_pedal_torque_x100 = ui8_m_torque_sensor_weight * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
+  ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
   ui16_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
 
-  // apply the 0.637 factor
-  ui16_pedal_torque_max_x100 = (uint16_t) ui8_g_adc_torque_sensor_max_value_per_rotation * (uint16_t) ADC_STEP_PEDAL_TORQUE_X100;
-  ui16_pedal_power_max_x10 = (uint16_t) ((ui16_pedal_torque_max_x100 * (uint32_t) ui8_pas_cadence_rpm) / 150);
+  // linearize and calculate weight on pedals
+  linearize_torque_sensor_to_kgs(&ui16_g_adc_torque_sensor_max_value_per_rotation, &ui8_m_torque_sensor_weight_max);
+  ui16_pedal_torque_max_x100 = (uint16_t) ui8_m_torque_sensor_weight_max * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
+  ui16_pedal_power_max_x10 = (uint16_t) ((ui16_pedal_torque_max_x100 * (uint32_t) ui8_pas_cadence_rpm) / 150);  // apply the 0.637 factor
 }
 
 
@@ -914,7 +998,7 @@ static void boost_run_statemachine(void)
     {
       // ebike is stopped, wait for throttle signal to startup boost
       case BOOST_STATE_BOOST_DISABLED:
-        if(ui8_torque_sensor > 12 &&
+        if(ui16_m_torque_sensor_adc_steps > 48 &&
             (ui8_m_brake_is_set == 0))
         {
           ui8_startup_boost_enable = 1;
@@ -932,7 +1016,7 @@ static void boost_run_statemachine(void)
         }
 
         // end boost if
-        if(ui8_torque_sensor < 12)
+        if(ui16_m_torque_sensor_adc_steps < 48)
         {
           ui8_startup_boost_enable = 0;
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_WAIT_TO_RESTART;
@@ -967,7 +1051,7 @@ static void boost_run_statemachine(void)
         if(ui8_startup_boost_fade_steps > 0) { ui8_startup_boost_fade_steps--; }
 
         // disable fade if
-        if(ui8_torque_sensor < 12 ||
+        if(ui16_m_torque_sensor_adc_steps < 48 ||
             ui8_startup_boost_fade_steps == 0)
         {
           ui8_startup_boost_fade_enable = 0;
@@ -982,7 +1066,7 @@ static void boost_run_statemachine(void)
         if((m_configuration_variables.ui8_startup_motor_power_boost_state & 1) == 0)
         {
           if(ui16_wheel_speed_x10 == 0 &&
-              ui8_torque_sensor < 12)
+              ui16_m_torque_sensor_adc_steps < 48)
           {
             ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
           }
@@ -990,7 +1074,7 @@ static void boost_run_statemachine(void)
         // torque sensor must be 0
         if((m_configuration_variables.ui8_startup_motor_power_boost_state & 1) > 0)
         {
-          if(ui8_torque_sensor < 12 ||
+          if(ui16_m_torque_sensor_adc_steps < 48 ||
               ui8_pas_cadence_rpm == 0)
           {
             ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
@@ -1055,18 +1139,18 @@ static void read_pas_cadence(void)
 
 static void torque_sensor_read(void)
 {
-  uint8_t ui8_adc_torque_sensor = UI8_ADC_TORQUE_SENSOR;
+  uint16_t ui16_adc_torque_sensor = ui16_adc_read_torque_sensor_10b();
 
   // remove the offset
   // make sure readed value is higher than the offset
-  if(ui8_adc_torque_sensor >= ui8_g_adc_torque_sensor_min_value)
+  if(ui16_adc_torque_sensor >= ui16_g_adc_torque_sensor_min_value)
   {
-    ui8_torque_sensor_raw = ui8_adc_torque_sensor - ui8_g_adc_torque_sensor_min_value;
+    ui16_torque_sensor_raw = ui16_adc_torque_sensor - ui16_g_adc_torque_sensor_min_value;
   }
   // offset is higher, something is wrong so just keep ui8_torque_sensor_raw at 0 value
   else
   {
-    ui8_torque_sensor_raw = 0;
+    ui16_torque_sensor_raw = 0;
   }
 
   // next state machine is used to filter out the torque sensor signal
@@ -1075,7 +1159,7 @@ static void torque_sensor_read(void)
   {
     // ebike is stopped
     case STATE_NO_PEDALLING:
-    if(ui8_torque_sensor_raw > 0 && ui16_wheel_speed_x10)
+    if(ui16_torque_sensor_raw > 0 && ui16_wheel_speed_x10)
     {
       ui8_tstr_state_machine = STATE_PEDALLING;
     }
@@ -1083,7 +1167,7 @@ static void torque_sensor_read(void)
 
     // wait on this state and reset when ebike stops
     case STATE_PEDALLING:
-    if(ui16_wheel_speed_x10 == 0 && ui8_torque_sensor_raw == 0)
+    if(ui16_wheel_speed_x10 == 0 && ui16_torque_sensor_raw == 0)
     {
       ui8_tstr_state_machine = STATE_NO_PEDALLING;
     }
@@ -1096,11 +1180,11 @@ static void torque_sensor_read(void)
   // bike is moving but user doesn't pedal, disable torque sensor signal because user can be resting the feet on the pedals
   if(ui8_tstr_state_machine == STATE_PEDALLING && ui8_pas_cadence_rpm == 0)
   {
-    ui8_torque_sensor = 0;
+    ui16_m_torque_sensor_adc_steps = 0;
   }
   else
   {
-    ui8_torque_sensor = ui8_torque_sensor_raw;
+    ui16_m_torque_sensor_adc_steps = ui16_torque_sensor_raw;
   }
 }
 
