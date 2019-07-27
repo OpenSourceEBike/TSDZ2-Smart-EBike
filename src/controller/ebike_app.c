@@ -112,7 +112,7 @@ static void check_system(void);
 static void throttle_read (void);
 static void read_pas_cadence (void);
 static void torque_sensor_read(void);
-static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight);
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight, uint8_t *ui8_p_pas_pedal_right);
 static void calc_pedal_force_and_torque (void);
 static void calc_wheel_speed (void);
 static void calc_motor_temperature (void);
@@ -139,16 +139,25 @@ static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_bo
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
 #define TORQUE_SENSOR_LINEARIZE_NR_POINTS 5
-uint16_t ui16_torque_sensor_linearize[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
+uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
-  0, 18,
-  260, 20,
-  284, 20,
-  292, 60,
-  324, 210,
+  0, 16,
+  260, 16,
+  284, 21,
+  292, 63,
+  340, 160,
 };
 
+uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
+{
+  // ADC 10 bits step, steps_per_kg_x100
+  0, 19,
+  292, 19,
+  304, 42,
+  308, 125,
+  328, 360,
+};
 
 void ebike_app_init (void)
 {
@@ -680,7 +689,7 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   if (ui8_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX) { ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX; }
 }
 
-static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight)
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight, uint8_t *ui8_p_pas_pedal_right)
 {
   uint16_t array[TORQUE_SENSOR_LINEARIZE_NR_POINTS];
   uint8_t ui8_end = 0;
@@ -690,71 +699,137 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
 
   ui16_p_torque_sensor_adc_absolute_steps = *ui16_p_torque_sensor_adc_steps + ui16_g_adc_torque_sensor_min_value;
 
-  if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[2])
+  if(*ui8_p_pas_pedal_right > 0)
   {
-    array[0] = *ui16_p_torque_sensor_adc_steps;
-    ui8_end = 1;
+    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[2])
+    {
+      array[0] = *ui16_p_torque_sensor_adc_steps;
+      ui8_end = 1;
+    }
+    else
+    {
+      array[0] = ui16_torque_sensor_linearize_right[2] - ui16_g_adc_torque_sensor_min_value;
+    }
+
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[4])
+      {
+        array[1] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[2]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[1] = ui16_torque_sensor_linearize_right[4] - ui16_torque_sensor_linearize_right[2];
+      }
+    }
+
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[6])
+      {
+        array[2] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[4]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[2] = ui16_torque_sensor_linearize_right[6] - ui16_torque_sensor_linearize_right[4];
+      }
+    }
+
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[8])
+      {
+        array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[4]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[3] = ui16_torque_sensor_linearize_right[8] - ui16_torque_sensor_linearize_right[6];
+      }
+    }
+
+    if(ui8_end == 0)
+    {
+      array[4] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[8];
+    }
+
+    *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize_right[3] +
+        array[1] * ui16_torque_sensor_linearize_right[5] +
+        array[2] * ui16_torque_sensor_linearize_right[7] +
+        array[3] * ui16_torque_sensor_linearize_right[9] +
+        array[4] * ui16_torque_sensor_linearize_right[9]) / 100;
   }
   else
   {
-    array[0] = ui16_torque_sensor_linearize[2] - ui16_g_adc_torque_sensor_min_value;
-  }
-
-  if(ui8_end == 0)
-  {
-    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[4])
+    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[2])
     {
-      array[1] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[2]);
+      array[0] = *ui16_p_torque_sensor_adc_steps;
       ui8_end = 1;
     }
     else
     {
-      array[1] = ui16_torque_sensor_linearize[4] - ui16_torque_sensor_linearize[2];
+      array[0] = ui16_torque_sensor_linearize_left[2] - ui16_g_adc_torque_sensor_min_value;
     }
-  }
 
-  if(ui8_end == 0)
-  {
-    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[6])
+    if(ui8_end == 0)
     {
-      array[2] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[4]);
-      ui8_end = 1;
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[4])
+      {
+        array[1] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[2]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[1] = ui16_torque_sensor_linearize_left[4] - ui16_torque_sensor_linearize_left[2];
+      }
     }
-    else
-    {
-      array[2] = ui16_torque_sensor_linearize[6] - ui16_torque_sensor_linearize[4];
-    }
-  }
 
-  if(ui8_end == 0)
-  {
-    if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize[8])
+    if(ui8_end == 0)
     {
-      array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[4]);
-      ui8_end = 1;
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[6])
+      {
+        array[2] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[4]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[2] = ui16_torque_sensor_linearize_left[6] - ui16_torque_sensor_linearize_left[4];
+      }
     }
-    else
+
+    if(ui8_end == 0)
     {
-      array[3] = ui16_torque_sensor_linearize[8] - ui16_torque_sensor_linearize[6];
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[8])
+      {
+        array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[4]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[3] = ui16_torque_sensor_linearize_left[8] - ui16_torque_sensor_linearize_left[6];
+      }
     }
-  }
 
-  if(ui8_end == 0)
-  {
-    array[4] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize[8];
-  }
+    if(ui8_end == 0)
+    {
+      array[4] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[8];
+    }
 
-  *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize[1] +
-      array[1] * ui16_torque_sensor_linearize[3] +
-      array[2] * ui16_torque_sensor_linearize[5] +
-      array[3] * ui16_torque_sensor_linearize[7] +
-      array[4] * ui16_torque_sensor_linearize[9]) / 100;
+    *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize_left[3] +
+        array[1] * ui16_torque_sensor_linearize_left[5] +
+        array[2] * ui16_torque_sensor_linearize_left[7] +
+        array[3] * ui16_torque_sensor_linearize_left[9] +
+        array[4] * ui16_torque_sensor_linearize_left[9]) / 100;
+  }
 }
 
 static void calc_pedal_force_and_torque(void)
 {
   uint16_t ui16_pedal_torque_x100;
   uint16_t ui16_pedal_torque_max_x100;
+  uint8_t ui8_pas_pedal_right = 1;
 
   // calculate power on pedals
   // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
@@ -777,15 +852,18 @@ static void calc_pedal_force_and_torque(void)
 
   */
   // linearize and calculate weight on pedals
-  linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_adc_steps, &ui8_m_torque_sensor_weight);
+  linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_adc_steps, &ui8_m_torque_sensor_weight, &ui8_g_pas_pedal_right);
   ui16_pedal_torque_x100 = ui8_m_torque_sensor_weight * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
   ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
   ui16_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
 
-  // linearize and calculate weight on pedals
-  linearize_torque_sensor_to_kgs(&ui16_g_adc_torque_sensor_max_value_per_rotation, &ui8_m_torque_sensor_weight_max);
-  ui16_pedal_torque_max_x100 = (uint16_t) ui8_m_torque_sensor_weight_max * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
-  ui16_pedal_power_max_x10 = (uint16_t) ((ui16_pedal_torque_max_x100 * (uint32_t) ui8_pas_cadence_rpm) / 150);  // apply the 0.637 factor
+  ui16_pedal_power_max_x10 = ui16_pedal_power_x10;
+
+//  // linearize and calculate weight on pedals
+//  // here consider always right pedal as it should always have the higher value
+//  linearize_torque_sensor_to_kgs(&ui16_g_adc_torque_sensor_max_value_per_rotation, &ui8_m_torque_sensor_weight_max, &ui8_pas_pedal_right);
+//  ui16_pedal_torque_max_x100 = (uint16_t) ui8_m_torque_sensor_weight_max * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
+//  ui16_pedal_power_max_x10 = (uint16_t) ((ui16_pedal_torque_max_x100 * (uint32_t) ui8_pas_cadence_rpm) / 150);  // apply the 0.637 factor
 }
 
 

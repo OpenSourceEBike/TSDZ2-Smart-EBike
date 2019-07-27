@@ -410,6 +410,8 @@ uint8_t ui8_pas_state;
 uint8_t ui8_pas_state_old;
 uint8_t ui8_pas_after_first_pulse = 0;
 uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+uint8_t ui8_pas_tick_counter = 0;
+volatile uint8_t ui8_g_pas_pedal_right = 0;
 
 volatile uint16_t ui16_g_adc_torque_sensor_max_value_per_rotation = 0;
 volatile uint16_t ui16_g_adc_torque_sensor_max = 0;
@@ -843,6 +845,27 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           ui8_g_pedaling_direction = 1;
         }
       }
+
+      // lef/right
+      if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
+      {
+        ui8_pas_tick_counter++;
+        if(ui8_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
+        {
+          ui8_pas_tick_counter = 1;
+        }
+      }
+      else
+      {
+        if(ui8_pas_tick_counter <= 1)
+        {
+          ui8_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
+        }
+        else
+        {
+          ui8_pas_tick_counter--;
+        }
+      }
     }
     else
     {
@@ -859,7 +882,40 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           ui8_g_pedaling_direction = 1;
         }
       }
+
+
+      // lef/right
+      if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
+      {
+        ui8_pas_tick_counter++;
+        if(ui8_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
+        {
+          ui8_pas_tick_counter = 1;
+        }
+      }
+      else
+      {
+        if(ui8_pas_tick_counter <= 1)
+        {
+          ui8_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
+        }
+        else
+        {
+          ui8_pas_tick_counter--;
+        }
+      }
     }
+
+    // define if pedal is right or left
+    if(ui8_pas_tick_counter > PAS_NUMBER_MAGNETS)
+    {
+      ui8_g_pas_pedal_right = 0;
+    }
+    else
+    {
+      ui8_g_pas_pedal_right = 1;
+    }
+
 
     /****************************************************************************/
     // on the next block of code, let's save the torque sensor max value on each pedal full rotation
