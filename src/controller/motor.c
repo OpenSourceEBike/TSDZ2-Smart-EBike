@@ -24,7 +24,7 @@
 #define SVM_TABLE_LEN   256
 #define SIN_TABLE_LEN   60
 
-uint8_t ui8_svm_table [SVM_TABLE_LEN] =
+uint8_t ui8_svm_table[SVM_TABLE_LEN] =
 {
     239 ,
     241 ,
@@ -284,7 +284,7 @@ uint8_t ui8_svm_table [SVM_TABLE_LEN] =
     238 ,
 };
 
-uint8_t ui8_sin_table [SIN_TABLE_LEN] =
+uint8_t ui8_sin_table[SIN_TABLE_LEN] =
 {
     0 ,
     3 ,
@@ -371,7 +371,6 @@ volatile uint8_t ui8_controller_adc_battery_current_target = 0;
 volatile uint8_t ui8_g_duty_cycle = 0;
 volatile uint8_t ui8_controller_duty_cycle_target = 0;
 volatile uint8_t ui8_g_foc_angle = 0;
-
 
 
 // cadence sensor
@@ -629,7 +628,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // reset duty cycle ramp down counter (filter)
     ui16_counter_duty_cycle_ramp_down = 0;
     
-    // duty cycle ramp up
+    // ramp up duty cycle
     if (++ui16_counter_duty_cycle_ramp_up > ui16_controller_duty_cycle_ramp_up_inverse_step)
     {
       ui16_counter_duty_cycle_ramp_up = 0;

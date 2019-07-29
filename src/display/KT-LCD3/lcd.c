@@ -147,7 +147,7 @@ void riding_mode_controller(void);
 void lcd_execute_main_screen(void);
 void lcd_execute_menu_config(void);
 void lcd_execute_menu_config_power(void);
-void lcd_execute_menu_config_submenu_basic_config(void);
+void lcd_execute_menu_config_submenu_basic_setup(void);
 void lcd_execute_menu_config_submenu_battery(void);
 void lcd_execute_menu_config_submenu_power_assist(void);
 void lcd_execute_menu_config_submenu_torque_assist(void);
@@ -157,7 +157,7 @@ void lcd_execute_menu_config_submenu_walk_assist(void);
 void lcd_execute_menu_config_submenu_cruise(void);
 void lcd_execute_menu_config_main_screen_setup(void);
 void lcd_execute_menu_config_submenu_motor_startup_power_boost(void);
-void lcd_execute_menu_config_submenu_controller_setup(void);
+void lcd_execute_menu_config_submenu_advanced_setup(void);
 void lcd_execute_menu_config_submenu_street_mode(void);
 void lcd_execute_menu_config_submenu_technical(void);
 void update_menu_flashing_state(void);
@@ -332,14 +332,14 @@ void lcd_execute_main_screen (void)
 
 void lcd_execute_menu_config (void)
 {
-  #define MAX_NUMBER_OF_SUBMENUS    12
+  #define MAX_NUMBER_OF_SUBMENUS    11
   
   if (ui8_lcd_menu_config_submenu_active)
   {
     switch (ui8_lcd_menu_config_submenu_number)
     {
       case 0:
-        lcd_execute_menu_config_submenu_basic_config();
+        lcd_execute_menu_config_submenu_basic_setup();
       break;
 
       case 1:
@@ -359,7 +359,7 @@ void lcd_execute_menu_config (void)
       break;
       
       case 5:
-        lcd_execute_menu_config_submenu_eMTB_assist;
+        lcd_execute_menu_config_submenu_eMTB_assist();
       break;
       
       case 6:
@@ -375,23 +375,19 @@ void lcd_execute_menu_config (void)
       break;
 
       case 9:
-        lcd_execute_menu_config_submenu_motor_startup_power_boost();
-      break;
-
-      case 10:
-        lcd_execute_menu_config_submenu_controller_setup();        
-      break;
-
-      case 11:
         lcd_execute_menu_config_submenu_street_mode();
       break;
 
-      case 12:
-        lcd_execute_menu_config_submenu_technical();
-      break;  
+      case 10:
+        lcd_execute_menu_config_submenu_advanced_setup();     
+      break;
 
+      case 11:
+        lcd_execute_menu_config_submenu_technical();
+      break;
+      
       default:
-        ui8_lcd_menu_config_submenu_number = 0;
+        ui8_lcd_menu_config_submenu_active = 0;
       break;
     }
   }
@@ -410,6 +406,12 @@ void lcd_execute_menu_config (void)
       if (ui8_lcd_menu_config_submenu_number > 0) { --ui8_lcd_menu_config_submenu_number; } 
       else { ui8_lcd_menu_config_submenu_number = MAX_NUMBER_OF_SUBMENUS; }
     }
+    
+    // print submenu number only half of the time
+    if (ui8_lcd_menu_flash_state)
+    {
+      lcd_print(ui8_lcd_menu_config_submenu_number, WHEEL_SPEED_FIELD, 0);
+    }
   
     // enter submenu if...
     if (ONOFF_CLICK)
@@ -422,34 +424,29 @@ void lcd_execute_menu_config (void)
     // leave config menu if...
     if (ONOFF_LONG_CLICK)
     {
-      // save the updated variables on EEPROM
+      // save the updated variables to EEPROM
       eeprom_write_variables();
       
       // switch to main menu
       ui8_lcd_menu = MAIN_MENU;
-    }
-    
-    // print submenu number only half of the time
-    if (ui8_lcd_menu_flash_state)
-    {
-      lcd_print(ui8_lcd_menu_config_submenu_number, WHEEL_SPEED_FIELD, 0);
     }
   }
 }
 
 
 
-void lcd_execute_menu_config_submenu_basic_config(void)
+void lcd_execute_menu_config_submenu_basic_setup(void)
 {
   var_number_t lcd_var_number;
   uint32_t ui32_temp;
+  uint16_t ui16_temp;
   static uint8_t ui8_reset_to_defaults_counter;
   
   switch(ui8_lcd_menu_config_submenu_state)
   {
-    // menu to choose units type
     case 0:
-
+    
+      // units
       lcd_var_number.p_var_number = &configuration_variables.ui8_units_type;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -480,8 +477,9 @@ void lcd_execute_menu_config_submenu_basic_config(void)
 
     break;
     
-    // menu to choose max wheel speed
     case 1:
+    
+      // max wheel speed
       
       // display max wheel speed in either imperial or metric units
       if (configuration_variables.ui8_units_type)
@@ -518,9 +516,9 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       
     break;
     
-    // menu to choose wheel perimeter in millimeters
     case 2:
     
+      // wheel perimeter in millimeters
       lcd_var_number.p_var_number = &configuration_variables.ui16_wheel_perimeter;
       lcd_var_number.ui8_size = 16;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -532,9 +530,51 @@ void lcd_execute_menu_config_submenu_basic_config(void)
     
     break;
     
-    // set odometer
     case 3:
+      // motor voltage type
+      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_type;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 3;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    case 4:
+      // motor power limit
+      ui16_temp = configuration_variables.ui8_target_max_battery_power_div25 * 25;
+      lcd_var_number.p_var_number = &ui16_temp;
+      lcd_var_number.ui8_size = 16;
+      lcd_var_number.ui8_decimal_digit = 1; // needs to be for BATTERY_POWER_FIELD
+      lcd_var_number.ui32_max_value = 1900;
+      lcd_var_number.ui32_min_value = 0;
 
+      if (configuration_variables.ui8_target_max_battery_power_div25 < 10)
+      {
+        lcd_var_number.ui32_increment_step = 25;
+      }
+      else
+      {
+        lcd_var_number.ui32_increment_step = 50;
+      }
+
+      lcd_var_number.ui8_odometer_field = BATTERY_POWER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      configuration_variables.ui8_target_max_battery_power_div25 = ui16_temp / 25;
+      
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_enable_w_symbol (1);
+        lcd_enable_motor_symbol (1);
+      }
+
+    break;
+    
+    case 5:
+      
+      // set odometer
       if (configuration_variables.ui8_units_type)
       {
         // imperial
@@ -577,9 +617,9 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       
     break;
     
-    // backlight off brightness
-    case 4:
+    case 6:
     
+      // backlight off brightness
       ui32_temp = configuration_variables.ui8_lcd_backlight_off_brightness * 5;
       
       lcd_var_number.p_var_number = &ui32_temp;
@@ -599,9 +639,10 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       
     break;
 
-    // backlight on brightness
-    case 5:
+
+    case 7:
     
+      // backlight on brightness
       ui32_temp = configuration_variables.ui8_lcd_backlight_on_brightness * 5;
       
       lcd_var_number.p_var_number = &ui32_temp;
@@ -621,9 +662,9 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       
     break;
 
-    // auto power off
-    case 6:
+    case 8:
     
+      // auto power off
       lcd_var_number.p_var_number = &configuration_variables.ui8_lcd_power_off_time_minutes;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -639,9 +680,9 @@ void lcd_execute_menu_config_submenu_basic_config(void)
       
     break;
 
-    // reset to defaults
-    case 7:
+    case 9:
     
+      // reset to defaults
       lcd_var_number.p_var_number = &ui8_reset_to_defaults_counter;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -663,7 +704,7 @@ void lcd_execute_menu_config_submenu_basic_config(void)
     break;
   }
   
-  submenu_state_controller(7); // 7 sub menus
+  submenu_state_controller(9);
   
   if (ui8_lcd_menu_config_submenu_state > 1 && (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled))
   {
@@ -1045,11 +1086,11 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
     case 1:
       
       // set eMTB assist level
-      lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_level;
+      lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_sensitivity;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 255;
-      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_max_value = 8;
+      lcd_var_number.ui32_min_value = 1;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
@@ -1376,256 +1417,6 @@ void lcd_execute_menu_config_main_screen_setup(void)
 
 
 
-void lcd_execute_menu_config_submenu_motor_startup_power_boost(void)
-{
-  var_number_t lcd_var_number;
-  uint8_t ui8_temp;
-
-  // feature enable or disable
-  if (ui8_lcd_menu_config_submenu_state == 0)
-  {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_startup_motor_power_boost_feature_enabled;
-    lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 0;
-    lcd_var_number.ui32_max_value = 1;
-    lcd_var_number.ui32_min_value = 0;
-    lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-    lcd_configurations_print_number(&lcd_var_number);
-  }
-  // enabled on startup when wheel speed is zero or always when cadence is zero
-  else if (ui8_lcd_menu_config_submenu_state == 1)
-  {
-    ui8_temp = configuration_variables.ui8_startup_motor_power_boost_state & 1;
-    lcd_var_number.p_var_number = &ui8_temp;
-    lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 0;
-    lcd_var_number.ui32_max_value = 1;
-    lcd_var_number.ui32_min_value = 0;
-    lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-    lcd_configurations_print_number(&lcd_var_number);
-
-    if(ui8_temp) { configuration_variables.ui8_startup_motor_power_boost_state |= 1; }
-    else { configuration_variables.ui8_startup_motor_power_boost_state &= ~1; }
-  }
-  // limit to max power
-  else if (ui8_lcd_menu_config_submenu_state == 2)
-  {
-    ui8_temp = (configuration_variables.ui8_startup_motor_power_boost_state & 2) >> 1;
-    lcd_var_number.p_var_number = &ui8_temp;
-    lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 0;
-    lcd_var_number.ui32_max_value = 1;
-    lcd_var_number.ui32_min_value = 0;
-    lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-    lcd_configurations_print_number(&lcd_var_number);
-
-    if(ui8_temp) { configuration_variables.ui8_startup_motor_power_boost_state |= 2; }
-    else { configuration_variables.ui8_startup_motor_power_boost_state &= ~2; }
-  }
-  // startup motor power boost time
-  else if (ui8_lcd_menu_config_submenu_state == 3)
-  {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_startup_motor_power_boost_time;
-    lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
-    lcd_var_number.ui32_max_value = 255;
-    lcd_var_number.ui32_min_value = 0;
-    lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-    lcd_configurations_print_number(&lcd_var_number);
-  }
-  // startup motor power boost fade time
-  else if (ui8_lcd_menu_config_submenu_state == 4)
-  {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_startup_motor_power_boost_fade_time;
-    lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
-    lcd_var_number.ui32_max_value = 255;
-    lcd_var_number.ui32_min_value = 0;
-    lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-    lcd_configurations_print_number(&lcd_var_number);
-  }
-  // value of each assist level factor for power boost
-  else
-  {
-    lcd_var_number.p_var_number = &configuration_variables.ui8_startup_motor_power_boost_factor[(ui8_lcd_menu_config_submenu_state - 5)];
-    lcd_var_number.ui8_size = 8;
-    lcd_var_number.ui8_decimal_digit = 1;
-    lcd_var_number.ui32_max_value = 255;
-    lcd_var_number.ui32_min_value = 0;
-    lcd_var_number.ui32_increment_step = 1;
-    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-    lcd_configurations_print_number(&lcd_var_number);
-    
-    if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
-    {
-      lcd_enable_assist_symbol(1);
-      lcd_print(ui8_lcd_menu_config_submenu_state - 4, ASSIST_LEVEL_FIELD, 1);
-    }
-  }
-
-  submenu_state_controller(configuration_variables.ui8_number_of_assist_levels + 4);
-  
-  if (ui8_lcd_menu_config_submenu_state < 5 && (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled))
-  {
-    lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
-  }
-}
-
-
-
-void lcd_execute_menu_config_submenu_controller_setup(void)
-{
-  var_number_t lcd_var_number;
-  uint16_t ui16_temp;
-
-  switch (ui8_lcd_menu_config_submenu_state)
-  {
-    // motor voltage type
-    case 0:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_type;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 3;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-    
-    // motor power limit
-    case 1:
-      ui16_temp = configuration_variables.ui8_target_max_battery_power_div25 * 25;
-      lcd_var_number.p_var_number = &ui16_temp;
-      lcd_var_number.ui8_size = 16;
-      lcd_var_number.ui8_decimal_digit = 1; // needs to be for BATTERY_POWER_FIELD
-      lcd_var_number.ui32_max_value = 1900;
-      lcd_var_number.ui32_min_value = 0;
-
-      if (configuration_variables.ui8_target_max_battery_power_div25 < 10)
-      {
-        lcd_var_number.ui32_increment_step = 25;
-      }
-      else
-      {
-        lcd_var_number.ui32_increment_step = 50;
-      }
-
-      lcd_var_number.ui8_odometer_field = BATTERY_POWER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      configuration_variables.ui8_target_max_battery_power_div25 = ui16_temp / 25;
-      
-      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-      {
-        lcd_enable_w_symbol (1);
-        lcd_enable_motor_symbol (1);
-      }
-
-    break;
-  
-    // motor acceleration
-    case 2:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_acceleration;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 100;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-    
-    case 3:
-      // pedal torque conversion
-      lcd_var_number.p_var_number = &configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 255;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-    
-    case 4:
-    
-    // weight on pedal from pedal torque conversion
-    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-    {
-      lcd_print(ui16_weight_on_pedal_x10, ODOMETER_FIELD, 1);
-    }
-    
-    break;
-    
-    case 5:
-      // cadence sensor magnet pulse width
-      lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_sensor_magnet_pulse_width;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 200;
-      lcd_var_number.ui32_min_value = 1;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-    
-    // limit motor temperature or throttle enable/disable 
-    case 6:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 2;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-    break;
-
-    // motor temperature limit min
-    case 7:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_min_value_to_limit;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 110;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      
-      lcd_enable_temperature_degrees_symbol (1);
-
-    break;
-
-    // motor temperature limit max
-    case 8:
-      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_max_value_to_limit;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 110;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-      
-      lcd_enable_temperature_degrees_symbol (1);
-    
-    break;
-  }
-
-  submenu_state_controller(8);
-
-  if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
-  {
-    lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
-  }
-}
-
-
-
 void lcd_execute_menu_config_submenu_street_mode (void)
 {
   var_number_t lcd_var_number;
@@ -1722,6 +1513,111 @@ void lcd_execute_menu_config_submenu_street_mode (void)
   submenu_state_controller(5);
 
   if (ui8_lcd_menu_config_submenu_state != 2 && (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled))
+  {
+    lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
+  }
+}
+
+
+
+void lcd_execute_menu_config_submenu_advanced_setup(void)
+{
+  var_number_t lcd_var_number;
+
+  switch (ui8_lcd_menu_config_submenu_state)
+  {
+    // motor acceleration adjustment
+    case 0:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_acceleration;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 100;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    case 1:
+      // pedal torque conversion
+      lcd_var_number.p_var_number = &configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 255;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    case 2:
+    
+    // weight on pedal from pedal torque conversion
+    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+    {
+      lcd_print(ui16_weight_on_pedal_x10, ODOMETER_FIELD, 1);
+    }
+    
+    break;
+    
+    case 3:
+      // cadence sensor magnet pulse width
+      lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_sensor_magnet_pulse_width;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 200;
+      lcd_var_number.ui32_min_value = 1;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+    
+    // limit motor temperature or throttle enable/disable 
+    case 4:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 2;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+    break;
+
+    // motor temperature limit min
+    case 5:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_min_value_to_limit;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 110;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      lcd_enable_temperature_degrees_symbol (1);
+
+    break;
+
+    // motor temperature limit max
+    case 6:
+      lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_max_value_to_limit;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 110;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+      lcd_enable_temperature_degrees_symbol (1);
+    
+    break;
+  }
+
+  submenu_state_controller(6);
+
+  if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
     lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
   }
@@ -3720,7 +3616,7 @@ void submenu_state_controller(uint8_t ui8_state_max_number)
 {
   if (ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
-    // stop changing variables if...
+    // stop changing variables
     if (ONOFF_CLICK || ONOFF_LONG_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
@@ -3728,37 +3624,35 @@ void submenu_state_controller(uint8_t ui8_state_max_number)
   }
   else
   {
-    // change variables if...
+    // advance on submenus
+    if (UP_CLICK)
+    {
+      if (ui8_lcd_menu_config_submenu_state < ui8_state_max_number) { ++ui8_lcd_menu_config_submenu_state; } 
+      else { ui8_lcd_menu_config_submenu_state = 0; }
+    }
+
+    // recede on submenus
+    if (DOWN_CLICK)
+    {
+      if (ui8_lcd_menu_config_submenu_state > 0) { --ui8_lcd_menu_config_submenu_state; } 
+      else { ui8_lcd_menu_config_submenu_state = ui8_state_max_number; }
+    }
+    
+    // change variables
     if (ONOFF_CLICK)
     {
       ui8_lcd_menu_config_submenu_change_variable_enabled = 1;
     }
-    else
+    
+    // leave config menu
+    if (ONOFF_LONG_CLICK)
     {
-      // advance on submenus
-      if (UP_CLICK)
-      {
-        if (ui8_lcd_menu_config_submenu_state < ui8_state_max_number) { ++ui8_lcd_menu_config_submenu_state; } 
-        else { ui8_lcd_menu_config_submenu_state = 0; }
-      }
-
-      // recede on submenus
-      if (DOWN_CLICK)
-      {
-        if (ui8_lcd_menu_config_submenu_state > 0) { --ui8_lcd_menu_config_submenu_state; } 
-        else { ui8_lcd_menu_config_submenu_state = ui8_state_max_number; }
-      }
+      ui8_lcd_menu_config_submenu_active = 0;
+      ui8_lcd_menu_config_submenu_state = 0;
       
-      // leave config menu
-      if (ONOFF_LONG_CLICK)
-      {
-        ui8_lcd_menu_config_submenu_active = 0;
-        ui8_lcd_menu_config_submenu_state = 0;
-        
-        // set backlight brightness after user has configured settings, looks nicer this way
-        if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
-        else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
-      }
+      // set backlight brightness after user has configured settings, looks nicer this way
+      if (ui8_lights_state == 0) { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_off_brightness); }
+      else { lcd_set_backlight_intensity (configuration_variables.ui8_lcd_backlight_on_brightness); }
     }
   }
 }
@@ -3778,7 +3672,7 @@ void advance_on_subfield (uint8_t* ui8_p_state, uint8_t ui8_state_max_number)
 
 
 
-void lcd_power_off (uint8_t SaveToEEPROM)
+void lcd_power_off(uint8_t SaveToEEPROM)
 {
   if (SaveToEEPROM)
   {

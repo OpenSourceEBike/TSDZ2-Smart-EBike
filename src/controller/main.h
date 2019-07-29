@@ -15,29 +15,25 @@
 
 
 // motor 
-#define PWM_CYCLES_COUNTER_MAX                                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
+#define PWM_CYCLES_COUNTER_MAX                                    3125    // 5 erps minimum speed -> 1/5 = 200 ms; 200 ms / 64 us = 3125
 #define PWM_CYCLES_SECOND                                         15625   // 1 / 64us(PWM period)
 #define PWM_DUTY_CYCLE_MAX                                        254
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
 
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT               150     // 200 -> 200 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT               160     // 160 -> 160 * 64 us for every duty cycle increment
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN                   20      // 20 -> 20 * 64 us for every duty cycle increment
 
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT             35      // 20 -> 20 * 64 us for every duty cycle decrement
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN                 15      // 20 -> 20 * 64 us for every duty cycle decrement
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT             40      // 40 -> 40 * 64 us for every duty cycle decrement
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN                 10      // 10 -> 10 * 64 us for every duty cycle decrement
 
 /*---------------------------------------------------------
   NOTE: regarding duty cycle (PWM) ramping
   
-  Choose appropriate duty cycle (PWM) ramp up/down step. 
-  A higher value will make the motor acceleration or
-  deacceleration slower.
+  Do not change these values if not sure of the effects!
   
-  A value of 20 for acceleration is approching the limit
-  for comfortable acceleration at slow speeds around 
-  8 kph. For deacceleration it is possible to have lower
-  values than 20 but it can cause mechanical spikes in
-  the drive line.
+  A lower value of the duty cycle inverse step will mean
+  a faster acceleration. Be careful not to choose too
+  low values.
 ---------------------------------------------------------*/
 
 
@@ -158,11 +154,10 @@
   
   
   Cadence is calculated by counting how much time passes between two 
-  transitions. Depending on transistion it is important to adjust for 
-  the different spacings between the transitions.
-  
-  The conversion factors are determined from measurements.
-  
+  transitions. Depending on if all transitions are measured or simply 
+  transitions of the same kind it is important to adjust the calculation of 
+  pedal cadence. If measuring all transistions it is also important to 
+  adjust for the different spacings between the transitions.
 -------------------------------------------------------------------------------*/
 
 

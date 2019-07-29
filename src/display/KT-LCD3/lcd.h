@@ -48,7 +48,7 @@ typedef struct _configuration_variables
   uint8_t ui8_cadence_assist_function_enabled;
   uint8_t ui8_cadence_assist_level[9];
   uint8_t ui8_eMTB_assist_function_enabled;
-  uint8_t ui8_eMTB_assist_level;
+  uint8_t ui8_eMTB_assist_sensitivity;
   uint8_t ui8_walk_assist_function_enabled;
   uint8_t ui8_walk_assist_level[9];
   uint8_t ui8_cruise_function_enabled;
@@ -83,11 +83,6 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
   uint8_t ui8_pedal_torque_per_10_bit_ADC_step_x100;
-  uint8_t ui8_startup_motor_power_boost_feature_enabled;
-  uint8_t ui8_startup_motor_power_boost_state;
-  uint8_t ui8_startup_motor_power_boost_time;
-  uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_startup_motor_power_boost_factor[9];
   uint16_t ui16_adc_motor_temperature_10b;
   uint8_t ui8_optional_ADC_function;
   uint8_t ui8_motor_temperature_min_value_to_limit;
@@ -97,7 +92,6 @@ typedef struct _configuration_variables
   uint8_t ui8_lcd_backlight_on_brightness;
   uint8_t ui8_lcd_backlight_off_brightness;
   uint8_t ui8_street_mode_function_enabled;
-  uint8_t ui8_street_mode_enabled_on_startup;
   uint8_t ui8_street_mode_speed_limit;
   uint8_t ui8_street_mode_power_limit_enabled;
   uint8_t ui8_street_mode_power_limit_div25;

@@ -23,7 +23,7 @@
 
 // default values for assist levels
 #define DEFAULT_VALUE_ASSIST_LEVEL                                  0
-#define DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS                       5
+#define DEFAULT_VALUE_NUMBER_OF_ASSIST_LEVELS                       9
 
 
 
@@ -53,7 +53,21 @@
 #define DEFAULT_VALUE_BATTERY_CELLS_NUMBER                          13  // 13 -> 48 V
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0             134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8))
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1             1
-#define DEFAULT_VALUE_CONFIG_0                                      0   // motor type, temperature limit enabled, temperature field state
+
+
+
+// default value motor type
+#define DEFAULT_VALUE_MOTOR_TYPE                                    0 // 0 = 48 volt motor
+
+
+
+// default value optional ADC function
+#define DEFAULT_VALUE_OPTIONAL_ADC_FUNCTION                         0
+
+
+
+// default value temperature field state
+#define DEFAULT_VALUE_TEMPERATURE_FIELD_STATE                       0
 
 
 
@@ -69,23 +83,6 @@
 #define DEFAULT_VALUE_POWER_ASSIST_LEVEL_7                          21
 #define DEFAULT_VALUE_POWER_ASSIST_LEVEL_8                          24
 #define DEFAULT_VALUE_POWER_ASSIST_LEVEL_9                          30
-
-
-
-// default values for BOOST function
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FEATURE_ENABLED     0   // disabled by default
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_STATE               1
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_1      1
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_2      2
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_3      4
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_4      7   // 0.7
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_5      12  // 1.2
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_6      18
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_7      23
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_8      25
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_ASSIST_LEVEL_9      30
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_TIME                20  // 2.0 seconds
-#define DEFAULT_VALUE_STARTUP_MOTOR_POWER_BOOST_FADE_TIME           35  // 3.5 seconds
 
 
 
@@ -151,8 +148,8 @@
 
 
 
-// default values motor acceleration
-#define DEFAULT_VALUE_MOTOR_ACCELERATION                            70
+// default value motor acceleration
+#define DEFAULT_VALUE_MOTOR_ACCELERATION                            0
 
 
 
@@ -241,7 +238,7 @@
 
 // default value for eMTB assist
 #define DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED                  0
-#define DEFAULT_VALUE_EMTB_ASSIST_LEVEL                             100
+#define DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY                       0
 
 
 

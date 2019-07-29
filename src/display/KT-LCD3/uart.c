@@ -242,7 +242,7 @@ void uart_data_clock (void)
         
         case eMTB_ASSIST_MODE:
         
-          ui8_tx_buffer[3] = p_configuration_variables->ui8_eMTB_assist_level;
+          ui8_tx_buffer[3] = p_configuration_variables->ui8_eMTB_assist_sensitivity;
           
         break;
         
@@ -335,26 +335,21 @@ void uart_data_clock (void)
 
         case 3:
         
-          // boost assist level 
-          ui8_tx_buffer[5] = p_configuration_variables->ui8_startup_motor_power_boost_factor [p_configuration_variables->ui8_assist_level - 1];
+          ui8_tx_buffer[5] = 0;
           
-          // boost state
-          ui8_tx_buffer[6] = p_configuration_variables->ui8_startup_motor_power_boost_state;
+          ui8_tx_buffer[6] = 0;
           
-          // boost runtime 
-          ui8_tx_buffer[7] = p_configuration_variables->ui8_startup_motor_power_boost_time;
+          ui8_tx_buffer[7] = 0;
           
         break;
 
         case 4:
         
-          // boost fade time
-          ui8_tx_buffer[5] = p_configuration_variables->ui8_startup_motor_power_boost_fade_time;
+          ui8_tx_buffer[5] = 0;
           
-          // boost enabled
-          ui8_tx_buffer[6] = p_configuration_variables->ui8_startup_motor_power_boost_feature_enabled;
+          ui8_tx_buffer[6] = 0;
           
-          // motor acceleration
+          // motor acceleration adjustment
           ui8_tx_buffer[7] = p_configuration_variables->ui8_motor_acceleration;
 
         break;
