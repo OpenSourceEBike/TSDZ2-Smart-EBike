@@ -1523,7 +1523,9 @@ void lcd_execute_menu_config_submenu_street_mode (void)
 void lcd_execute_menu_config_submenu_advanced_setup(void)
 {
   var_number_t lcd_var_number;
-
+  
+  static uint8_t ui8_hold_down_enabled;
+  
   switch (ui8_lcd_menu_config_submenu_state)
   {
     // motor acceleration adjustment
@@ -1561,15 +1563,46 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     break;
     
     case 3:
-      // cadence sensor magnet pulse width
-      lcd_var_number.p_var_number = &configuration_variables.ui8_cadence_sensor_magnet_pulse_width;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 200;
-      lcd_var_number.ui32_min_value = 1;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
+    
+      // cadence sensor mode and calibration
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
+      }
+      
+      if (ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        if (configuration_variables.ui8_cadence_sensor_mode > 1)
+        {
+          configuration_variables.ui8_cadence_sensor_mode = STANDARD_MODE;
+        }
+        
+        if (UP_CLICK && configuration_variables.ui8_cadence_sensor_mode < 1)
+        {
+          ++configuration_variables.ui8_cadence_sensor_mode;
+        }
+        
+        if (DOWN_CLICK && configuration_variables.ui8_cadence_sensor_mode > 0)
+        {
+          --configuration_variables.ui8_cadence_sensor_mode;
+        }
+        
+        if (DOWN_LONG_CLICK && (configuration_variables.ui8_cadence_sensor_mode == ADVANCED_MODE))
+        {
+          ui8_hold_down_enabled = 1;
+        }
+        
+        if (ui8_hold_down_enabled && buttons_get_down_state())
+        {
+          motor_controller_data.ui8_riding_mode = CADENCE_SENSOR_CALIBRATION_MODE;
+        }
+        else
+        {
+          motor_controller_data.ui8_riding_mode = OFF_MODE;
+          ui8_hold_down_enabled = 0;
+        }
+      }
+      
     break;
     
     // limit motor temperature or throttle enable/disable 
@@ -2136,7 +2169,7 @@ void riding_mode_controller(void)
   if (ui8_long_hold_down_button)
   {
     // if down button is pressed
-    if (buttons_get_down_state ())
+    if (buttons_get_down_state())
     {
       // enable walk assist or cruise if...
       if ((configuration_variables.ui8_walk_assist_function_enabled) &&

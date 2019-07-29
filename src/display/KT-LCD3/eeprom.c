@@ -130,7 +130,7 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] =
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7,                               // 110 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8,                               // 111 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9,                               // 112 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CADENCE_SENSOR_MAGNET_PULSE_WIDTH,                    // 113 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_SENSOR_MODE,                                  // 113 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_STREET_MODE_CRUISE_ENABLED,                           // 114 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED,                         // 115 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY,                              // 116 + EEPROM_BASE_ADDRESS (Array index)
@@ -393,8 +393,8 @@ static void eeprom_read_values_to_variables(void)
   p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
   
   
-  // cadence sensor magnet pulse width
-  p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH);
+  // cadence sensor mode
+  p_configuration_variables->ui8_cadence_sensor_mode = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_MODE);
 }
 
 
@@ -572,8 +572,8 @@ static void variables_to_array (uint8_t *ui8_array)
   // pedal torque conversion
   ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
   
-  // cadence sensor magnet pulse width
-  ui8_array[ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width;
+  // cadence sensor mode
+  ui8_array[ADDRESS_CADENCE_SENSOR_MODE - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_sensor_mode;
 }
 
 

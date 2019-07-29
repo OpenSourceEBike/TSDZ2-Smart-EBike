@@ -44,6 +44,9 @@ static uint8_t    ui8_duty_cycle_target = 0;
 
 
 // cadence sensor variables
+volatile uint8_t  ui8_cadence_sensor_mode = STANDARD_MODE;
+volatile uint8_t  ui8_cadence_sensor_magnet_pulse_width = CADENCE_SENSOR_MAGNET_PULSE_WIDTH_DEFAULT;
+volatile uint16_t ui16_cadence_sensor_ticks_counter_min_speed_adjusted = CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN;
 static uint8_t    ui8_pedal_cadence_RPM = 0;
 
 
@@ -160,8 +163,8 @@ void ebike_app_controller (void)
 static void ebike_control_motor (void)
 {
   // reset control variables (safety)
-  ui16_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
-  ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
+  ui16_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
+  ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
   ui8_adc_battery_current_target = 0;
   ui8_duty_cycle_target = 0;
   
@@ -252,7 +255,7 @@ static void ebike_control_motor (void)
   }
   else
   {
-    // reset control variables (safety)
+    // reset motor control variables (safety)
     ui16_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
     ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
     ui8_controller_adc_battery_current_target = 0;
@@ -331,7 +334,7 @@ static void apply_torque_assist()
     uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter;
     
     // calculate torque assist target current
-    uint16_t ui16_adc_battery_current_target_torque_assist = ((uint16_t) (ui16_adc_pedal_torque_delta * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
+    uint16_t ui16_adc_battery_current_target_torque_assist = (uint16_t) (ui16_adc_pedal_torque_delta * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
   
     // set motor acceleration
     ui16_duty_cycle_ramp_up_inverse_step = map((uint32_t) ui16_wheel_speed_x10,
@@ -611,16 +614,29 @@ static void apply_cruise()
 
 static void apply_cadence_sensor_calibration()
 {
-  #define CADENCE_SENSOR_CALIBRATION_DUTY_CYCLE_RAMP_UP_INVERSE_STEP   200
+  #define CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP     200
+  #define CADENCE_SENSOR_CALIBRATION_MODE_ADC_BATTERY_CURRENT_TARGET          5 // 5 -> 5 * 0.2 = 1 A
+  #define CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_TARGET                   22
   
-  // limit acceleration
-  ui16_duty_cycle_ramp_up_inverse_step = CADENCE_SENSOR_CALIBRATION_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
+  // enable the cadence sensor calibration mode
+  ui8_cadence_sensor_mode = CALIBRATION_MODE;
+  
+  // avoid zero division when calculating the magnet pulse width
+  if ((ui16_cadence_sensor_ticks_counter_min_high > 0) && (ui16_cadence_sensor_ticks_counter_min_low > 0))
+  {
+    // calculate the magnet pulse width
+    ui8_cadence_sensor_magnet_pulse_width = (uint32_t) (ui16_cadence_sensor_ticks_counter_min_high / ui16_cadence_sensor_ticks_counter_min_low) * 100;
+  }
+  
+  // set motor acceleration
+  ui16_duty_cycle_ramp_up_inverse_step = CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP;
+  ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
 
   // set battery current target
-  ui8_adc_battery_current_target = 5; // 5 -> 5 * 0.2 = 1 A
+  ui8_adc_battery_current_target = CADENCE_SENSOR_CALIBRATION_MODE_ADC_BATTERY_CURRENT_TARGET;
   
   // set duty cycle target
-  ui8_duty_cycle_target = 22;
+  ui8_duty_cycle_target = CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_TARGET;
 }
 
 
@@ -732,69 +748,113 @@ static void calc_wheel_speed(void)
 
 static void calc_cadence(void)
 {
-  #define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED    1000
-  
-  // scale cadence sensor ticks counter min depending on wheel speed
-  uint16_t ui16_cadence_sensor_ticks_counter_min_temp = map((uint32_t) ui16_wheel_speed_x10,
-                                                            (uint32_t) 40,
-                                                            (uint32_t) 200,
-                                                            (uint32_t) CADENCE_SENSOR_TICKS_COUNTER_MIN,
-                                                            (uint32_t) CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
-                                                             
-  // set parameters for cadence calculation
-  if (ui8_cadence_sensor_magnet_pulse_width > 199)
+  // select cadence sensor mode
+  switch (ui8_cadence_sensor_mode)
   {
-    // set the magnet pulse width in ticks
-    ui16_cadence_sensor_high_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_temp * 2;
-    ui16_cadence_sensor_low_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_temp * 2;
+    case STANDARD_MODE:
     
-    // set the conversion ratio
-    ui16_cadence_sensor_high_conversion_x100 = 100;
-    ui16_cadence_sensor_low_conversion_x100 = 100;
-  }
-  else
-  {
-    // limit magnet pulse width and avoid zero division
-    if (ui8_cadence_sensor_magnet_pulse_width < 1) { ui8_cadence_sensor_magnet_pulse_width = 1; }
+      #define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN_AT_SPEED    2000
+      
+      // scale cadence sensor ticks counter min depending on wheel speed
+      ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,
+                                                                 (uint32_t) 40,
+                                                                 (uint32_t) 200,
+                                                                 (uint32_t) CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN,
+                                                                 (uint32_t) CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN_AT_SPEED);
+                                                                 
+      // calculate cadence in RPM and avoid zero division
+      if (ui16_cadence_sensor_ticks)
+      {
+        ui8_pedal_cadence_RPM = 46875 / ui16_cadence_sensor_ticks; // see note below
+      }
+      else
+      {
+        ui8_pedal_cadence_RPM = 0;
+      }
+      
+      /*-------------------------------------------------------------------------------
+      
+        NOTE: regarding the cadence calculation
+        
+        Cadence in standard mode is calculated by counting how many ticks there are 
+        between two transitions of LOW to HIGH.
+        
+        Formula for calculating the cadence in RPM:
+        
+        (1) Cadence in RPM = 60 / (ticks * CADENCE_SENSOR_NUMBER_MAGNETS * 0.000064)
+        
+        (2) Cadence in RPM = 60 / (ticks * 0.00128)
+        
+        (3) Cadence in RPM = 46875 / ticks
+        
+      -------------------------------------------------------------------------------*/
     
-    // set the magnet pulse width in ticks
-    ui16_cadence_sensor_high_ticks_counter_min = ((uint32_t) ui8_cadence_sensor_magnet_pulse_width * ui16_cadence_sensor_ticks_counter_min_temp) / 100;
-    ui16_cadence_sensor_low_ticks_counter_min = ((uint32_t) (200 - ui8_cadence_sensor_magnet_pulse_width) * ui16_cadence_sensor_ticks_counter_min_temp) / 100;
+    break;
     
-    // set the conversion ratio adjusting for double the transitions and magnet pulse width
-    ui16_cadence_sensor_high_conversion_x100 = (uint16_t) 20000 / ui8_cadence_sensor_magnet_pulse_width;
-    ui16_cadence_sensor_low_conversion_x100 = (uint16_t) 20000 / (200 - ui8_cadence_sensor_magnet_pulse_width);
-  }
+    case ADVANCED_MODE:
+    
+      #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED    1000
+      
+      // scale cadence sensor ticks counter min depending on wheel speed
+      ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,
+                                                                 (uint32_t) 40,
+                                                                 (uint32_t) 200,
+                                                                 (uint32_t) CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN,
+                                                                 (uint32_t) CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED);
+                                                                 
+      // limit magnet pulse width
+      if (ui8_cadence_sensor_magnet_pulse_width > CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MAX) { ui8_cadence_sensor_magnet_pulse_width = CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MAX; }
+      if (ui8_cadence_sensor_magnet_pulse_width < CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MIN) { ui8_cadence_sensor_magnet_pulse_width = CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MIN; }
+      
+      // set the magnet pulse width in ticks
+      ui16_cadence_sensor_ticks_counter_min_high = ((uint32_t) ui8_cadence_sensor_magnet_pulse_width * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 100;
+      ui16_cadence_sensor_ticks_counter_min_low = ((uint32_t) (200 - ui8_cadence_sensor_magnet_pulse_width) * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 100;
+      
+      // set the conversion ratio adjusting for double the transitions and magnet pulse width
+      ui16_cadence_sensor_conversion_x100_high = (uint16_t) 20000 / ui8_cadence_sensor_magnet_pulse_width;
+      ui16_cadence_sensor_conversion_x100_low = (uint16_t) 20000 / (200 - ui8_cadence_sensor_magnet_pulse_width);
+      
+      // calculate cadence in RPM and avoid zero division
+      if (ui16_cadence_sensor_ticks)
+      {
+        ui8_pedal_cadence_RPM = 4687500 / ((uint32_t) ui16_cadence_sensor_ticks * ui16_cadence_sensor_conversion_x100); // see note below
+      }
+      else
+      {
+        ui8_pedal_cadence_RPM = 0;
+      }
+      
+      /*-------------------------------------------------------------------------------
+      
+        NOTE: regarding the cadence calculation
+        
+        Cadence in extra mode is calculated by counting how many ticks there are 
+        between all transitions of any kind. By measuring all transitions it is 
+        possible to double the cadence resolution or to half the response time. 
+        
+        But when using the cadence sensor extra mode it is important to adjust for the 
+        different spacings between different kind of transitions. This is why there is 
+        a conversion factor.
+        
+        Formula for calculating the cadence in RPM using the extra mode:
+        
+        (1) Cadence in RPM = 6000 / (ticks * conversion_x100 * CADENCE_SENSOR_NUMBER_MAGNETS * 0.000064)
+        
+        (2) Cadence in RPM = 6000 / (ticks * conversion_x100 * 0.00128)
+        
+        (3) Cadence in RPM = 4687500 / (ticks * conversion_x100)
+        
+      -------------------------------------------------------------------------------*/
   
-  // calculate cadence in RPM and avoid zero division
-  if (ui16_cadence_sensor_ticks)
-  {
-    ui8_pedal_cadence_RPM = 4687500 / ((uint32_t) ui16_cadence_sensor_ticks * ui16_cadence_sensor_conversion_x100); // see note below
+    break;
+    
+    case CALIBRATION_MODE:
+      
+      // set the pedal cadence to zero because calibration is taking place
+      ui8_pedal_cadence_RPM = 0;
+    
+    break;
   }
-  else
-  {
-    ui8_pedal_cadence_RPM = 0;
-  }
-  
-  /*-------------------------------------------------------------------------------
-  
-    NOTE: regarding the cadence calculation
-    
-    Cadence is calculated by counting how many ticks there are between two 
-    transitions. Usually it is measured from 1 -> 1 or 0 -> 0. But to double the 
-    resoultion and system response it is possible to use the 1 -> 0 and 0 -> 1 
-    transitions. But when doing so it is important to adjust for the different 
-    spacings between the transitions. This is why there is a conversion factor.
-    
-    Formula for calculating the cadence in RPM:
-    
-    (1) Cadence in RPM = 6000 / (ticks * conversion_x100 * CADENCE_SENSOR_NUMBER_MAGNETS * 0.000064)
-    
-    (2) Cadence in RPM = 6000 / (ticks * conversion_x100 * 0.00128)
-    
-    (3) Cadence in RPM = 4687500 / (ticks * conversion_x100)
-    
-  -------------------------------------------------------------------------------*/
 }
 
 
@@ -1111,8 +1171,8 @@ static void uart_receive_package(void)
         
         case 6:
           
-          // cadence sensor magnet pulse width
-          ui8_cadence_sensor_magnet_pulse_width = ui8_rx_buffer [5];
+          // cadence sensor mode
+          ui8_cadence_sensor_mode = ui8_rx_buffer [5];
           
           uint8_t ui8_temp_1 = ui8_rx_buffer [6];
           
@@ -1196,7 +1256,7 @@ static void uart_send_package(void)
   ui8_tx_buffer[14] = (uint8_t) (ui16_temp >> 8);
   
   // FOC angle
-  ui8_tx_buffer[15] = ui8_g_foc_angle;
+  ui8_tx_buffer[15] = ui8_cadence_sensor_magnet_pulse_width;//ui8_g_foc_angle;
   
   // system state
   ui8_tx_buffer[16] = ui8_system_state;

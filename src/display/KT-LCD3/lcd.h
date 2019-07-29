@@ -101,7 +101,7 @@ typedef struct _configuration_variables
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
   uint8_t ui8_motor_acceleration;
-  uint8_t ui8_cadence_sensor_magnet_pulse_width;
+  uint8_t ui8_cadence_sensor_mode;
   uint8_t ui8_show_cruise_function_set_target_speed;
   uint8_t ui8_wheel_speed_field_state;
   uint8_t ui8_show_distance_data_odometer_field;

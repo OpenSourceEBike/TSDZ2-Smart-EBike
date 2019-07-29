@@ -117,10 +117,18 @@
 
 
 // cadence sensor
-#define CADENCE_SENSOR_NUMBER_MAGNETS                             20    // see note below
+#define CADENCE_SENSOR_NUMBER_MAGNETS                             20
 #define CADENCE_SENSOR_NUMBER_MAGNETS_X2                          (CADENCE_SENSOR_NUMBER_MAGNETS * 2)
-#define CADENCE_SENSOR_TICKS_COUNTER_MAX                          150   // see note below
-#define CADENCE_SENSOR_TICKS_COUNTER_MIN                          4900  // see note below
+
+#define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MAX            300
+#define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN            10000
+
+#define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MAX            150
+#define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN            4900
+
+#define CADENCE_SENSOR_MAGNET_PULSE_WIDTH_DEFAULT                 100
+#define CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MIN                     50
+#define CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MAX                     150
 
 /*-------------------------------------------------------------------------------
   NOTE: regarding the cadence sensor
@@ -136,8 +144,7 @@
   
   CADENCE_SENSOR_TICKS_COUNTER_MAX = x / CADENCE_SENSOR_NUMBER_MAGNETS
   
-  
-  
+
   
   CADENCE_SENSOR_NUMBER_MAGNETS_X2 = 40, this is the number of transitions 
   in one crank revolution
@@ -149,7 +156,6 @@
   93750 / CADENCE_SENSOR_NUMBER_MAGNETS_X2 ≈ 2344 -> 10 RPM, or 5 RPM if set to around 4600
   
   CADENCE_SENSOR_TICKS_COUNTER_MAX = x / CADENCE_SENSOR_NUMBER_MAGNETS_X2
-  
   
   
   

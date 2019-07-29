@@ -128,7 +128,7 @@
 #define ADDRESS_CADENCE_ASSIST_LEVEL_7                                      110 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_ASSIST_LEVEL_8                                      111 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_ASSIST_LEVEL_9                                      112 + EEPROM_BASE_ADDRESS
-#define ADDRESS_CADENCE_SENSOR_MAGNET_PULSE_WIDTH                           113 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_SENSOR_MODE                                         113 + EEPROM_BASE_ADDRESS
 #define ADDRESS_STREET_MODE_CRUISE_ENABLED                                  114 + EEPROM_BASE_ADDRESS
 #define ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED                                115 + EEPROM_BASE_ADDRESS
 #define ADDRESS_EMTB_ASSIST_SENSITIVITY                                     116 + EEPROM_BASE_ADDRESS

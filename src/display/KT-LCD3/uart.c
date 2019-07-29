@@ -376,8 +376,8 @@ void uart_data_clock (void)
         
         case 6:
         
-          // cadence sensor magnet pulse width
-          ui8_tx_buffer[5] = p_configuration_variables->ui8_cadence_sensor_magnet_pulse_width;
+          // cadence sensor mode
+          ui8_tx_buffer[5] = p_configuration_variables->ui8_cadence_sensor_mode;
           
           ui8_tx_buffer[6] = 0;
           

@@ -20,6 +20,7 @@
 #include "adc.h"
 #include "watchdog.h"
 #include "math.h"
+#include "common.h"
 
 #define SVM_TABLE_LEN   256
 #define SIN_TABLE_LEN   60
@@ -375,12 +376,11 @@ volatile uint8_t ui8_g_foc_angle = 0;
 
 // cadence sensor
 volatile uint16_t ui16_cadence_sensor_ticks = 0;
-volatile uint16_t ui16_cadence_sensor_high_ticks_counter_min = CADENCE_SENSOR_TICKS_COUNTER_MIN;
-volatile uint16_t ui16_cadence_sensor_low_ticks_counter_min = CADENCE_SENSOR_TICKS_COUNTER_MIN;
-volatile uint16_t ui16_cadence_sensor_high_conversion_x100 = 100;
-volatile uint16_t ui16_cadence_sensor_low_conversion_x100 = 100;
+volatile uint16_t ui16_cadence_sensor_ticks_counter_min_high = CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN;
+volatile uint16_t ui16_cadence_sensor_ticks_counter_min_low = CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN;
 volatile uint16_t ui16_cadence_sensor_conversion_x100 = 100;
-volatile uint8_t ui8_cadence_sensor_magnet_pulse_width = 200;
+volatile uint16_t ui16_cadence_sensor_conversion_x100_high = 100;
+volatile uint16_t ui16_cadence_sensor_conversion_x100_low = 100;
 
 
 // wheel speed sensor
@@ -720,7 +720,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
   
   
-  #define CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD    1000 // software based Schmitt trigger to stop motor jitter when at resolution limits
   
   static uint16_t ui16_cadence_sensor_ticks_counter;
   static uint16_t ui16_cadence_sensor_ticks_counter_min;
@@ -734,53 +733,136 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // check if cadence sensor pin state has changed
   if (ui8_cadence_sensor_pin_1_state != ui8_cadence_sensor_pin_state_old)
   {
-    // set the ticks counter limit and conversion depending on pin state
-    if (ui8_cadence_sensor_pin_1_state)
-    {
-      // set counter limit depending on current pin state
-      ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_high_ticks_counter_min;
-      
-      // set conversion depending on previous pin state
-      ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_low_conversion_x100;
-    }
-    else
-    {
-      // set counter limit depending on current pin state
-      ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_low_ticks_counter_min;
-      
-      // set conversion depending on previous pin state
-      ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_high_conversion_x100;
-    }
-
-    // check if first transition and if to consider the 1 -> 0 transition
-    if (!ui8_cadence_sensor_ticks_counter_started && !((ui8_cadence_sensor_magnet_pulse_width > 199) && (ui8_cadence_sensor_pin_state_old)))
-    {
-      // start cadence sensor ticks counter as this is the first transition
-      ui8_cadence_sensor_ticks_counter_started = 1;
-    }
-    else if (!((ui8_cadence_sensor_magnet_pulse_width > 199) && (ui8_cadence_sensor_pin_state_old)))
-    {
-      // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
-      if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_TICKS_COUNTER_MAX) || 
-          (ui8_cadence_sensor_pin_1_state == ui8_cadence_sensor_pin_2_state))
-      {
-        ui16_cadence_sensor_ticks = 0;
-        ui16_cadence_sensor_ticks_counter = 0;
-        ui8_cadence_sensor_ticks_counter_started = 0;
-      }
-      else
-      {
-        // set the cadence sensor ticks between the two transitions
-        ui16_cadence_sensor_ticks = ui16_cadence_sensor_ticks_counter;
-        ui16_cadence_sensor_ticks_counter = 0;
-        
-        // software based Schmitt trigger to stop motor jitter when at resolution limits
-        ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_SCHMITT_TRIGGER_THRESHOLD;
-      }
-    }
-    
     // update old cadence sensor pin state
     ui8_cadence_sensor_pin_state_old = ui8_cadence_sensor_pin_1_state;
+    
+    // select cadence sensor mode
+    switch (ui8_cadence_sensor_mode)
+    {
+      case STANDARD_MODE:
+      
+        #define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD    1000 // software based Schmitt trigger to stop motor jitter when at resolution limits
+      
+        // only consider the 0 -> 1 transition
+        if (ui8_cadence_sensor_pin_1_state)
+        {
+          // set the ticks counter limit depending on current wheel speed
+          ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_speed_adjusted;
+          
+          // check if first transition
+          if (!ui8_cadence_sensor_ticks_counter_started) 
+          {
+            // start cadence sensor ticks counter as this is the first transition
+            ui8_cadence_sensor_ticks_counter_started = 1;
+          }
+          else
+          {
+            // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
+            if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MAX) || 
+                (ui8_cadence_sensor_pin_1_state == ui8_cadence_sensor_pin_2_state))
+            {
+              ui16_cadence_sensor_ticks = 0;
+              ui16_cadence_sensor_ticks_counter = 0;
+              ui8_cadence_sensor_ticks_counter_started = 0;
+            }
+            else
+            {
+              // set the cadence sensor ticks between the two transitions
+              ui16_cadence_sensor_ticks = ui16_cadence_sensor_ticks_counter;
+              ui16_cadence_sensor_ticks_counter = 0;
+              
+              // software based Schmitt trigger to stop motor jitter when at resolution limits
+              ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD;
+            }
+          }
+        }
+        
+      break;
+      
+      case ADVANCED_MODE:
+      
+        #define CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD    1000 // software based Schmitt trigger to stop motor jitter when at resolution limits
+        
+        // set the ticks counter limit and conversion depending on pin state
+        if (ui8_cadence_sensor_pin_1_state)
+        {
+          // set the ticks counter limit depending on current pin state
+          ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_high;
+          
+          // set conversion depending on previous pin state
+          ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_conversion_x100_low;
+        }
+        else
+        {
+          // set the ticks counter limit depending on current pin state
+          ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_low;
+          
+          // set conversion depending on previous pin state
+          ui16_cadence_sensor_conversion_x100 = ui16_cadence_sensor_conversion_x100_high;
+        }
+
+        // check if first transition
+        if (!ui8_cadence_sensor_ticks_counter_started)
+        {
+          // start cadence sensor ticks counter as this is the first transition
+          ui8_cadence_sensor_ticks_counter_started = 1;
+        }
+        else
+        {
+          // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
+          if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MAX) || 
+              (ui8_cadence_sensor_pin_1_state == ui8_cadence_sensor_pin_2_state))
+          {
+            ui16_cadence_sensor_ticks = 0;
+            ui16_cadence_sensor_ticks_counter = 0;
+            ui8_cadence_sensor_ticks_counter_started = 0;
+          }
+          else
+          {
+            // set the cadence sensor ticks between the two transitions
+            ui16_cadence_sensor_ticks = ui16_cadence_sensor_ticks_counter;
+            ui16_cadence_sensor_ticks_counter = 0;
+            
+            // software based Schmitt trigger to stop motor jitter when at resolution limits
+            ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD;
+          }
+        }
+        
+      break;
+      
+      case CALIBRATION_MODE:
+        
+        #define CADENCE_SENSOR_CALIBRATION_MODE_TICKS_COUNTER_MIN   20000
+        
+        // set the ticks counter limit
+        ui16_cadence_sensor_ticks_counter_min = CADENCE_SENSOR_CALIBRATION_MODE_TICKS_COUNTER_MIN;
+        
+        // check if first transition
+        if (!ui8_cadence_sensor_ticks_counter_started)
+        {
+          // start cadence sensor ticks counter as this is the first transition
+          ui8_cadence_sensor_ticks_counter_started = 1;
+        }
+        else
+        {
+          // set the cadence sensor ticks depending on pin state
+          if (ui8_cadence_sensor_pin_1_state)
+          {
+            // pin state is high so previous pin state was low
+            ui16_cadence_sensor_ticks_counter_min_low = ui16_cadence_sensor_ticks_counter;
+          }
+          else
+          {
+            // pin state is low so previous pin state was high
+            ui16_cadence_sensor_ticks_counter_min_high = ui16_cadence_sensor_ticks_counter;
+          }
+          
+          // reset cadence sensor counter
+          ui16_cadence_sensor_ticks_counter = 0;
+        }
+        
+      break;
+    }
   }
   
   // increment and also limit the ticks counter
@@ -810,7 +892,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   // check if wheel speed sensor pin state has changed
   if (ui8_wheel_speed_sensor_pin_state != ui8_wheel_speed_sensor_pin_state_old)
-  {
+  { 
     // update old wheel speed sensor pin state
     ui8_wheel_speed_sensor_pin_state_old = ui8_wheel_speed_sensor_pin_state;
     

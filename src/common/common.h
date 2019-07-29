@@ -45,6 +45,12 @@
 #define THROTTLE_CONTROL                          2
 
 
+// cadence sensor
+#define STANDARD_MODE                             0
+#define ADVANCED_MODE                             1
+#define CALIBRATION_MODE                          2
+
+
 int32_t map (int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max);
 int32_t map_inverse (int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max);
 uint8_t ui8_max (uint8_t value_a, uint8_t value_b);

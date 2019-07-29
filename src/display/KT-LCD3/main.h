@@ -203,8 +203,8 @@
 
 
 
-// default value cadence sensor magnet pulse width
-#define DEFAULT_VALUE_CADENCE_SENSOR_MAGNET_PULSE_WIDTH             200
+// default value cadence sensor mode
+#define DEFAULT_VALUE_CADENCE_SENSOR_MODE                           0
 
 
 
