@@ -33,9 +33,7 @@ extern volatile uint8_t ui8_g_foc_angle;
 extern volatile uint16_t ui16_cadence_sensor_ticks;
 extern volatile uint16_t ui16_cadence_sensor_ticks_counter_min_high;
 extern volatile uint16_t ui16_cadence_sensor_ticks_counter_min_low;
-extern volatile uint16_t ui16_cadence_sensor_conversion_x100;
-extern volatile uint16_t ui16_cadence_sensor_conversion_x100_high;
-extern volatile uint16_t ui16_cadence_sensor_conversion_x100_low;
+extern volatile uint8_t ui8_cadence_sensor_pulse_state;
 
 
 // wheel speed sensor

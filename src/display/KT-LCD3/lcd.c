@@ -1569,15 +1569,15 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       {
         lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
       }
-      
+                    lcd_print(motor_controller_data.ui16_motor_speed_erps, BATTERY_POWER_FIELD, 1);
       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
       {
-        if (configuration_variables.ui8_cadence_sensor_mode > 1)
+        if (configuration_variables.ui8_cadence_sensor_mode > 2)
         {
           configuration_variables.ui8_cadence_sensor_mode = STANDARD_MODE;
         }
         
-        if (UP_CLICK && configuration_variables.ui8_cadence_sensor_mode < 1)
+        if (UP_CLICK && configuration_variables.ui8_cadence_sensor_mode < 2)
         {
           ++configuration_variables.ui8_cadence_sensor_mode;
         }
@@ -1587,7 +1587,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
           --configuration_variables.ui8_cadence_sensor_mode;
         }
         
-        if (DOWN_LONG_CLICK && (configuration_variables.ui8_cadence_sensor_mode == ADVANCED_MODE))
+        if (DOWN_LONG_CLICK && (configuration_variables.ui8_cadence_sensor_mode == CALIBRATION_MODE))
         {
           ui8_hold_down_enabled = 1;
         }
@@ -1605,7 +1605,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       
     break;
     
-    // limit motor temperature or throttle enable/disable 
+    // motor temperature control or throttle control
     case 4:
       lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
       lcd_var_number.ui8_size = 8;

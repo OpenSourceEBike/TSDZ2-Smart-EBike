@@ -124,11 +124,11 @@
 #define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN            10000
 
 #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MAX            150
-#define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN            4900
+#define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN            9800
 
-#define CADENCE_SENSOR_MAGNET_PULSE_WIDTH_DEFAULT                 100
-#define CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MIN                     50
-#define CADENCE_SENSOR_MAGNET_PULSE_WIDTH_MAX                     150
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_DEFAULT                   50
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_MAX                       90
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_MIN                       10
 
 /*-------------------------------------------------------------------------------
   NOTE: regarding the cadence sensor
