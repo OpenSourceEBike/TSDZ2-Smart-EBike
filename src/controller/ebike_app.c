@@ -138,25 +138,31 @@ static void     boost_run_statemachine (void);
 static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
-#define TORQUE_SENSOR_LINEARIZE_NR_POINTS 5
+#define TORQUE_SENSOR_LINEARIZE_NR_POINTS 8
 uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
-  0, 16,
-  260, 16,
-  284, 21,
-  292, 63,
-  340, 160,
+  0, 17,
+  252, 17,
+  280, 18,
+  320, 25,
+  332, 83,
+  340, 125,
+  356, 369,
+  360, 375,
 };
 
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
-  0, 19,
-  292, 19,
-  304, 42,
+  0, 18,
+  248, 18,
+  272, 21,
+  300, 36,
   308, 125,
-  328, 360,
+  316, 125,
+  328, 492,
+  331, 500,
 };
 
 void ebike_app_init (void)
@@ -701,6 +707,7 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
 
   if(*ui8_p_pas_pedal_right > 0)
   {
+    // 1
     if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[2])
     {
       array[0] = *ui16_p_torque_sensor_adc_steps;
@@ -708,9 +715,17 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
     }
     else
     {
-      array[0] = ui16_torque_sensor_linearize_right[2] - ui16_g_adc_torque_sensor_min_value;
+      if(ui16_torque_sensor_linearize_right[2] > ui16_g_adc_torque_sensor_min_value)
+      {
+        array[0] = ui16_torque_sensor_linearize_right[2] - ui16_g_adc_torque_sensor_min_value;
+      }
+      else
+      {
+        array[0] = 0;
+      }
     }
 
+    // 2
     if(ui8_end == 0)
     {
       if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[4])
@@ -724,6 +739,7 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       }
     }
 
+    // 3
     if(ui8_end == 0)
     {
       if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[6])
@@ -737,11 +753,12 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       }
     }
 
+    // 4
     if(ui8_end == 0)
     {
       if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[8])
       {
-        array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[4]);
+        array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[6]);
         ui8_end = 1;
       }
       else
@@ -750,19 +767,66 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       }
     }
 
+    // 5
     if(ui8_end == 0)
     {
-      array[4] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[8];
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[10])
+      {
+        array[4] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[8]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[4] = ui16_torque_sensor_linearize_right[10] - ui16_torque_sensor_linearize_right[8];
+      }
     }
 
-    *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize_right[3] +
-        array[1] * ui16_torque_sensor_linearize_right[5] +
-        array[2] * ui16_torque_sensor_linearize_right[7] +
-        array[3] * ui16_torque_sensor_linearize_right[9] +
-        array[4] * ui16_torque_sensor_linearize_right[9]) / 100;
+    // 6
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[12])
+      {
+        array[5] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[10]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[5] = ui16_torque_sensor_linearize_right[12] - ui16_torque_sensor_linearize_right[10];
+      }
+    }
+
+    // 7
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_right[14])
+      {
+        array[6] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[12]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[6] = ui16_torque_sensor_linearize_right[14] - ui16_torque_sensor_linearize_right[12];
+      }
+    }
+
+    // 8
+    if(ui8_end == 0)
+    {
+      array[7] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_right[14];
+    }
+
+    *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize_right[1] +
+        array[1] * ui16_torque_sensor_linearize_right[3] +
+        array[2] * ui16_torque_sensor_linearize_right[5] +
+        array[3] * ui16_torque_sensor_linearize_right[7] +
+        array[4] * ui16_torque_sensor_linearize_right[9] +
+        array[5] * ui16_torque_sensor_linearize_right[11] +
+        array[6] * ui16_torque_sensor_linearize_right[13] +
+        array[7] * ui16_torque_sensor_linearize_right[15]) / 100;
   }
   else
   {
+    // 1
     if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[2])
     {
       array[0] = *ui16_p_torque_sensor_adc_steps;
@@ -770,9 +834,17 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
     }
     else
     {
-      array[0] = ui16_torque_sensor_linearize_left[2] - ui16_g_adc_torque_sensor_min_value;
+      if(ui16_torque_sensor_linearize_left[2] > ui16_g_adc_torque_sensor_min_value)
+      {
+        array[0] = ui16_torque_sensor_linearize_left[2] - ui16_g_adc_torque_sensor_min_value;
+      }
+      else
+      {
+        array[0] = 0;
+      }
     }
 
+    // 2
     if(ui8_end == 0)
     {
       if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[4])
@@ -786,6 +858,7 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       }
     }
 
+    // 3
     if(ui8_end == 0)
     {
       if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[6])
@@ -799,11 +872,12 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       }
     }
 
+    // 4
     if(ui8_end == 0)
     {
       if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[8])
       {
-        array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[4]);
+        array[3] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[6]);
         ui8_end = 1;
       }
       else
@@ -812,16 +886,62 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       }
     }
 
+    // 5
     if(ui8_end == 0)
     {
-      array[4] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[8];
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[10])
+      {
+        array[4] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[8]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[4] = ui16_torque_sensor_linearize_left[10] - ui16_torque_sensor_linearize_left[8];
+      }
     }
 
-    *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize_left[3] +
-        array[1] * ui16_torque_sensor_linearize_left[5] +
-        array[2] * ui16_torque_sensor_linearize_left[7] +
-        array[3] * ui16_torque_sensor_linearize_left[9] +
-        array[4] * ui16_torque_sensor_linearize_left[9]) / 100;
+    // 6
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[12])
+      {
+        array[5] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[10]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[5] = ui16_torque_sensor_linearize_left[12] - ui16_torque_sensor_linearize_left[10];
+      }
+    }
+
+    // 7
+    if(ui8_end == 0)
+    {
+      if(ui16_p_torque_sensor_adc_absolute_steps < ui16_torque_sensor_linearize_left[14])
+      {
+        array[6] = (ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[12]);
+        ui8_end = 1;
+      }
+      else
+      {
+        array[6] = ui16_torque_sensor_linearize_left[14] - ui16_torque_sensor_linearize_left[12];
+      }
+    }
+
+    // 8
+    if(ui8_end == 0)
+    {
+      array[7] = ui16_p_torque_sensor_adc_absolute_steps - ui16_torque_sensor_linearize_left[14];
+    }
+
+    *ui8_torque_sensor_weight = (array[0] * ui16_torque_sensor_linearize_left[1] +
+        array[1] * ui16_torque_sensor_linearize_left[3] +
+        array[2] * ui16_torque_sensor_linearize_left[5] +
+        array[3] * ui16_torque_sensor_linearize_left[7] +
+        array[4] * ui16_torque_sensor_linearize_left[9] +
+        array[5] * ui16_torque_sensor_linearize_left[11] +
+        array[6] * ui16_torque_sensor_linearize_left[13] +
+        array[7] * ui16_torque_sensor_linearize_left[15]) / 100;
   }
 }
 
