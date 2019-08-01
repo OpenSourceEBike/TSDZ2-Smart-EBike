@@ -1564,7 +1564,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     
     case 3:
     
-      // cadence sensor mode and calibration
+      // cadence sensor mode and automatic calibration
       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
       {
         if (configuration_variables.ui8_cadence_sensor_mode > 2)
@@ -1572,7 +1572,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
           configuration_variables.ui8_cadence_sensor_mode = STANDARD_MODE;
         }
         
-        if (UP_CLICK && configuration_variables.ui8_cadence_sensor_mode < 2)
+        if (UP_CLICK && configuration_variables.ui8_cadence_sensor_mode < 1)
         {
           ++configuration_variables.ui8_cadence_sensor_mode;
         }
@@ -1582,7 +1582,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
           --configuration_variables.ui8_cadence_sensor_mode;
         }
         
-        if (DOWN_LONG_CLICK && (configuration_variables.ui8_cadence_sensor_mode == CALIBRATION_MODE))
+        if (DOWN_LONG_CLICK && (configuration_variables.ui8_cadence_sensor_mode == ADVANCED_MODE))
         {
           ui8_hold_down_enabled = 1;
         }
@@ -1590,13 +1590,25 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
         if (ui8_hold_down_enabled && buttons_get_down_state())
         {
           motor_controller_data.ui8_riding_mode = CADENCE_SENSOR_CALIBRATION_MODE;
+          configuration_variables.ui8_cadence_sensor_mode = CALIBRATION_MODE;
+          
           lcd_print(configuration_variables.ui16_cadence_sensor_pulse_high_percentage_x10, ODOMETER_FIELD, 1);
         }
         else
         {
-          motor_controller_data.ui8_riding_mode = OFF_MODE;
-          lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
           ui8_hold_down_enabled = 0;
+          
+          motor_controller_data.ui8_riding_mode = OFF_MODE;
+          
+          if (configuration_variables.ui8_cadence_sensor_mode == CALIBRATION_MODE)
+          {
+            configuration_variables.ui8_cadence_sensor_mode = ADVANCED_MODE;
+          }
+          
+          if (ui8_lcd_menu_flash_state)
+          {
+            lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
+          }
         }
       }
       else if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -1663,7 +1675,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
 
 void lcd_execute_menu_config_submenu_technical (void)
 {
-  #define MAX_NUMBER_OF_SUBMENUS_TECHNICAL_DATA    8
+  #define MAX_NUMBER_OF_SUBMENUS_TECHNICAL_DATA    7
   
   switch (ui8_lcd_menu_config_submenu_state)
   {
@@ -1680,25 +1692,22 @@ void lcd_execute_menu_config_submenu_technical (void)
     break;
 
     case 3:
-    break;
-
-    case 4:
       lcd_print(motor_controller_data.ui8_pedal_cadence_RPM, ODOMETER_FIELD, 0);
     break;
 
-    case 5:
+    case 4:
       lcd_print(motor_controller_data.ui8_duty_cycle, ODOMETER_FIELD, 0);
     break;
 
-    case 6:
+    case 5:
       lcd_print(motor_controller_data.ui16_motor_speed_erps, ODOMETER_FIELD, 0);
     break;
 
-    case 7:
+    case 6:
       lcd_print(motor_controller_data.ui8_foc_angle, ODOMETER_FIELD, 0);
     break;
     
-    case 8:
+    case 7:
       lcd_print(configuration_variables.ui16_cadence_sensor_pulse_high_percentage_x10, ODOMETER_FIELD, 1);
     break;
   }
