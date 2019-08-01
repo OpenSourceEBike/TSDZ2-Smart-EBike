@@ -1565,11 +1565,6 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     case 3:
     
       // cadence sensor mode and calibration
-      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-      {
-        lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
-      }
-                    lcd_print(motor_controller_data.ui16_motor_speed_erps, BATTERY_POWER_FIELD, 1);
       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
       {
         if (configuration_variables.ui8_cadence_sensor_mode > 2)
@@ -1595,18 +1590,25 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
         if (ui8_hold_down_enabled && buttons_get_down_state())
         {
           motor_controller_data.ui8_riding_mode = CADENCE_SENSOR_CALIBRATION_MODE;
+          lcd_print(configuration_variables.ui16_cadence_sensor_pulse_high_percentage_x10, ODOMETER_FIELD, 1);
         }
         else
         {
           motor_controller_data.ui8_riding_mode = OFF_MODE;
+          lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
           ui8_hold_down_enabled = 0;
         }
+      }
+      else if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(configuration_variables.ui8_cadence_sensor_mode, ODOMETER_FIELD, 0);
       }
       
     break;
     
-    // motor temperature control or throttle control
     case 4:
+      
+      // motor temperature control or throttle control
       lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1615,6 +1617,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
     break;
 
     // motor temperature limit min
@@ -1660,6 +1663,8 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
 
 void lcd_execute_menu_config_submenu_technical (void)
 {
+  #define MAX_NUMBER_OF_SUBMENUS_TECHNICAL_DATA    8
+  
   switch (ui8_lcd_menu_config_submenu_state)
   {
     case 0:
@@ -1692,12 +1697,16 @@ void lcd_execute_menu_config_submenu_technical (void)
     case 7:
       lcd_print(motor_controller_data.ui8_foc_angle, ODOMETER_FIELD, 0);
     break;
+    
+    case 8:
+      lcd_print(configuration_variables.ui16_cadence_sensor_pulse_high_percentage_x10, ODOMETER_FIELD, 1);
+    break;
   }
   
   // advance on sub menu
   if (UP_CLICK)
   {
-    if (ui8_lcd_menu_config_submenu_state < 7) { ++ui8_lcd_menu_config_submenu_state; } 
+    if (ui8_lcd_menu_config_submenu_state < MAX_NUMBER_OF_SUBMENUS_TECHNICAL_DATA) { ++ui8_lcd_menu_config_submenu_state; } 
     else { ui8_lcd_menu_config_submenu_state = 0; }
   }
 
@@ -1705,7 +1714,7 @@ void lcd_execute_menu_config_submenu_technical (void)
   if (DOWN_CLICK)
   {
     if (ui8_lcd_menu_config_submenu_state > 0) { --ui8_lcd_menu_config_submenu_state; } 
-    else { ui8_lcd_menu_config_submenu_state = 7; }
+    else { ui8_lcd_menu_config_submenu_state = MAX_NUMBER_OF_SUBMENUS_TECHNICAL_DATA; }
   }
   
   // leave sub menu 
@@ -1789,7 +1798,7 @@ void power_off_timer (void)
       if (ui16_seconds_since_power_on - ui16_seconds_since_power_on_offset >= (configuration_variables.ui8_lcd_power_off_time_minutes * 60))
       {
         // power off system and save variables to EEPROM
-        lcd_power_off (1);
+        lcd_power_off(1);
       }
     }
   }

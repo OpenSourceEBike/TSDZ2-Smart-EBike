@@ -46,8 +46,7 @@ static uint8_t    ui8_duty_cycle_target = 0;
 // cadence sensor variables
 volatile uint8_t ui8_cadence_sensor_mode = STANDARD_MODE;
 volatile uint16_t ui16_cadence_sensor_ticks_counter_min_speed_adjusted = CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN;
-static uint16_t ui16_cadence_sensor_pulse_high_percentage = CADENCE_SENSOR_PULSE_PERCENTAGE_DEFAULT;
-static uint16_t ui16_cadence_sensor_pulse_low_percentage = CADENCE_SENSOR_PULSE_PERCENTAGE_DEFAULT;
+static uint16_t ui16_cadence_sensor_pulse_high_percentage_x10 = CADENCE_SENSOR_PULSE_PERCENTAGE_X10_DEFAULT;
 static uint8_t ui8_pedal_cadence_RPM = 0;
 
 
@@ -99,7 +98,7 @@ static void apply_boost();
 
 // UART
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   7   // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
-#define UART_NUMBER_DATA_BYTES_TO_SEND      24  // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_NUMBER_DATA_BYTES_TO_SEND      26  // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
@@ -124,10 +123,9 @@ static void check_brakes(void);
 
 static void get_battery_voltage_filtered(void);
 static void get_battery_current_filtered(void);
-static void get_adc_pedal_torque(void);
+static void get_pedal_torque(void);
 static void calc_wheel_speed(void);
 static void calc_cadence(void);
-static void calc_crank_power(void);
 
 
 static void apply_power_assist();
@@ -144,14 +142,13 @@ static void apply_temperature_limiting();
 
 
 void ebike_app_controller (void)
-{
-  get_battery_voltage_filtered();   // get filtered voltage from FOC calculations
-  get_battery_current_filtered();   // get filtered current from FOC calculations
-  get_adc_pedal_torque();           // get 10 bit ADC pedal torque value
-  
+{ 
   calc_wheel_speed();               // calculate the wheel speed
   calc_cadence();                   // calculate the cadence and set limits from wheel speed
-  calc_crank_power();               // calculate the crank power
+  
+  get_battery_voltage_filtered();   // get filtered voltage from FOC calculations
+  get_battery_current_filtered();   // get filtered current from FOC calculations
+  get_pedal_torque();               // get pedal torque
   
   check_system();                   // check if there are any errors for motor control 
   check_brakes();                   // check if brakes are enabled for motor control
@@ -263,27 +260,6 @@ static void ebike_control_motor (void)
     ui8_controller_duty_cycle_target = 0;
     ui8_g_duty_cycle = 0;
   }
-}
-
-
-
-static void calc_crank_power(void)
-{
-  // calculate torque on pedals
-  ui16_pedal_torque_x100 = ui16_adc_pedal_torque_delta * m_configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
-
-  // calculate crank power
-  ui16_pedal_power_x10 = ((uint32_t) ui16_pedal_torque_x100 * ui8_pedal_cadence_RPM) / 105; // see note below
-
-  /*---------------------------------------------------------
-
-    NOTE: regarding the human power calculation
-    
-    Formula: power  =  force  *  rotations per second  *  2  *  pi
-    Formula: power  =  force  *  rotations per minute  *  2  *  pi / 60
-    
-    (100 * 2 * pi) / 60 ≈ 1.047 -> 105
-  ---------------------------------------------------------*/
 }
 
 
@@ -618,8 +594,8 @@ static void apply_cruise()
 static void apply_cadence_sensor_calibration()
 {
   #define CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP     200
-  #define CADENCE_SENSOR_CALIBRATION_MODE_ADC_BATTERY_CURRENT_TARGET          5 // 5 -> 5 * 0.2 = 1 A
-  #define CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_TARGET                   22
+  #define CADENCE_SENSOR_CALIBRATION_MODE_ADC_BATTERY_CURRENT_TARGET          8   // 8 -> 8 * 0.2 = 1.6 A
+  #define CADENCE_SENSOR_CALIBRATION_MODE_DUTY_CYCLE_TARGET                   24
   
   // get the ticks counter interrupt values for the different states
   uint32_t ui32_high_state = ui16_cadence_sensor_ticks_counter_min_high;
@@ -629,17 +605,14 @@ static void apply_cadence_sensor_calibration()
   if ((ui32_high_state > 0) && (ui32_low_state > 0))
   {
     // calculate the cadence sensor pulse high percentage
-    ui16_cadence_sensor_pulse_high_percentage = (ui32_high_state * 100) / (ui32_high_state + ui32_low_state);
+    uint16_t ui16_cadence_sensor_pulse_high_percentage_x10_temp = (ui32_high_state * 1000) / (ui32_high_state + ui32_low_state);
     
-    // limit the cadence sensor pulse high 
-    if (ui16_cadence_sensor_pulse_high_percentage > CADENCE_SENSOR_PULSE_PERCENTAGE_MAX) { ui16_cadence_sensor_pulse_high_percentage = CADENCE_SENSOR_PULSE_PERCENTAGE_MAX; }
-    if (ui16_cadence_sensor_pulse_high_percentage < CADENCE_SENSOR_PULSE_PERCENTAGE_MIN) { ui16_cadence_sensor_pulse_high_percentage = CADENCE_SENSOR_PULSE_PERCENTAGE_MIN; }
+    // limit the cadence sensor pulse high
+    if (ui16_cadence_sensor_pulse_high_percentage_x10_temp > CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MAX) { ui16_cadence_sensor_pulse_high_percentage_x10_temp = CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MAX; }
+    if (ui16_cadence_sensor_pulse_high_percentage_x10_temp < CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN) { ui16_cadence_sensor_pulse_high_percentage_x10_temp = CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN; }
     
     // filter the cadence sensor pulse high percentage
-    //ui16_filter(&ui16_cadence_sensor_pulse_high_percentage, uint16_t *ui16_old_value, uint16_t ui16_alpha)
-    
-    // calculate the cadence sensor pulse low percentage
-    ui16_cadence_sensor_pulse_low_percentage = 100 - ui16_cadence_sensor_pulse_high_percentage;
+    ui16_cadence_sensor_pulse_high_percentage_x10 = filter(ui16_cadence_sensor_pulse_high_percentage_x10_temp, ui16_cadence_sensor_pulse_high_percentage_x10, 95);
   }
   
   // set motor acceleration
@@ -700,7 +673,7 @@ static void apply_temperature_limiting()
   volatile uint16_t ui16_temp = UI16_ADC_10_BIT_THROTTLE;
   
   // filter motor temperature value
-  ui16_filter(&ui16_temp, &ui16_adc_motor_temperature_filtered, 5);
+  ui16_adc_motor_temperature_filtered = filter(ui16_temp, ui16_adc_motor_temperature_filtered, 80);
   
   m_configuration_variables.ui16_motor_temperature_x2 = (float) ui16_adc_motor_temperature_filtered / 1.024;
   m_configuration_variables.ui8_motor_temperature = m_configuration_variables.ui16_motor_temperature_x2 >> 1;
@@ -825,20 +798,20 @@ static void calc_cadence(void)
                                                                  (uint32_t) CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED);
                                                                  
       // set the pulse duty cycle in ticks
-      ui16_cadence_sensor_ticks_counter_min_high = ((uint32_t) ui16_cadence_sensor_pulse_high_percentage * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 100;
-      ui16_cadence_sensor_ticks_counter_min_low = ((uint32_t) ui16_cadence_sensor_pulse_low_percentage * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 100;
+      ui16_cadence_sensor_ticks_counter_min_high = ((uint32_t) ui16_cadence_sensor_pulse_high_percentage_x10 * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 1000;
+      ui16_cadence_sensor_ticks_counter_min_low = ((uint32_t) (1000 - ui16_cadence_sensor_pulse_high_percentage_x10) * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 1000;
       
       // calculate cadence in RPM and avoid zero division
       if (ui16_cadence_sensor_ticks_temp)
       {
-        // adjust cadence calculation depending pulse state
+        // adjust cadence calculation depending on pulse state
         if (ui8_cadence_sensor_pulse_state_temp)
         {
-          ui8_pedal_cadence_RPM = ((uint32_t) ui16_cadence_sensor_pulse_low_percentage * 46875) / ((uint32_t) ui16_cadence_sensor_ticks_temp * 100);
+          ui8_pedal_cadence_RPM = ((uint32_t) (1000 - ui16_cadence_sensor_pulse_high_percentage_x10) * 46875) / ((uint32_t) ui16_cadence_sensor_ticks_temp * 1000);
         }
         else
         {
-          ui8_pedal_cadence_RPM = ((uint32_t) ui16_cadence_sensor_pulse_high_percentage * 46875) / ((uint32_t) ui16_cadence_sensor_ticks_temp * 100);
+          ui8_pedal_cadence_RPM = ((uint32_t) ui16_cadence_sensor_pulse_high_percentage_x10 * 46875) / ((uint32_t) ui16_cadence_sensor_ticks_temp * 1000);
         }
       }
       else
@@ -905,11 +878,25 @@ static void get_battery_current_filtered(void)
 
 
 
-static void get_adc_pedal_torque(void)
+static void get_pedal_torque(void)
 {
-  // get adc pedal torque
-  ui16_adc_pedal_torque = UI16_ADC_10_BIT_TORQUE_SENSOR;
+  #define ADC_TORQUE_MEASUREMENT_THRESHOLD      90 // 50 pedal cadence RPM
   
+  // get the adc torque sensor value depending on cadence RPM
+  if (ui8_pedal_cadence_RPM > ADC_TORQUE_MEASUREMENT_THRESHOLD)
+  {
+    // get the max adc pedal torque from the motor PWM control loop
+    ui16_adc_pedal_torque = ui16_adc_pedal_torque_max;
+    
+    // approximate the max adc value to a sinewave and calculate average torque
+    ui16_adc_pedal_torque = ((uint32_t) ui16_adc_pedal_torque * 637) / 1000;
+  }
+  else
+  {
+    // get the adc pedal torque
+    ui16_adc_pedal_torque = UI16_ADC_10_BIT_TORQUE_SENSOR;
+  }
+
   // calculate the delta value of adc pedal torque and the adc pedal torque offset from calibration
   if (ui16_adc_pedal_torque > ui16_adc_pedal_torque_offset)
   {
@@ -919,6 +906,22 @@ static void get_adc_pedal_torque(void)
   {
     ui16_adc_pedal_torque_delta = 0;
   }
+  
+  // calculate torque on pedals
+  ui16_pedal_torque_x100 = ui16_adc_pedal_torque_delta * m_configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
+
+  // calculate crank power
+  ui16_pedal_power_x10 = ((uint32_t) ui16_pedal_torque_x100 * ui8_pedal_cadence_RPM) / 105; // see note below
+
+  /*---------------------------------------------------------
+
+    NOTE: regarding the human power calculation
+    
+    Formula: power  =  force  *  rotations per second  *  2  *  pi
+    Formula: power  =  force  *  rotations per minute  *  2  *  pi / 60
+    
+    (100 * 2 * pi) / 60 ≈ 1.047 -> 105
+  ---------------------------------------------------------*/
 }
 
 
@@ -1099,10 +1102,10 @@ static void uart_receive_package(void)
       ui8_riding_mode_parameter = ui8_rx_buffer [3];
       
       // lights state
-      m_configuration_variables.ui8_lights = ui8_rx_buffer [4];
+      uint8_t ui8_lights = ui8_rx_buffer [4];
       
       // set lights
-      lights_set_state(m_configuration_variables.ui8_lights);
+      lights_set_state(ui8_lights);
 
       switch (ui8_message_ID)
       {
@@ -1204,21 +1207,20 @@ static void uart_receive_package(void)
         case 6:
           
           // cadence sensor mode
-          ui8_cadence_sensor_mode = ui8_rx_buffer [5];
+          ui8_cadence_sensor_mode = ui8_rx_buffer[5];
           
-          uint8_t ui8_temp_1 = ui8_rx_buffer [6];
-          
-          uint8_t ui8_temp_2 = ui8_rx_buffer [7];
-        
+          // cadence sensor pulse high percentage
+          if (ui8_cadence_sensor_mode == ADVANCED_MODE)
+          {
+            ui16_cadence_sensor_pulse_high_percentage_x10 = (((uint16_t) ui8_rx_buffer[7]) << 8) + ((uint16_t) ui8_rx_buffer[6]);
+          }
+
         break;
 
         default:
           // nothing, should display error code
         break;
       }
-
-      // check if any configuration_variables did change and if so, save all of them in the EEPROM
-      eeprom_write_if_values_changed();
 
       // signal that we processed the full package
       ui8_received_package_flag = 0;
@@ -1254,6 +1256,7 @@ static void uart_send_package(void)
   // optional ADC channel value
   ui8_tx_buffer[7] = UI8_ADC_THROTTLE;
   
+  // throttle or temperature control
   switch (m_configuration_variables.ui8_optional_ADC_function)
   {
     case THROTTLE_CONTROL:
@@ -1278,12 +1281,12 @@ static void uart_send_package(void)
 
   // pedal cadence
   ui8_tx_buffer[11] = ui8_pedal_cadence_RPM;
-  
+
   // PWM duty_cycle
   ui8_tx_buffer[12] = ui8_g_duty_cycle;
   
   // motor speed in ERPS
-  ui16_temp = ui16_cadence_sensor_pulse_high_percentage;//ui16_adc_pedal_torque_offset; //ui16_motor_get_motor_speed_erps();                          // CHANGE CHANGE CHANGE
+  ui16_temp = ui16_adc_pedal_torque_offset; //ui16_motor_get_motor_speed_erps();                          // CHANGE CHANGE CHANGE
   ui8_tx_buffer[13] = (uint8_t) (ui16_temp & 0xff);
   ui8_tx_buffer[14] = (uint8_t) (ui16_temp >> 8);
   
@@ -1309,6 +1312,11 @@ static void uart_send_package(void)
   // pedal power x10
   ui8_tx_buffer[23] = (uint8_t) (ui16_pedal_power_x10 & 0xff);
   ui8_tx_buffer[24] = (uint8_t) (ui16_pedal_power_x10 >> 8);
+  
+  // cadence sensor pulse high percentage
+  ui16_temp = ui16_cadence_sensor_pulse_high_percentage_x10;
+  ui8_tx_buffer[25] = (uint8_t) (ui16_temp & 0xff);
+  ui8_tx_buffer[26] = (uint8_t) (ui16_temp >> 8);
 
   // prepare crc of the package
   ui16_crc_tx = 0xffff;

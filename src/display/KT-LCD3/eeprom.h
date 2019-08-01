@@ -134,7 +134,9 @@
 #define ADDRESS_EMTB_ASSIST_SENSITIVITY                                     116 + EEPROM_BASE_ADDRESS
 #define ADRESS_OPTIONAL_ADC_FUNCTION                                        117 + EEPROM_BASE_ADDRESS
 #define ADRESS_TEMPERATURE_FIELD_STATE                                      118 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 119
+#define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0                  119 + EEPROM_BASE_ADDRESS
+#define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1                  120 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 121
 
 
 void eeprom_init(void);

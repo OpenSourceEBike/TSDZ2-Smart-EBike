@@ -39,6 +39,7 @@ typedef struct _motor_controller_data
 
 typedef struct _configuration_variables
 {
+  uint16_t ui16_cadence_sensor_pulse_high_percentage_x10;
   uint8_t ui8_assist_level;
   uint8_t ui8_number_of_assist_levels;
   uint8_t ui8_power_assist_function_enabled;

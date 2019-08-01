@@ -135,7 +135,9 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] =
   DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED,                         // 115 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY,                              // 116 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_OPTIONAL_ADC_FUNCTION,                                // 117 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_TEMPERATURE_FIELD_STATE                               // 118 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_TEMPERATURE_FIELD_STATE,                              // 118 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0,           // 119 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1            // 120 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -395,6 +397,10 @@ static void eeprom_read_values_to_variables(void)
   
   // cadence sensor mode
   p_configuration_variables->ui8_cadence_sensor_mode = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_MODE);
+  ui16_temp = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0);
+  ui8_temp = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1);
+  ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
+  p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 = ui16_temp;
 }
 
 
@@ -574,6 +580,8 @@ static void variables_to_array (uint8_t *ui8_array)
   
   // cadence sensor mode
   ui8_array[ADDRESS_CADENCE_SENSOR_MODE - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_cadence_sensor_mode;
+  ui8_array[ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 & 255;
+  ui8_array[ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 >> 8) & 255;
 }
 
 

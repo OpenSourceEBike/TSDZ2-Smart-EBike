@@ -65,21 +65,22 @@ void ui8_limit_max(uint8_t *ui8_p_value, uint8_t ui8_max_value)
 
 
 
-void ui8_filter(uint8_t *ui8_new_value, uint8_t *ui8_old_value, uint8_t ui8_alpha)
+uint32_t filter(uint32_t ui32_new_value, uint32_t ui32_old_value, uint8_t ui8_alpha)
 {
-  if (ui8_alpha > 10) { ui8_alpha = 10; }
-  
-  *ui8_old_value = (((ui8_alpha * *ui8_new_value) + ((10 - ui8_alpha) * *ui8_old_value)) + 5) / 10;
+  if (ui8_alpha < 101)
+  {
+    ui32_old_value = ((((100 - ui8_alpha) * ui32_new_value) + (ui8_alpha * ui32_old_value)) + 50) / 100;
+    
+    if (ui32_old_value < ui32_new_value) { ui32_old_value += 1; }
+    
+    return ui32_old_value;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
-
-
-void ui16_filter(uint16_t *ui16_new_value, uint16_t *ui16_old_value, uint16_t ui16_alpha)
-{
-  if (ui16_alpha > 10) { ui16_alpha = 10; }
-  
-  *ui16_old_value = (((ui16_alpha * *ui16_new_value) + ((10 - ui16_alpha) * *ui16_old_value)) + 5) / 10;
-}
 
 
 

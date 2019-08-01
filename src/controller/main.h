@@ -126,9 +126,9 @@
 #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MAX            150
 #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN            9800
 
-#define CADENCE_SENSOR_PULSE_PERCENTAGE_DEFAULT                   50
-#define CADENCE_SENSOR_PULSE_PERCENTAGE_MAX                       90
-#define CADENCE_SENSOR_PULSE_PERCENTAGE_MIN                       10
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_X10_DEFAULT               500
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MAX                   800
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN                   200
 
 /*-------------------------------------------------------------------------------
   NOTE: regarding the cadence sensor
@@ -175,8 +175,6 @@
 
 
 // EEPROM memory variables default values
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10                     40  // 4.0
-#define DEFAULT_VALUE_CONFIG_0                                    0
 #define DEFAULT_VALUE_BATTERY_MAX_CURRENT                         10  // 10 amps
 #define DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10                50  // 500 watts
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0           134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8)) = 390
@@ -185,6 +183,18 @@
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                           8
 #define DEFAULT_VALUE_WHEEL_SPEED_MAX                             50  // 50 km/h
 #define DEFAULT_VALUE_MOTOR_TYPE                                  0
+#define DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100       67
+
+/*---------------------------------------------------------
+
+  NOTE: regarding the torque sensor output values
+
+  Torque (force) value needs to be found experimentaly.
+  
+  One torque sensor ADC 10 bit step is equal to 0.38 kg
+  
+  Force (Nm) = 1 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
+---------------------------------------------------------*/
 
 
 
@@ -217,22 +227,6 @@
   NOTE: regarding battery current ADC
 
   1 A per 5 steps of ADC 10 bits
----------------------------------------------------------*/
-
-
-
-// ADC torque sensor
-#define DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100       67
-
-/*---------------------------------------------------------
-
-  NOTE: regarding the torque sensor output values
-
-  Torque (force) value needs to be found experimentaly.
-  
-  One torque sensor ADC 10 bit step is equal to 0.38 kg
-  
-  Force (Nm) = 1 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/
 
 

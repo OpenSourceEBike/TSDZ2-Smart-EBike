@@ -87,7 +87,7 @@
 
 
 // default values for motor temperature limit function
-#define DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT             75  // 75 degrees celsius
+#define DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT             70  // 70 degrees celsius
 #define DEFAULT_VALUE_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT             85
 
 
@@ -106,7 +106,7 @@
 
 
 // default values for internal resistance of battery
-#define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0                     130 // 48 V battery, 13S5P measured 130 milli ohms
+#define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_0                     140
 #define DEFAULT_VALUE_BATTERY_PACK_RESISTANCE_1                     0
 
 
@@ -156,14 +156,14 @@
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_1                           20
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_2                           22
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_3                           24
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_4                           26
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_5                           28
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_6                           30
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_7                           32
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_8                           34
-#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_9                           36
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_2                           25
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_3                           30
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_4                           35
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_5                           40
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_6                           42
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_7                           44
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_8                           46
+#define DEFAULT_VALUE_WALK_ASSIST_LEVEL_9                           48
 
 
 
@@ -182,19 +182,19 @@
 
 
 // default values for showing odometer variables
-#define DEFAULT_VALUE_SHOW_DISTANCE_DATA_ODOMETER_FIELD             1   // enabled by default
-#define DEFAULT_VALUE_SHOW_BATTERY_STATE_ODOMETER_FIELD             1   // enabled by default
-#define DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD                1   // enabled by default
-#define DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD          1   // enabled by default
-#define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               1   // enabled by default
-#define DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD               1   // enabled by default
-#define DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD         1   // enabled by default
-#define DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD               1   // enabled by default
+#define DEFAULT_VALUE_SHOW_DISTANCE_DATA_ODOMETER_FIELD             1
+#define DEFAULT_VALUE_SHOW_BATTERY_STATE_ODOMETER_FIELD             1
+#define DEFAULT_VALUE_SHOW_PEDAL_DATA_ODOMETER_FIELD                1
+#define DEFAULT_VALUE_SHOW_TIME_MEASUREMENT_ODOMETER_FIELD          0
+#define DEFAULT_VALUE_SHOW_WHEEL_SPEED_ODOMETER_FIELD               0
+#define DEFAULT_VALUE_SHOW_ENERGY_DATA_ODOMETER_FIELD               1
+#define DEFAULT_VALUE_SHOW_MOTOR_TEMPERATURE_ODOMETER_FIELD         0
+#define DEFAULT_VALUE_SHOW_BATTERY_SOC_ODOMETER_FIELD               1
 
 
 
 // default value for the main screen power menu
-#define DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                1   // enabled by default
+#define DEFAULT_VALUE_MAIN_SCREEN_POWER_MENU_ENABLED                1
 
 
 
@@ -205,12 +205,14 @@
 
 // default value cadence sensor mode
 #define DEFAULT_VALUE_CADENCE_SENSOR_MODE                           0
+#define DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0    244
+#define DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1    1
 
 
 
 // default value for torque assist
 #define DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED                0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         10
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         12
 #define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2                         20
 #define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3                         30
 #define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4                         40
@@ -224,21 +226,21 @@
 
 // default value for cadence assist
 #define DEFAULT_VALUE_CADENCE_ASSIST_FUNCTION_ENABLED               0
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_1                        10
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_2                        20
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_1                        20
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_2                        30
 #define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_3                        40
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_4                        80
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_5                        120
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6                        160
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7                        190
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8                        200
-#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                        220
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_4                        60
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_5                        100
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_6                        120
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_7                        140
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_8                        160
+#define DEFAULT_VALUE_CADENCE_ASSIST_LEVEL_9                        180
 
 
 
 // default value for eMTB assist
 #define DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED                  0
-#define DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY                       0
+#define DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY                       2
 
 
 

@@ -15,7 +15,7 @@
 #include "lcd.h"
 #include "common.h"
 
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   24  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   26  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_NUMBER_DATA_BYTES_TO_SEND      7   // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 #define UART_MAX_NUMBER_MESSAGE_ID          6   // change this value depending on how many different packages there is to send
 
@@ -132,6 +132,7 @@ void uart_data_clock (void)
       // value from optional ADC channel
       p_motor_controller_data->ui8_adc_throttle = ui8_rx_buffer[7];
       
+      // throttle or temperature control
       switch (p_configuration_variables->ui8_optional_ADC_function)
       {
         case THROTTLE_CONTROL:
@@ -152,7 +153,7 @@ void uart_data_clock (void)
       // ADC pedal torque
       p_motor_controller_data->ui16_adc_pedal_torque_sensor = (((uint16_t) ui8_rx_buffer [10]) << 8) + ((uint16_t) ui8_rx_buffer [9]);
       
-      // pedal cadence in RPM
+      // pedal cadence
       p_motor_controller_data->ui8_pedal_cadence_RPM = ui8_rx_buffer[11];
       
       // PWM duty_cycle
@@ -178,6 +179,12 @@ void uart_data_clock (void)
       
       // pedal power x10
       p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [24]) << 8) + ((uint16_t) ui8_rx_buffer [23]);
+      
+      // cadence sensor pulse high percentage
+      if (p_configuration_variables->ui8_cadence_sensor_mode == CALIBRATION_MODE)
+      {
+        p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 = (((uint16_t) ui8_rx_buffer [26]) << 8) + ((uint16_t) ui8_rx_buffer [25]);        
+      }
 
       // flag that we processed the full package
       ui8_received_package_flag = 0;
@@ -379,14 +386,17 @@ void uart_data_clock (void)
           // cadence sensor mode
           ui8_tx_buffer[5] = p_configuration_variables->ui8_cadence_sensor_mode;
           
-          ui8_tx_buffer[6] = 0;
+          // cadence sensor pulse high percentage
+          uint16_t ui16_temp = p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10;
+          ui8_tx_buffer[6] = (uint8_t) (ui16_temp & 0xff);
+          ui8_tx_buffer[7] = (uint8_t) (ui16_temp >> 8);
           
-          ui8_tx_buffer[7] = 0;
-
         break;
         
         default:
+          
           ui8_message_ID = 0;
+        
         break;
       }
 

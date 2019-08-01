@@ -381,6 +381,10 @@ volatile uint16_t ui16_cadence_sensor_ticks_counter_min_low = CADENCE_SENSOR_ADV
 volatile uint8_t ui8_cadence_sensor_pulse_state = 0;
 
 
+// torque sensor
+volatile uint16_t ui16_adc_pedal_torque_max = 0;
+volatile uint8_t ui8_adc_torque_sensor_transition_counter = 0;
+
 // wheel speed sensor
 volatile uint16_t ui16_wheel_speed_sensor_ticks = 0;
 volatile uint32_t ui32_wheel_speed_sensor_ticks_total = 0;
@@ -712,9 +716,38 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // phase A
   TIM1->CCR1H = (uint8_t) (ui8_phase_a_voltage >> 7);
   TIM1->CCR1L = (uint8_t) (ui8_phase_a_voltage << 1);
-
-
-
+  
+  
+  
+  /****************************************************************************/
+  
+  
+  
+  static uint16_t ui16_adc_pedal_torque_max_temp;
+  
+  // get the adc pedal torque
+  uint16_t ui16_adc_pedal_torque = UI16_ADC_10_BIT_TORQUE_SENSOR;
+  
+  // check if crank has rotated one half revolution
+  if (ui8_adc_torque_sensor_transition_counter > 10)
+  {
+    // reset transition counter
+    ui8_adc_torque_sensor_transition_counter = 0;
+    
+    // set the max adc torque value from the half crank rotation
+    ui16_adc_pedal_torque_max = ui16_adc_pedal_torque_max_temp;
+    
+    // reset temporary variable holding the max adc torque sensor value
+    ui16_adc_pedal_torque_max_temp = 0;
+  }
+  else
+  {
+    // measure and store the max adc torque sensor value
+    if (ui16_adc_pedal_torque > ui16_adc_pedal_torque_max_temp) { ui16_adc_pedal_torque_max_temp = ui16_adc_pedal_torque; }
+  }
+  
+  
+  
   /****************************************************************************/
   
   
@@ -744,6 +777,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         // only consider the 0 -> 1 transition
         if (ui8_cadence_sensor_pin_1_state)
         {
+          // count one transition for the adc torque sensor max value
+          ++ui8_adc_torque_sensor_transition_counter;
+          
           // set the ticks counter limit depending on current wheel speed
           ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_speed_adjusted;
           
@@ -757,7 +793,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           {
             // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
             if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MAX) || 
-                (ui8_cadence_sensor_pin_1_state != ui8_cadence_sensor_pin_2_state))
+                (ui8_cadence_sensor_pin_2_state != 0))
             {
               // reset variables
               ui16_cadence_sensor_ticks = 0;
@@ -785,8 +821,17 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         #define CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD    1000 // software based Schmitt trigger to stop motor jitter when at resolution limits
         
         // set the ticks counter limit depending on current wheel speed and pin state
-        if (ui8_cadence_sensor_pin_1_state) { ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_high; }
-        else { ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_low; }
+        if (ui8_cadence_sensor_pin_1_state)
+        {
+          // count one transition for the adc torque sensor max value
+          ++ui8_adc_torque_sensor_transition_counter;
+          
+          ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_high;
+        }
+        else
+        {
+          ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_low;
+        }
 
         // check if first transition
         if (!ui8_cadence_sensor_ticks_counter_started)
