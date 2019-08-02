@@ -316,7 +316,7 @@ void lcd_execute_main_screen (void)
   }
   
   // enter power menu if...
-  if (ONOFF_UP_LONG_CLICK && configuration_variables.ui8_main_screen_power_menu_enabled && !(motor_controller_data.ui8_street_mode_enabled))
+  if (ONOFF_UP_LONG_CLICK && configuration_variables.ui8_main_screen_power_menu_enabled && !(configuration_variables.ui8_street_mode_enabled))
   {
     ui8_lcd_menu = POWER_MENU;
   }
@@ -1512,7 +1512,7 @@ void lcd_execute_menu_config_submenu_street_mode (void)
   
   submenu_state_controller(5);
 
-  if (ui8_lcd_menu_config_submenu_state != 2 && (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled))
+  if (ui8_lcd_menu_config_submenu_state != 1 && (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled))
   {
     lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
   }
@@ -2238,6 +2238,9 @@ void riding_mode_controller(void)
 
 void assist_level_field(void)
 {
+  static uint8_t ui8_street_mode_assist_symbol_state_counter;
+  static uint8_t ui8_street_mode_assist_symbol_state;
+  
   // display either assist level or eMTB symbol
   if (motor_controller_data.ui8_riding_mode == eMTB_ASSIST_MODE)
   {
@@ -2248,8 +2251,22 @@ void assist_level_field(void)
     lcd_print(configuration_variables.ui8_assist_level, ASSIST_LEVEL_FIELD, 1);    
   }
 
-  // if street mode is disabled display "assist" symbol
-  if (!(motor_controller_data.ui8_street_mode_enabled))
+  if (configuration_variables.ui8_street_mode_function_enabled && configuration_variables.ui8_street_mode_enabled)
+  {
+    lcd_enable_assist_symbol(1);
+  }
+  else if (configuration_variables.ui8_street_mode_function_enabled)
+  {
+    if (++ui8_street_mode_assist_symbol_state_counter > 45)
+    {
+      ui8_street_mode_assist_symbol_state_counter = 0;
+      
+      ui8_street_mode_assist_symbol_state = !ui8_street_mode_assist_symbol_state;
+    }
+
+    lcd_enable_assist_symbol(ui8_street_mode_assist_symbol_state);
+  }
+  else
   {
     lcd_enable_assist_symbol(1);
   }
@@ -2259,8 +2276,6 @@ void assist_level_field(void)
 
 void street_mode (void)
 {
-  static uint8_t ui8_street_mode_assist_symbol_state;
-  static uint8_t ui8_street_mode_assist_symbol_state_counter;
   static uint8_t ui8_executed_on_startup;
   
   if (configuration_variables.ui8_street_mode_function_enabled) 
@@ -2272,25 +2287,17 @@ void street_mode (void)
       
       if (configuration_variables.ui8_street_mode_function_enabled > 1) 
       {
-        motor_controller_data.ui8_street_mode_enabled = 1;
+        configuration_variables.ui8_street_mode_enabled = 1;
+      }
+      else
+      {
+        configuration_variables.ui8_street_mode_enabled = 0;
       }
     }
     
     if (ONOFF_DOWN_LONG_CLICK)
     {
-      motor_controller_data.ui8_street_mode_enabled = !(motor_controller_data.ui8_street_mode_enabled);
-    }
-    
-    if (motor_controller_data.ui8_street_mode_enabled) 
-    {
-      if (++ui8_street_mode_assist_symbol_state_counter > 45)
-      {
-        ui8_street_mode_assist_symbol_state_counter = 0;
-        
-        ui8_street_mode_assist_symbol_state = !ui8_street_mode_assist_symbol_state;
-      }
-
-      lcd_enable_assist_symbol(ui8_street_mode_assist_symbol_state);
+      configuration_variables.ui8_street_mode_enabled = !(configuration_variables.ui8_street_mode_enabled);
     }
   }
 }

@@ -40,7 +40,7 @@ void eeprom_init (void)
 
   // start by reading address 0 and see if value is different from our key,
   // if so mean that eeprom memory is clean and we need to populate: should happen after erasing the microcontroller
-  ui8_data = FLASH_ReadByte (ADDRESS_KEY);
+  ui8_data = FLASH_ReadByte(ADDRESS_KEY);
   
   // verify key exists
   if (ui8_data != KEY) 

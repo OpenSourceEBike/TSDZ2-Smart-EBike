@@ -26,7 +26,6 @@ typedef struct _motor_controller_data
   uint8_t ui8_braking;
   uint8_t ui8_pedal_cadence_RPM;
   uint8_t ui8_lights;
-  uint8_t ui8_street_mode_enabled;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
   uint8_t ui8_temperature_current_limiting_value;
@@ -93,6 +92,7 @@ typedef struct _configuration_variables
   uint8_t ui8_lcd_backlight_on_brightness;
   uint8_t ui8_lcd_backlight_off_brightness;
   uint8_t ui8_street_mode_function_enabled;
+  uint8_t ui8_street_mode_enabled;
   uint8_t ui8_street_mode_speed_limit;
   uint8_t ui8_street_mode_power_limit_enabled;
   uint8_t ui8_street_mode_power_limit_div25;

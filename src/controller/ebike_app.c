@@ -523,7 +523,7 @@ static void apply_cruise()
       // reset PID variables
       i16_error = 0;          // error should be 0 when cruise function starts
       i16_last_error = 0;     // last error should be 0 when cruise function starts 
-      i16_integral = 250;     // integral can start at around 250 when cruise function starts ( 250 = around 64 target PWM = around 8 km/h depending on gear and bike )
+      i16_integral = 300;     // integral can start at around 250 when cruise function starts ( 250 = around 64 target PWM = around 8 km/h depending on gear and bike )
       i16_derivative = 0;     // derivative should be 0 when cruise function starts 
       i16_control_output = 0; // control signal/output should be 0 when cruise function starts
       
@@ -1286,7 +1286,7 @@ static void uart_send_package(void)
   ui8_tx_buffer[12] = ui8_g_duty_cycle;
   
   // motor speed in ERPS
-  ui16_temp = ui16_adc_pedal_torque_offset; //ui16_motor_get_motor_speed_erps();                          // CHANGE CHANGE CHANGE
+  ui16_temp = ui16_motor_get_motor_speed_erps();
   ui8_tx_buffer[13] = (uint8_t) (ui16_temp & 0xff);
   ui8_tx_buffer[14] = (uint8_t) (ui16_temp >> 8);
   

@@ -298,7 +298,7 @@ void uart_data_clock (void)
           ui8_tx_buffer[6] = (uint8_t) (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8);
           
           // wheel max speed
-          if (p_motor_controller_data->ui8_street_mode_enabled)
+          if (p_configuration_variables->ui8_street_mode_enabled)
           {
             ui8_tx_buffer[7] = p_configuration_variables->ui8_street_mode_speed_limit;
           }
@@ -316,7 +316,7 @@ void uart_data_clock (void)
           ui8_tx_buffer[6] = (uint8_t) (p_configuration_variables->ui16_wheel_perimeter >> 8);
           
           // optional ADC function, disable throttle if set to be disabled in Street Mode
-          if (p_motor_controller_data->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_optional_ADC_function == THROTTLE_CONTROL)
+          if (p_configuration_variables->ui8_street_mode_enabled && !p_configuration_variables->ui8_street_mode_throttle_enabled && p_configuration_variables->ui8_optional_ADC_function == THROTTLE_CONTROL)
           {
             ui8_tx_buffer[7] = 0;
           }
@@ -370,7 +370,7 @@ void uart_data_clock (void)
           ui8_tx_buffer[6] = p_configuration_variables->ui8_battery_max_current;
           
           // battery power limit
-          if (p_motor_controller_data->ui8_street_mode_enabled && p_configuration_variables->ui8_street_mode_power_limit_enabled)
+          if (p_configuration_variables->ui8_street_mode_enabled && p_configuration_variables->ui8_street_mode_power_limit_enabled)
           {
             ui8_tx_buffer[7] = p_configuration_variables->ui8_street_mode_power_limit_div25;
           }
