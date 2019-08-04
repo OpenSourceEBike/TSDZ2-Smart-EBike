@@ -199,14 +199,14 @@ void EEPROM_controller(uint8_t ui8_operation)
     
     case SET_TO_DEFAULT:
     
-      // write array of variables to EEPROM
-      for (ui8_i = 0; ui8_i < EEPROM_BYTES_STORED; ui8_i++)
+      // write array of variables to EEPROM, write key last
+      for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)
       {
         // get address
-        uint32_t ui32_default_address = (uint32_t) ui8_i + EEPROM_BASE_ADDRESS;
+        uint32_t ui32_default_address = (uint32_t) ui8_i - 1 + EEPROM_BASE_ADDRESS;
         
         // get value
-        uint8_t ui8_default_variable_value = ui8_default_array[ui8_i];
+        uint8_t ui8_default_variable_value = ui8_default_array[ui8_i - 1];
         
         // write variable value to EEPROM
         FLASH_ProgramByte(ui32_default_address, ui8_default_variable_value);
@@ -215,7 +215,7 @@ void EEPROM_controller(uint8_t ui8_operation)
         volatile uint8_t ui8_saved_default_value = FLASH_ReadByte(ui32_default_address);
         
         // if write was not successful, rewrite
-        if (ui8_saved_default_value != ui8_default_variable_value) { ui8_i = 0; }
+        if (ui8_saved_default_value != ui8_default_variable_value) { ui8_i = EEPROM_BYTES_STORED; }
       }
       
     break;
@@ -593,13 +593,13 @@ void EEPROM_controller(uint8_t ui8_operation)
       ui8_array[ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 >> 8) & 255;
       
       // write array of variables to EEPROM
-      for (ui8_i = 0; ui8_i < EEPROM_BYTES_STORED; ui8_i++)
+      for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)
       {
         // get address
-        uint32_t ui32_address = (uint32_t) ui8_i + EEPROM_BASE_ADDRESS;
+        uint32_t ui32_address = (uint32_t) ui8_i - 1 + EEPROM_BASE_ADDRESS;
         
         // get value
-        uint8_t ui8_variable_value = ui8_array[ui8_i];
+        uint8_t ui8_variable_value = ui8_array[ui8_i - 1];
         
         // write variable value to EEPROM
         FLASH_ProgramByte(ui32_address, ui8_variable_value);
@@ -608,7 +608,7 @@ void EEPROM_controller(uint8_t ui8_operation)
         volatile uint8_t ui8_saved_value = FLASH_ReadByte(ui32_address);
         
         // if write was not successful, rewrite
-        if (ui8_saved_value != ui8_variable_value) { ui8_i = 0; }
+        if (ui8_saved_value != ui8_variable_value) { ui8_i = EEPROM_BYTES_STORED; }
       }
       
     break;

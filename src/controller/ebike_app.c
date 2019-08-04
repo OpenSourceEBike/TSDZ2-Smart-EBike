@@ -748,7 +748,7 @@ static void calc_cadence(void)
   {
     case STANDARD_MODE:
     
-      #define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN_AT_SPEED    2000
+      #define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN_AT_SPEED    3000
       
       // adjust cadence sensor ticks counter min depending on wheel speed
       ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,
@@ -788,7 +788,7 @@ static void calc_cadence(void)
     
     case ADVANCED_MODE:
     
-      #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED    1000
+      #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED    2000
       
       // adjust cadence sensor ticks counter min depending on wheel speed
       ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,

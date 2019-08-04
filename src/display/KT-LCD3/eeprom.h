@@ -131,7 +131,7 @@
 #define ADDRESS_EMTB_ASSIST_FUNCTION_ENABLED                                115 + EEPROM_BASE_ADDRESS
 #define ADDRESS_EMTB_ASSIST_SENSITIVITY                                     116 + EEPROM_BASE_ADDRESS
 #define ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100                       117 + EEPROM_BASE_ADDRESS
-#define ADDRESS_TEMPERATURE_FIELD_STATE                                      118 + EEPROM_BASE_ADDRESS
+#define ADDRESS_TEMPERATURE_FIELD_STATE                                     118 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0                  119 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1                  120 + EEPROM_BASE_ADDRESS
 #define EEPROM_BYTES_STORED                                                 121
