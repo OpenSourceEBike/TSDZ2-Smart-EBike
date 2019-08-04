@@ -49,14 +49,14 @@ int main (void)
   uint16_t ui16_10ms_loop_counter = 0;
 
   // set clock at the max 16 MHz
-  CLK_HSIPrescalerConfig (CLK_PRESCALER_HSIDIV1);
+  CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
   gpio_init();
   timer1_init();
   timer3_init();
   uart2_init();
   adc_init();
   eeprom_init();
-  lcd_init(); // must be after eeprom_init();
+  lcd_init();
 
   // block until users releases the buttons
   while (buttons_get_onoff_state() || buttons_get_down_state() || buttons_get_up_state());

@@ -87,8 +87,8 @@
 
 
 // default values for motor temperature limit function
-#define DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT             70  // 70 degrees celsius
-#define DEFAULT_VALUE_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT             85
+#define DEFAULT_VALUE_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT             65  // 70 degrees celsius
+#define DEFAULT_VALUE_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT             70
 
 
 
@@ -99,7 +99,7 @@
 
 
 // default values for screen parameters
-#define DEFAULT_VALUE_LCD_POWER_OFF_TIME                            15  // 15 minutes, each unit 1 minute
+#define DEFAULT_VALUE_LCD_POWER_OFF_TIME                            10  // 15 minutes, each unit 1 minute
 #define DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS                   16  // 16 = 80 %
 #define DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS                  1   // 1 = 5%
 
@@ -212,15 +212,15 @@
 
 // default value for torque assist
 #define DEFAULT_VALUE_TORQUE_ASSIST_FUNCTION_ENABLED                0
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         20
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2                         30
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3                         40
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4                         50
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_5                         60
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6                         70
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7                         80
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8                         90
-#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                         100
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_1                         10
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_2                         20
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_3                         30
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_4                         40
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_5                         50
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_6                         60
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_7                         70
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_8                         80
+#define DEFAULT_VALUE_TORQUE_ASSIST_LEVEL_9                         90
 
 
 

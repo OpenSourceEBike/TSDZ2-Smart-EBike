@@ -425,7 +425,7 @@ void lcd_execute_menu_config (void)
     if (ONOFF_LONG_CLICK)
     {
       // save the updated variables to EEPROM
-      eeprom_write_variables();
+      EEPROM_controller(WRITE_TO_MEMORY);
       
       // switch to main menu
       ui8_lcd_menu = MAIN_MENU;
@@ -440,7 +440,6 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
   var_number_t lcd_var_number;
   uint32_t ui32_temp;
   uint16_t ui16_temp;
-  static uint8_t ui8_reset_to_defaults_counter;
   
   switch(ui8_lcd_menu_config_submenu_state)
   {
@@ -682,23 +681,19 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
 
     case 9:
     
-      // reset to defaults
-      lcd_var_number.p_var_number = &ui8_reset_to_defaults_counter;
-      lcd_var_number.ui8_size = 8;
-      lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 10;
-      lcd_var_number.ui32_min_value = 0;
-      lcd_var_number.ui32_increment_step = 1;
-      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
-      lcd_configurations_print_number(&lcd_var_number);
-
-      if (ui8_reset_to_defaults_counter > 9)
+      if (ONOFF_LONG_CLICK && ui8_lcd_menu_config_submenu_change_variable_enabled)
       {
-        // erase saved EEPROM values (all values will be set to defaults)
-        eeprom_erase_key_value();
-
-        // Turn off LCD
-        lcd_power_off(0);
+        EEPROM_controller(SET_TO_DEFAULT);
+        EEPROM_controller(READ_FROM_MEMORY);
+        
+        // set backlight brightness after reset, looks nicer this way
+        if (ui8_lights_state == 0) { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_off_brightness); }
+        else { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_on_brightness); }
+      }
+      
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(42, ODOMETER_FIELD, 0); // just for show
       }
       
     break;
@@ -1776,7 +1771,7 @@ void lcd_execute_menu_config_power (void)
     ui8_lcd_menu_config_submenu_change_variable_enabled = 0;
 
     // save the updated variables to EEPROM
-    eeprom_write_variables();
+    EEPROM_controller(WRITE_TO_MEMORY);
     
     // change to main menu
     ui8_lcd_menu = MAIN_MENU;
@@ -3605,9 +3600,6 @@ void lcd_init (void)
   ht1622_init();
   lcd_set_frame_buffer();
   lcd_update();
-
-  // init variables with the stored value on EEPROM
-  eeprom_init_variables();
 }
 
 
@@ -3738,14 +3730,14 @@ void lcd_power_off(uint8_t SaveToEEPROM)
     configuration_variables.ui32_wh_x10_offset = ui32_wh_x10;
     
     // save variables to EEPROM
-    eeprom_write_variables();
+    EEPROM_controller(WRITE_TO_MEMORY);
   }
 
   // clear LCD so it is clear to user what is happening
   lcd_clear();
   lcd_update();
 
-  // now disable the power to all the system
+  // now disable the power to the system
   GPIO_WriteLow(LCD3_ONOFF_POWER__PORT, LCD3_ONOFF_POWER__PIN);
 
   // block here
