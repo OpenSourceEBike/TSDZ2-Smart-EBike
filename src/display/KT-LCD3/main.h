@@ -99,7 +99,7 @@
 
 
 // default values for screen parameters
-#define DEFAULT_VALUE_LCD_POWER_OFF_TIME                            10  // 15 minutes, each unit 1 minute
+#define DEFAULT_VALUE_LCD_POWER_OFF_TIME                            10  // 10 -> 10 minutes
 #define DEFAULT_VALUE_LCD_BACKLIGHT_ON_BRIGHTNESS                   16  // 16 = 80 %
 #define DEFAULT_VALUE_LCD_BACKLIGHT_OFF_BRIGHTNESS                  1   // 1 = 5%
 
@@ -241,6 +241,11 @@
 // default value for eMTB assist
 #define DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED                  0
 #define DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY                       2
+
+
+
+// default value assist without pedal rotation threshold
+#define DEFAULT_VALUE_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD       0
 
 
 

@@ -69,7 +69,6 @@ int main (void)
 
   brake_init();
   while (brake_is_set()) ; // hold here while brake is pressed -- this is a protection for development
-  eeprom_init();
   lights_init();
   uart2_init();
   timer2_init();
@@ -80,7 +79,7 @@ int main (void)
   wheel_speed_sensor_init();
   hall_sensor_init();
   pwm_init_bipolar_4q();
-  eeprom_init_variables();
+  EEPROM_init();
   enableInterrupts();
 
   while (1)

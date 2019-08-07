@@ -46,7 +46,7 @@
 #define ADDRESS_POWER_ASSIST_LEVEL_7                                        30 + EEPROM_BASE_ADDRESS
 #define ADDRESS_POWER_ASSIST_LEVEL_8                                        31 + EEPROM_BASE_ADDRESS
 #define ADDRESS_POWER_ASSIST_LEVEL_9                                        32 + EEPROM_BASE_ADDRESS
-#define ADDRESS_OPTIONAL_ADC_FUNCTION                                        33 + EEPROM_BASE_ADDRESS
+#define ADDRESS_OPTIONAL_ADC_FUNCTION                                       33 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MOTOR_TEMPERATURE_MIN_VALUE_LIMIT                           34 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MOTOR_TEMPERATURE_MAX_VALUE_LIMIT                           35 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_VOLTAGE_RESET_WH_COUNTER_X10_0                      36 + EEPROM_BASE_ADDRESS
@@ -134,7 +134,8 @@
 #define ADDRESS_TEMPERATURE_FIELD_STATE                                     118 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0                  119 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1                  120 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 121
+#define ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD                     121 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 122
 
 
 #define DEFAULT_VALUE_KEY     202
@@ -143,9 +144,8 @@
 #define WRITE_TO_MEMORY       2
 
 
-void eeprom_init(void);
+void EEPROM_init(void);
 void EEPROM_controller(uint8_t ui8_operation);
-void eeprom_erase_key_value(void);
 
 
 #endif /* _EEPROM_H_ */

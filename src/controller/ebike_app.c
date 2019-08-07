@@ -29,7 +29,8 @@ static uint8_t    ui8_riding_mode = OFF_MODE;
 static uint8_t    ui8_riding_mode_parameter = 0;
 static uint8_t    ui8_system_state = NO_ERROR;
 static uint8_t    ui8_brakes_enabled = 0;
-static uint8_t    ui8_motor_enabled = 0;
+static uint8_t    ui8_motor_enabled = 1;
+static uint8_t    ui8_assist_without_pedal_rotation_threshold = 0;
 
 
 // power control variables
@@ -303,16 +304,22 @@ static void apply_power_assist()
 
 static void apply_torque_assist()
 {
-  #define ADC_PEDAL_TORQUE_THRESHOLD            6     // minimum ADC torque to enable torque assist
   #define TORQUE_ASSIST_FACTOR_DENOMINATOR      110   // scale the torque assist target current
   
-  if ((ui16_adc_pedal_torque_delta > ADC_PEDAL_TORQUE_THRESHOLD) && ui8_pedal_cadence_RPM)
+  // check for assist without pedal rotation threshold when there is no pedal rotation and standing still
+  if (ui8_assist_without_pedal_rotation_threshold && !ui8_pedal_cadence_RPM && !ui16_wheel_speed_x10)
+  {
+    if (ui16_adc_pedal_torque_delta > (100 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 1; }
+  }
+  
+  // calculate torque assistance
+  if (ui16_adc_pedal_torque_delta && ui8_pedal_cadence_RPM)
   {
     // get the torque assist factor
     uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter;
     
     // calculate torque assist target current
-    uint16_t ui16_adc_battery_current_target_torque_assist = ((uint16_t) (ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD) * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
+    uint16_t ui16_adc_battery_current_target_torque_assist = ((uint16_t) ui16_adc_pedal_torque_delta * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
   
     // set motor acceleration
     ui16_duty_cycle_ramp_up_inverse_step = map((uint32_t) ui16_wheel_speed_x10,
@@ -376,10 +383,9 @@ static void apply_cadence_assist()
 
 static void apply_emtb_assist()
 {
-  #define ADC_PEDAL_TORQUE_THRESHOLD                  6     // minimum ADC torque to enable eMTB assist
   #define eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR      20    // scale the eMTB assist target current
   
-  if ((ui16_adc_pedal_torque_delta > ADC_PEDAL_TORQUE_THRESHOLD) && ui8_pedal_cadence_RPM)
+  if (ui16_adc_pedal_torque_delta && ui8_pedal_cadence_RPM)
   {
     // initialize eMTB assist target current
     uint16_t ui16_adc_battery_current_target_eMTB_assist = 0;
@@ -392,56 +398,56 @@ static void apply_emtb_assist()
       case 1:
       
         // ADC torque value to the power of 1.3
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_3[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_3[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
       
       case 2:
       
         // ADC torque value to the power of 1.4
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_4[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_4[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
       
       case 3:
       
         // ADC torque value to the power of 1.5
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_5[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_5[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
       
       case 4:
       
         // ADC torque value to the power of 1.6
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_6[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_6[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
       
       case 5:
       
         // ADC torque value to the power of 1.7
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_7[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_7[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
       
       case 6:
       
         // ADC torque value to the power of 1.8
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_8[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_8[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
 
       case 7:
       
         // ADC torque value to the power of 1.9
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_9[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_1_9[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
       
       case 8:
       
         // ADC torque value to the power of 2
-        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_2_0[ui16_adc_pedal_torque_delta - ADC_PEDAL_TORQUE_THRESHOLD] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
+        ui16_adc_battery_current_target_eMTB_assist = (uint16_t) eMTB_power_2_0[ui16_adc_pedal_torque_delta] / eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR;
         
       break;
     }
@@ -880,23 +886,9 @@ static void get_battery_current_filtered(void)
 
 static void get_pedal_torque(void)
 {
-  #define ADC_TORQUE_MEASUREMENT_THRESHOLD      90 // 50 pedal cadence RPM
+  // get adc pedal torque
+  ui16_adc_pedal_torque = UI16_ADC_10_BIT_TORQUE_SENSOR;
   
-  // get the adc torque sensor value depending on cadence RPM
-  if (ui8_pedal_cadence_RPM > ADC_TORQUE_MEASUREMENT_THRESHOLD)
-  {
-    // get the max adc pedal torque from the motor PWM control loop
-    ui16_adc_pedal_torque = ui16_adc_pedal_torque_max;
-    
-    // approximate the max adc value to a sinewave and calculate average torque
-    ui16_adc_pedal_torque = ((uint32_t) ui16_adc_pedal_torque * 637) / 1000;
-  }
-  else
-  {
-    // get the adc pedal torque
-    ui16_adc_pedal_torque = UI16_ADC_10_BIT_TORQUE_SENSOR;
-  }
-
   // calculate the delta value of adc pedal torque and the adc pedal torque offset from calibration
   if (ui16_adc_pedal_torque > ui16_adc_pedal_torque_offset)
   {
@@ -1006,6 +998,25 @@ static void check_system()
     ui8_system_state = ERROR_TORQUE_SENSOR;
   }
   else if (ui8_system_state == ERROR_TORQUE_SENSOR)
+  {
+    // reset error code
+    ui8_system_state = NO_ERROR;
+  }
+  
+  
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  
+  // check cadence sensor calibration
+  if ((ui8_cadence_sensor_mode == ADVANCED_MODE) &&
+      ((ui16_cadence_sensor_pulse_high_percentage_x10 == CADENCE_SENSOR_PULSE_PERCENTAGE_X10_DEFAULT) ||
+       (ui16_cadence_sensor_pulse_high_percentage_x10 > CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MAX) ||
+       (ui16_cadence_sensor_pulse_high_percentage_x10 < CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN)))
+  {
+    // set error code
+    ui8_system_state = ERROR_CADENCE_SENSOR_CALIBRATION;
+  }
+  else if (ui8_system_state == ERROR_CADENCE_SENSOR_CALIBRATION)
   {
     // reset error code
     ui8_system_state = NO_ERROR;
@@ -1135,42 +1146,38 @@ static void uart_receive_package(void)
         case 2:
         
           // type of motor (36 volt, 48 volt or some experimental type)
-          m_configuration_variables.ui8_motor_type = ui8_rx_buffer [5];
+          m_configuration_variables.ui8_motor_type = ui8_rx_buffer[5];
           
           // motor over temperature min value limit
-          m_configuration_variables.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer [6];
+          m_configuration_variables.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer[6];
           
           // motor over temperature max value limit
-          m_configuration_variables.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer [7];
+          m_configuration_variables.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer[7];
 
         break;
 
         case 3:
         
-          // boost assist level
-          m_configuration_variables.ui8_startup_motor_power_boost_assist_level = ui8_rx_buffer [5];
+          // = ui8_rx_buffer[5];
           
-          // boost state
-          m_configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer [6] & 1);
+          // = ui8_rx_buffer[6];
           
-          // boost max power limit enabled
-          m_configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer [6] & 2) >> 1;
-          
-          // boost runtime
-          m_configuration_variables.ui8_startup_motor_power_boost_time = ui8_rx_buffer [7];
+          // = ui8_rx_buffer[7];
           
         break;
 
         case 4:
 
-          // boost fade time
-          m_configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [5];
+          // = ui8_rx_buffer[5];
           
-          // boost enabled
-          m_configuration_variables.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer [6];
+          // assist without pedal rotation threshold
+          ui8_assist_without_pedal_rotation_threshold = ui8_rx_buffer[6];
+          
+          // check if assist without pedal rotation threshold is valid (safety)
+          if (ui8_assist_without_pedal_rotation_threshold > 100) { ui8_assist_without_pedal_rotation_threshold = 0; }
           
           // motor acceleration adjustment
-          uint8_t ui8_motor_acceleration_adjustment = ui8_rx_buffer [7];
+          uint8_t ui8_motor_acceleration_adjustment = ui8_rx_buffer[7];
           
           // set duty cycle ramp up inverse step
           ui16_duty_cycle_ramp_up_inverse_step_default = map((uint32_t) ui8_motor_acceleration_adjustment,
@@ -1184,13 +1191,13 @@ static void uart_receive_package(void)
         case 5:
         
           // pedal torque conversion
-          m_configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100 = ui8_rx_buffer [5];
+          m_configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100 = ui8_rx_buffer[5];
           
           // max battery current
-          m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer [6];
+          m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer[6];
           
           // battery power limit
-          m_configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer [7];
+          m_configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer[7];
           
           // calculate max battery current in ADC steps from the received battery current limit
           uint8_t ui8_adc_battery_current_max_temp_1 = ((m_configuration_variables.ui8_battery_max_current * 10) / BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X10);
@@ -1214,6 +1221,15 @@ static void uart_receive_package(void)
           {
             ui16_cadence_sensor_pulse_high_percentage_x10 = (((uint16_t) ui8_rx_buffer[7]) << 8) + ((uint16_t) ui8_rx_buffer[6]);
           }
+          
+          /*-------------------------------------------------------------------------------------------------
+          
+            NOTE: regarding the cadence sensor mode and cadence sensor pulse high percentage
+            
+            These two variables need to be received at the same time. If they are not it might trigger the
+            ERROR_CADENCE_SENSOR_CALIBRATION flag.
+            
+          -------------------------------------------------------------------------------------------------*/
 
         break;
 
@@ -1221,10 +1237,10 @@ static void uart_receive_package(void)
           // nothing, should display error code
         break;
       }
-
-      // signal that we processed the full package
-      ui8_received_package_flag = 0;
     }
+    
+    // signal that we processed the full package
+    ui8_received_package_flag = 0;
 
     // enable UART2 receive interrupt as we are now ready to receive a new package
     UART2->CR2 |= (1 << 5);

@@ -1523,8 +1523,9 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
   
   switch (ui8_lcd_menu_config_submenu_state)
   {
-    // motor acceleration adjustment
     case 0:
+    
+      // motor acceleration adjustment    
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_acceleration;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1533,9 +1534,25 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
     break;
     
     case 1:
+    
+      // assist without pedal rotation threshold  
+      lcd_var_number.p_var_number = &configuration_variables.ui8_assist_without_pedal_rotation_threshold;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 100;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+    break;
+    
+    case 2:
+    
       // pedal torque conversion
       lcd_var_number.p_var_number = &configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
       lcd_var_number.ui8_size = 8;
@@ -1545,9 +1562,10 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
     break;
     
-    case 2:
+    case 3:
     
     // weight on pedal from pedal torque conversion
     if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -1557,7 +1575,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     
     break;
     
-    case 3:
+    case 4:
     
       // cadence sensor mode and automatic calibration
       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
@@ -1613,7 +1631,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       
     break;
     
-    case 4:
+    case 5:
       
       // motor temperature control or throttle control
       lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
@@ -1627,8 +1645,9 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       
     break;
 
-    // motor temperature limit min
-    case 5:
+    case 6:
+    
+      // motor temperature limit min
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_min_value_to_limit;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1642,8 +1661,9 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
 
     break;
 
-    // motor temperature limit max
-    case 6:
+    case 7:
+      
+      // motor temperature limit max
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_max_value_to_limit;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
@@ -1658,7 +1678,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     break;
   }
 
-  submenu_state_controller(6);
+  submenu_state_controller(7);
 
   if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
   {
@@ -2419,7 +2439,7 @@ void odometer_field(void)
       case 0:
         
         // check if user has disabled to show distance data in the odometer field
-        if (configuration_variables.ui8_show_distance_data_odometer_field == 0)
+        if (!configuration_variables.ui8_show_distance_data_odometer_field)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2531,7 +2551,7 @@ void odometer_field(void)
       case 1:
       
         // check if user has disabled to show battery state of charge in the odometer field
-        if (configuration_variables.ui8_battery_SOC_function_enabled == 0 || configuration_variables.ui8_show_battery_SOC_odometer_field == 0)
+        if (!configuration_variables.ui8_show_battery_SOC_odometer_field || !configuration_variables.ui8_battery_SOC_function_enabled)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2564,7 +2584,7 @@ void odometer_field(void)
       case 2:
       
         // check if user has disabled to show battery voltage or current in the odometer field
-        if (configuration_variables.ui8_show_battery_state_odometer_field == 0)
+        if (!configuration_variables.ui8_show_battery_state_odometer_field)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2598,7 +2618,7 @@ void odometer_field(void)
       case 3:
       
         // check if user has disabled to show pedal data in the odometer field
-        if (configuration_variables.ui8_show_pedal_data_odometer_field == 0)
+        if (!configuration_variables.ui8_show_pedal_data_odometer_field)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2636,7 +2656,7 @@ void odometer_field(void)
       case 4:
       
         // check if user has disabled to show energy data in the odometer field
-        if (configuration_variables.ui8_show_energy_data_odometer_field == 0)
+        if (!configuration_variables.ui8_show_energy_data_odometer_field)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2702,7 +2722,7 @@ void odometer_field(void)
       case 5:
       
         // check if user has disabled to show time measurement in the odometer field
-        if (configuration_variables.ui8_show_time_measurement_odometer_field == 0)
+        if (!configuration_variables.ui8_show_time_measurement_odometer_field)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2777,7 +2797,7 @@ void odometer_field(void)
       case 6: // wheel speed
       
         // check if user has disabled to show wheel speed in the odometer field
-        if (configuration_variables.ui8_show_wheel_speed_odometer_field == 0)
+        if (!configuration_variables.ui8_show_wheel_speed_odometer_field)
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2878,7 +2898,7 @@ void odometer_field(void)
       case 7:
       
         // check if user has enabled temperature limit function and enabled to show the value in the odometer field
-        if (configuration_variables.ui8_optional_ADC_function == TEMPERATURE_CONTROL || configuration_variables.ui8_show_motor_temperature_odometer_field == 0)
+        if (!configuration_variables.ui8_show_motor_temperature_odometer_field || (configuration_variables.ui8_optional_ADC_function != TEMPERATURE_CONTROL))
         {
           // increment odometer field state
           odometer_increase_field_state();
@@ -2886,7 +2906,7 @@ void odometer_field(void)
           break;
         }
         
-        lcd_print (motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 0);
+        lcd_print(motor_controller_data.ui8_motor_temperature, ODOMETER_FIELD, 0);
 
       break; // end of motor temperature
       
@@ -2894,7 +2914,7 @@ void odometer_field(void)
       case 8:
         
         // check if user has enabled the set target speed feature and also enabled to show cruise set target speed in the odometer field
-        if (configuration_variables.ui8_cruise_function_set_target_speed_enabled == 0 || configuration_variables.ui8_show_cruise_function_set_target_speed == 0)
+        if (!configuration_variables.ui8_show_cruise_function_set_target_speed || !configuration_variables.ui8_cruise_function_set_target_speed_enabled)
         {
           // increment odometer field state
           odometer_increase_field_state();

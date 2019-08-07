@@ -186,9 +186,6 @@ void uart_data_clock (void)
         p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 = (((uint16_t) ui8_rx_buffer [26]) << 8) + ((uint16_t) ui8_rx_buffer [25]);        
       }
 
-      // flag that we processed the full package
-      ui8_received_package_flag = 0;
-
       // flag that the first communication package is received from the motor controller
       ui8_received_first_package = 1;
 
@@ -354,7 +351,8 @@ void uart_data_clock (void)
         
           ui8_tx_buffer[5] = 0;
           
-          ui8_tx_buffer[6] = 0;
+          // assist without pedal rotation threshold
+          ui8_tx_buffer[6] = p_configuration_variables->ui8_assist_without_pedal_rotation_threshold;
           
           // motor acceleration adjustment
           ui8_tx_buffer[7] = p_configuration_variables->ui8_motor_acceleration;
@@ -420,6 +418,9 @@ void uart_data_clock (void)
       // increment message ID for next package
       if (++ui8_message_ID > UART_MAX_NUMBER_MESSAGE_ID) { ui8_message_ID = 0; }
     }
+    
+    // flag that we processed the full package
+    ui8_received_package_flag = 0;
 
     // enable UART2 receive interrupt as we are now ready to receive a new package
     UART2->CR2 |= (1 << 5);

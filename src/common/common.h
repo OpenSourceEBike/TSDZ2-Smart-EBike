@@ -29,6 +29,7 @@
 #define ERROR_THROTTLE_APPLIED_DURING_POWER_ON    4
 #define ERROR_NO_SPEED_SENSOR_DETECTED            5
 #define ERROR_LOW_CONTROLLER_VOLTAGE              6   // controller works with no less than 15 V so give error code if voltage is too low
+#define ERROR_CADENCE_SENSOR_CALIBRATION          7
 
 
 // walk assist

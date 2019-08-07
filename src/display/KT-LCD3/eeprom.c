@@ -135,11 +135,12 @@ static const uint8_t ui8_default_array[EEPROM_BYTES_STORED] =
   DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100,                // 117 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_TEMPERATURE_FIELD_STATE,                              // 118 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0,           // 119 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1            // 120 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1,           // 120 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD               // 121 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
-void eeprom_init(void)
+void EEPROM_init(void)
 {
   volatile uint32_t ui32_delay_counter = 0;
   
@@ -210,6 +211,9 @@ void EEPROM_controller(uint8_t ui8_operation)
         
         // write variable value to EEPROM
         FLASH_ProgramByte(ui32_default_address, ui8_default_variable_value);
+        
+        // wait until end of programming (write or erase operation) flag is set
+        while (FLASH_GetFlagStatus(FLASH_FLAG_EOP) == RESET) {}
         
         // read value from EEPROM for validation
         volatile uint8_t ui8_saved_default_value = FLASH_ReadByte(ui32_default_address);
@@ -307,7 +311,7 @@ void EEPROM_controller(uint8_t ui8_operation)
       // optional ADC function
       p_configuration_variables->ui8_optional_ADC_function = FLASH_ReadByte(ADDRESS_OPTIONAL_ADC_FUNCTION);
       
-      // tempereture field state
+      // temperature field state
       p_configuration_variables->ui8_temperature_field_state = FLASH_ReadByte(ADDRESS_TEMPERATURE_FIELD_STATE);
       
       // motor temperature protection
@@ -419,6 +423,9 @@ void EEPROM_controller(uint8_t ui8_operation)
       ui8_temp = FLASH_ReadByte(ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1);
       ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
       p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 = ui16_temp;
+      
+      // assist without pedal rotation threshold
+      p_configuration_variables->ui8_assist_without_pedal_rotation_threshold = FLASH_ReadByte(ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD);
       
     break;
     
@@ -592,6 +599,9 @@ void EEPROM_controller(uint8_t ui8_operation)
       ui8_array[ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 & 255;
       ui8_array[ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 >> 8) & 255;
       
+      // assist without pedal rotation threshold
+      ui8_array[ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_assist_without_pedal_rotation_threshold;
+      
       // write array of variables to EEPROM
       for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)
       {
@@ -603,6 +613,9 @@ void EEPROM_controller(uint8_t ui8_operation)
         
         // write variable value to EEPROM
         FLASH_ProgramByte(ui32_address, ui8_variable_value);
+        
+        // wait until end of programming (write or erase operation) flag is set
+        while (FLASH_GetFlagStatus(FLASH_FLAG_EOP) == RESET) {}
         
         // read value from EEPROM for validation
         volatile uint8_t ui8_saved_value = FLASH_ReadByte(ui32_address);

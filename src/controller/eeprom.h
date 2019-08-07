@@ -12,12 +12,9 @@
 #include "main.h"
 
 
-
-#define KEY                                                 0xcd
-
 #define EEPROM_BASE_ADDRESS                                 0x4000
 
-#define ADDRESS_KEY                                         EEPROM_BASE_ADDRESS
+#define ADDRESS_KEY                                         0 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_MAX_CURRENT                         1 + EEPROM_BASE_ADDRESS
 #define ADDRESS_MOTOR_POWER_X10                             2 + EEPROM_BASE_ADDRESS
 #define ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0           3 + EEPROM_BASE_ADDRESS
@@ -30,8 +27,13 @@
 #define EEPROM_BYTES_STORED                                 10
 
 
-void eeprom_init (void);
-void eeprom_init_variables (void);
-void eeprom_write_if_values_changed (void);
+#define DEFAULT_VALUE_KEY     202
+#define SET_TO_DEFAULT        0
+#define READ_FROM_MEMORY      1
+#define WRITE_TO_MEMORY       2
+
+
+void EEPROM_init(void);
+void EEPROM_controller(uint8_t ui8_operation);
 
 #endif /* _EEPROM_H_ */

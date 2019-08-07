@@ -55,7 +55,7 @@ int main (void)
   timer3_init();
   uart2_init();
   adc_init();
-  eeprom_init();
+  EEPROM_init();
   lcd_init();
 
   // block until users releases the buttons

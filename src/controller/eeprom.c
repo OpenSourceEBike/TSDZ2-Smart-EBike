@@ -12,9 +12,10 @@
 #include "eeprom.h"
 #include "ebike_app.h"
 
-static uint8_t array_default_values[EEPROM_BYTES_STORED] = 
+
+static const uint8_t ui8_default_array[EEPROM_BYTES_STORED] = 
 {
-  KEY,
+  DEFAULT_VALUE_KEY,                                          // 0 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_BATTERY_MAX_CURRENT,                          // 1 + EEPROM_BASE_ADDRESS
   DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10,                 // 2 + EEPROM_BASE_ADDRESS
   DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0,            // 3 + EEPROM_BASE_ADDRESS
@@ -27,156 +28,165 @@ static uint8_t array_default_values[EEPROM_BYTES_STORED] =
 };
 
 
-
-static void eeprom_read_values_to_variables (void);
-static void eeprom_write_array (uint8_t *array_values);
-static void variables_to_array (uint8_t *ui8_array);
-
-
-
-void eeprom_init (void)
+void EEPROM_init(void)
 {
-  uint8_t ui8_data;
-
-  // start by reading address 0 and see if value is different from our key,
-  // if so mean that eeprom memory is clean and we need to populate: should happen after erasing the microcontroller
-  ui8_data = FLASH_ReadByte(ADDRESS_KEY);
+  volatile uint32_t ui32_delay_counter = 0;
   
-  // verify key exists
-  if (ui8_data != KEY) 
+  // deinitialize EEPROM
+  FLASH_DeInit();
+  
+  // time delay
+  for (ui32_delay_counter = 0; ui32_delay_counter < 160000; ++ui32_delay_counter) {}
+  
+  // select and set programming time mode
+  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD); // standard programming (erase and write) time mode
+  //FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_TPROG); // fast programming (write only) time mode
+  
+  // time delay
+  for (ui32_delay_counter = 0; ui32_delay_counter < 160000; ++ui32_delay_counter) {}
+  
+  // read key
+  volatile uint8_t ui8_saved_key = FLASH_ReadByte(ADDRESS_KEY);
+  
+  // check if key is valid
+  if (ui8_saved_key != DEFAULT_VALUE_KEY)
   {
-    eeprom_write_array(array_default_values);
+    // set to default values
+    EEPROM_controller(SET_TO_DEFAULT);
   }
+  
+  // read from EEPROM
+  EEPROM_controller(READ_FROM_MEMORY);
 }
 
 
-void eeprom_init_variables (void)
-{
-  struct_configuration_variables *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
 
-  eeprom_read_values_to_variables ();
-
-  // now verify if any EEPROM saved value is out of valid range and if so,
-  // write correct ones and read again
-  if ((p_configuration_variables->ui8_battery_max_current > 100) ||
-      (p_configuration_variables->ui8_motor_power_x10 > 195) ||
-      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 > 630) ||
-      (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 < 160) ||
-      (p_configuration_variables->ui16_wheel_perimeter > 3000) ||
-      (p_configuration_variables->ui16_wheel_perimeter < 750))
-  {
-    eeprom_write_array(array_default_values);
-    eeprom_read_values_to_variables ();
-  }
-}
-
-
-static void eeprom_read_values_to_variables(void)
-{
-  static uint8_t ui8_temp;
-  static uint16_t ui16_temp;
-
-  struct_configuration_variables *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
-
-  p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
-  
-  p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte(ADDRESS_MOTOR_POWER_X10);
-  
-  ui16_temp = FLASH_ReadByte(ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0);
-  ui8_temp = FLASH_ReadByte(ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1);
-  ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
-  p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 = ui16_temp;
-  
-  ui16_temp = FLASH_ReadByte(ADDRESS_WHEEL_PERIMETER_0);
-  ui8_temp = FLASH_ReadByte(ADDRESS_WHEEL_PERIMETER_1);
-  ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
-  p_configuration_variables->ui16_wheel_perimeter = ui16_temp;
-
-  p_configuration_variables->ui8_wheel_speed_max = FLASH_ReadByte(ADDRESS_WHEEL_SPEED_MAX);
-
-  p_configuration_variables->ui8_motor_type = FLASH_ReadByte(ADDRESS_MOTOR_TYPE);
-  
-  p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
-}
-
-
-void eeprom_write_variables(void)
-{
-  uint8_t array_variables [EEPROM_BYTES_STORED];
-  variables_to_array(array_variables);
-  eeprom_write_array(array_variables);
-}
-
-
-static void variables_to_array(uint8_t *ui8_array)
+void EEPROM_controller(uint8_t ui8_operation)
 {
   struct_configuration_variables *p_configuration_variables;
   p_configuration_variables = get_configuration_variables();
-
-  ui8_array[0] = KEY;
   
-  ui8_array[ADDRESS_BATTERY_MAX_CURRENT - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_battery_max_current;
-  ui8_array[ADDRESS_MOTOR_POWER_X10 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_power_x10;
-  
-  ui8_array[ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
-  ui8_array[ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
-  
-  ui8_array[ADDRESS_WHEEL_PERIMETER_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_wheel_perimeter & 255;
-  ui8_array[ADDRESS_WHEEL_PERIMETER_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
-  
-  ui8_array[ADDRESS_WHEEL_SPEED_MAX - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_wheel_speed_max;
-  
-  ui8_array[ADDRESS_MOTOR_TYPE - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_type;
-  
-  ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
-}
-
-
-static void eeprom_write_array(uint8_t *array)
-{
+  uint8_t ui8_array[EEPROM_BYTES_STORED];
+  uint8_t ui8_temp;
+  uint16_t ui16_temp;
   uint8_t ui8_i;
 
-  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
-  
-  // unlock data memory 
-  FLASH_Unlock(FLASH_MEMTYPE_DATA); 
+  // unlock memory
+  FLASH_Unlock(FLASH_MEMTYPE_DATA);
   
   // wait until data EEPROM area unlocked flag is set
-  while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) {} 
-
-  for (ui8_i = 0; ui8_i < EEPROM_BYTES_STORED; ui8_i++)
+  while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) {}
+  
+  // select EEPROM operation
+  switch (ui8_operation)
   {
-    FLASH_ProgramByte(EEPROM_BASE_ADDRESS + ui8_i, *array++);
+    
+    
+    /********************************************************************************************************************************************************/
+    
+    
+    case SET_TO_DEFAULT:
+    
+      // write array of variables to EEPROM, write key last
+      for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)
+      {
+        // get address
+        uint32_t ui32_default_address = (uint32_t) ui8_i - 1 + EEPROM_BASE_ADDRESS;
+        
+        // get value
+        uint8_t ui8_default_variable_value = ui8_default_array[ui8_i - 1];
+        
+        // write variable value to EEPROM
+        FLASH_ProgramByte(ui32_default_address, ui8_default_variable_value);
+        
+        // wait until end of programming (write or erase operation) flag is set
+        while (FLASH_GetFlagStatus(FLASH_FLAG_EOP) == RESET) {}
+        
+        // read value from EEPROM for validation
+        volatile uint8_t ui8_saved_default_value = FLASH_ReadByte(ui32_default_address);
+        
+        // if write was not successful, rewrite
+        if (ui8_saved_default_value != ui8_default_variable_value) { ui8_i = EEPROM_BYTES_STORED; }
+      }
+      
+    break;
+    
+    
+    /********************************************************************************************************************************************************/
+    
+    
+    case READ_FROM_MEMORY:
+    
+      p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
+      
+      p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte(ADDRESS_MOTOR_POWER_X10);
+      
+      ui16_temp = FLASH_ReadByte(ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0);
+      ui8_temp = FLASH_ReadByte(ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1);
+      ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
+      p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 = ui16_temp;
+      
+      ui16_temp = FLASH_ReadByte(ADDRESS_WHEEL_PERIMETER_0);
+      ui8_temp = FLASH_ReadByte(ADDRESS_WHEEL_PERIMETER_1);
+      ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
+      p_configuration_variables->ui16_wheel_perimeter = ui16_temp;
+
+      p_configuration_variables->ui8_wheel_speed_max = FLASH_ReadByte(ADDRESS_WHEEL_SPEED_MAX);
+
+      p_configuration_variables->ui8_motor_type = FLASH_ReadByte(ADDRESS_MOTOR_TYPE);
+      
+      p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100 = FLASH_ReadByte(ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100);
+      
+    break;
+    
+    
+    /********************************************************************************************************************************************************/
+    
+    
+    case WRITE_TO_MEMORY:
+    
+      ui8_array[0] = DEFAULT_VALUE_KEY;
+      
+      ui8_array[ADDRESS_BATTERY_MAX_CURRENT - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_battery_max_current;
+      ui8_array[ADDRESS_MOTOR_POWER_X10 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_power_x10;
+      
+      ui8_array[ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
+      ui8_array[ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 >> 8) & 255;
+      
+      ui8_array[ADDRESS_WHEEL_PERIMETER_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_wheel_perimeter & 255;
+      ui8_array[ADDRESS_WHEEL_PERIMETER_1 - EEPROM_BASE_ADDRESS] = (p_configuration_variables->ui16_wheel_perimeter >> 8) & 255;
+      
+      ui8_array[ADDRESS_WHEEL_SPEED_MAX - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_wheel_speed_max;
+      
+      ui8_array[ADDRESS_MOTOR_TYPE - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_type;
+      
+      ui8_array[ADDRESS_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_pedal_torque_per_10_bit_ADC_step_x100;
+      
+      // write array of variables to EEPROM
+      for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)
+      {
+        // get address
+        uint32_t ui32_address = (uint32_t) ui8_i - 1 + EEPROM_BASE_ADDRESS;
+        
+        // get value
+        uint8_t ui8_variable_value = ui8_array[ui8_i - 1];
+        
+        // write variable value to EEPROM
+        FLASH_ProgramByte(ui32_address, ui8_variable_value);
+        
+        // wait until end of programming (write or erase operation) flag is set
+        while (FLASH_GetFlagStatus(FLASH_FLAG_EOP) == RESET) {}
+        
+        // read value from EEPROM for validation
+        volatile uint8_t ui8_saved_value = FLASH_ReadByte(ui32_address);
+        
+        // if write was not successful, rewrite
+        if (ui8_saved_value != ui8_variable_value) { ui8_i = EEPROM_BYTES_STORED; }
+      }
+      
+    break;
   }
   
-  // lock data memory 
+  // lock memory
   FLASH_Lock(FLASH_MEMTYPE_DATA);
-}
-
-
-void eeprom_write_if_values_changed(void)
-{
-// 2018.08.29:
-// NOTE: the next code gives a problem with motor, when we exchange assist level on LCD3 and
-// all the variables all written to EEPROM. As per datasheet, seems each byte takes ~6ms to be written
-// I am not sure the issue is the amount of time...
-
-//  uint8_t ui8_index;
-//
-//  uint8_t array_variables [EEPROM_BYTES_STORED];
-//  variables_to_array (array_variables);
-//
-//  ui8_index = 1; // do not verify the first byte: ADDRESS_KEY
-//  while (ui8_index < EEPROM_BYTES_STORED)
-//  {
-//    if (array_variables [ui8_index] != FLASH_ReadByte (EEPROM_BASE_ADDRESS + ui8_index))
-//    {
-//      eeprom_write_array (array_variables);
-//      break; // exit the while loop
-//    }
-//
-//    ui8_index++;
-//  }
 }

@@ -43,9 +43,10 @@ void adc_init (void)
   ADC1_Cmd(ENABLE);
 
   
-  #define ADC_INITIALIZATION_TIME   300 // 300 -> around 3.0 seconds
+  #define ADC_CALIBRATION_TIME                    300 // 300 -> around 3.0 seconds
+  #define ADC_TORQUE_SENSOR_CALIBRATION_OFFSET    6
   
-  for (ui16_i = 0; ui16_i < ADC_INITIALIZATION_TIME; ++ui16_i)
+  for (ui16_i = 0; ui16_i < ADC_CALIBRATION_TIME; ++ui16_i)
   {
     // set counter for delay
     ui16_counter = TIM3_GetCounter() + 10; // delay ~10 ms
@@ -65,6 +66,9 @@ void adc_init (void)
     // filter the ADC torque sensor value and set to offset variable
     ui16_adc_pedal_torque_offset = filter(ui16_temp, ui16_adc_pedal_torque_offset, 25);
   }
+  
+  // add calibration offset as the torque sensor offset can be higher or lower depending on how the pedals are oriented
+  ui16_adc_pedal_torque_offset += ADC_TORQUE_SENSOR_CALIBRATION_OFFSET;
 }
 
 
