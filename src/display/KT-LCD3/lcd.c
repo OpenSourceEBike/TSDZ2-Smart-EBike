@@ -3619,23 +3619,23 @@ void lcd_enable_A_symbol(uint8_t ui8_state)
 
 void filter_variables()
 {
-  ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 50);
+  ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 60);
   //ui16_battery_voltage_filtered_x1000 = motor_controller_data.ui16_battery_voltage_x1000;
   
-  ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 50);
+  ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 60);
   //ui16_battery_current_filtered_x10 = motor_controller_data.ui8_battery_current_x10;
   
   uint32_t ui32_battery_power_x10_temp = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
-  //ui16_battery_power_filtered_x10 = filter(ui32_battery_power_x10_temp, ui16_battery_power_filtered_x10, 50);
-  ui16_battery_power_filtered_x10 = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
+  ui16_battery_power_filtered_x10 = filter(ui32_battery_power_x10_temp, ui16_battery_power_filtered_x10, 60);
+  //ui16_battery_power_filtered_x10 = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
   
-  ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 50);
+  ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 60);
   //ui8_pedal_cadence_RPM_filtered = motor_controller_data.ui8_pedal_cadence_RPM;
   
-  ui16_pedal_torque_filtered = filter(motor_controller_data.ui16_pedal_torque_x100 / 100, ui16_pedal_torque_filtered, 20);
+  ui16_pedal_torque_filtered = filter(motor_controller_data.ui16_pedal_torque_x100 / 100, ui16_pedal_torque_filtered, 60);
   //ui16_pedal_torque_filtered = motor_controller_data.ui16_pedal_torque_x100 / 100;
   
-  ui16_pedal_power_filtered = filter(motor_controller_data.ui16_pedal_power_x10 / 10, ui16_pedal_power_filtered, 50);
+  ui16_pedal_power_filtered = filter(motor_controller_data.ui16_pedal_power_x10 / 10, ui16_pedal_power_filtered, 60);
   //ui16_pedal_power_filtered = motor_controller_data.ui16_pedal_power_x10 / 10;
 
   ui16_weight_on_pedal_x10 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 10) / 167;

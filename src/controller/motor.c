@@ -376,8 +376,8 @@ volatile uint8_t ui8_g_foc_angle = 0;
 
 // cadence sensor
 volatile uint16_t ui16_cadence_sensor_ticks = 0;
-volatile uint16_t ui16_cadence_sensor_ticks_counter_min_high = CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN;
-volatile uint16_t ui16_cadence_sensor_ticks_counter_min_low = CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN;
+volatile uint16_t ui16_cadence_sensor_ticks_counter_min_high = CADENCE_SENSOR_TICKS_COUNTER_MIN;
+volatile uint16_t ui16_cadence_sensor_ticks_counter_min_low = CADENCE_SENSOR_TICKS_COUNTER_MIN;
 volatile uint8_t ui8_cadence_sensor_pulse_state = 0;
 
 
@@ -756,7 +756,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           else
           {
             // check if cadence sensor ticks counter is out of bounds and also check direction of rotation
-            if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MAX) || 
+            if ((ui16_cadence_sensor_ticks_counter < CADENCE_SENSOR_TICKS_COUNTER_MAX) || 
                 (ui8_cadence_sensor_pin_2_state != 0))
             {
               // reset variables
@@ -781,8 +781,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       break;
       
       case ADVANCED_MODE:
-      
-        #define CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD    1000 // software based Schmitt trigger to stop motor jitter when at resolution limits
+        
+        #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MAX            150   // CADENCE_SENSOR_TICKS_COUNTER_MAX / 2
+        #define CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD    1000  // software based Schmitt trigger to stop motor jitter when at resolution limits
         
         // set the ticks counter limit depending on current wheel speed and pin state
         if (ui8_cadence_sensor_pin_1_state) { ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_high; }

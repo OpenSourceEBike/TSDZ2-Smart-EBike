@@ -46,7 +46,7 @@ static uint8_t    ui8_duty_cycle_target = 0;
 
 // cadence sensor variables
 volatile uint8_t ui8_cadence_sensor_mode = STANDARD_MODE;
-volatile uint16_t ui16_cadence_sensor_ticks_counter_min_speed_adjusted = CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN;
+volatile uint16_t ui16_cadence_sensor_ticks_counter_min_speed_adjusted = CADENCE_SENSOR_TICKS_COUNTER_MIN;
 static uint16_t ui16_cadence_sensor_pulse_high_percentage_x10 = CADENCE_SENSOR_PULSE_PERCENTAGE_X10_DEFAULT;
 static uint8_t ui8_pedal_cadence_RPM = 0;
 
@@ -272,7 +272,7 @@ static void apply_power_assist()
   // check for assist without pedal rotation threshold when there is no pedal rotation and standing still
   if (ui8_assist_without_pedal_rotation_threshold && !ui8_pedal_cadence_RPM && !ui16_wheel_speed_x10)
   {
-    if (ui16_adc_pedal_torque_delta > (100 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 4; }
+    if (ui16_adc_pedal_torque_delta > (110 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 4; }
   }
   
   // calculate power assist by multiplying human power with the power assist multiplier
@@ -328,7 +328,7 @@ static void apply_torque_assist()
   // check for assist without pedal rotation threshold when there is no pedal rotation and standing still
   if (ui8_assist_without_pedal_rotation_threshold && !ui8_pedal_cadence_RPM && !ui16_wheel_speed_x10)
   {
-    if (ui16_adc_pedal_torque_delta > (100 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 1; }
+    if (ui16_adc_pedal_torque_delta > (110 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 1; }
   }
   
   // calculate torque assistance
@@ -407,7 +407,7 @@ static void apply_emtb_assist()
   // check for assist without pedal rotation threshold when there is no pedal rotation and standing still
   if (ui8_assist_without_pedal_rotation_threshold && !ui8_pedal_cadence_RPM && !ui16_wheel_speed_x10)
   {
-    if (ui16_adc_pedal_torque_delta > (100 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 1; }
+    if (ui16_adc_pedal_torque_delta > (110 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 1; }
   }
   
   if (ui16_adc_pedal_torque_delta && ui8_pedal_cadence_RPM)
@@ -671,7 +671,7 @@ static void apply_throttle()
                            (uint8_t) ADC_THROTTLE_MAX_VALUE,
                            (uint8_t) 0,
                            (uint8_t) 255);
-                            
+                           
     // map ADC throttle value from 0 to max battery current
     uint8_t ui8_adc_battery_current_target_throttle = map((uint8_t) ui8_adc_throttle,
                                                           (uint8_t) 0,
@@ -768,26 +768,26 @@ static void calc_wheel_speed(void)
 
 static void calc_cadence(void)
 {
+  #define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED       1600
+  
   // get the cadence sensor ticks
   uint16_t ui16_cadence_sensor_ticks_temp = ui16_cadence_sensor_ticks;
   
   // get the cadence sensor pulse state
   uint8_t ui8_cadence_sensor_pulse_state_temp = ui8_cadence_sensor_pulse_state;
   
+  // adjust cadence sensor ticks counter min depending on wheel speed
+  ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,
+                                                             (uint32_t) 40,
+                                                             (uint32_t) 300,
+                                                             (uint32_t) CADENCE_SENSOR_TICKS_COUNTER_MIN,
+                                                             (uint32_t) CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
+                                                             
   // select cadence sensor mode
   switch (ui8_cadence_sensor_mode)
   {
     case STANDARD_MODE:
     
-      #define CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN_AT_SPEED    3000
-      
-      // adjust cadence sensor ticks counter min depending on wheel speed
-      ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,
-                                                                 (uint32_t) 40,
-                                                                 (uint32_t) 200,
-                                                                 (uint32_t) CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN,
-                                                                 (uint32_t) CADENCE_SENSOR_STANDARD_MODE_TICKS_COUNTER_MIN_AT_SPEED);
-                                                                 
       // calculate cadence in RPM and avoid zero division
       if (ui16_cadence_sensor_ticks_temp)
       {
@@ -819,15 +819,6 @@ static void calc_cadence(void)
     
     case ADVANCED_MODE:
     
-      #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED    2000
-      
-      // adjust cadence sensor ticks counter min depending on wheel speed
-      ui16_cadence_sensor_ticks_counter_min_speed_adjusted = map((uint32_t) ui16_wheel_speed_x10,
-                                                                 (uint32_t) 40,
-                                                                 (uint32_t) 200,
-                                                                 (uint32_t) CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN,
-                                                                 (uint32_t) CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MIN_AT_SPEED);
-                                                                 
       // set the pulse duty cycle in ticks
       ui16_cadence_sensor_ticks_counter_min_high = ((uint32_t) ui16_cadence_sensor_pulse_high_percentage_x10 * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 1000;
       ui16_cadence_sensor_ticks_counter_min_low = ((uint32_t) (1000 - ui16_cadence_sensor_pulse_high_percentage_x10) * ui16_cadence_sensor_ticks_counter_min_speed_adjusted) / 1000;
