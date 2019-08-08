@@ -25,7 +25,6 @@ typedef struct _motor_controller_data
   uint16_t ui16_wheel_speed_x10;
   uint8_t ui8_braking;
   uint8_t ui8_pedal_cadence_RPM;
-  uint8_t ui8_lights;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
   uint8_t ui8_temperature_current_limiting_value;
@@ -40,6 +39,8 @@ typedef struct _configuration_variables
 {
   uint16_t ui16_cadence_sensor_pulse_high_percentage_x10;
   uint8_t ui8_assist_without_pedal_rotation_threshold;
+  uint8_t ui8_lights_configuration;
+  uint8_t ui8_lights_state;
   uint8_t ui8_assist_level;
   uint8_t ui8_number_of_assist_levels;
   uint8_t ui8_power_assist_function_enabled;

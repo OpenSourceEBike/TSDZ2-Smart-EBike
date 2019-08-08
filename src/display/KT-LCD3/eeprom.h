@@ -134,8 +134,10 @@
 #define ADDRESS_TEMPERATURE_FIELD_STATE                                     118 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0                  119 + EEPROM_BASE_ADDRESS
 #define ADDRESS_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1                  120 + EEPROM_BASE_ADDRESS
-#define ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD                     121 + EEPROM_BASE_ADDRESS
-#define EEPROM_BYTES_STORED                                                 122
+#define ADDRESS_LIGHTS_CONFIGURATION                                        121 + EEPROM_BASE_ADDRESS
+#define ADDRESS_LIGHTS_STATE                                                122 + EEPROM_BASE_ADDRESS
+#define ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD                     123 + EEPROM_BASE_ADDRESS
+#define EEPROM_BYTES_STORED                                                 124
 
 
 #define DEFAULT_VALUE_KEY     202

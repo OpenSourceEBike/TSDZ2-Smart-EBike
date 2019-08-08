@@ -54,7 +54,7 @@ static uint8_t ui8_pedal_cadence_RPM = 0;
 // torque sensor variables
 volatile uint16_t ui16_adc_pedal_torque = 0;
 static uint16_t   ui16_adc_pedal_torque_delta = 0;
-static uint16_t   ui16_pedal_power_x10 = 0;
+static uint16_t   ui16_human_power_x10 = 0;
 static uint16_t   ui16_pedal_torque_x100 = 0;
 
 
@@ -269,8 +269,27 @@ static void apply_power_assist()
 {
   uint8_t ui8_power_assist_multiplier_x10 = ui8_riding_mode_parameter;
   
-  // calculate power assist
-  uint32_t ui32_power_assist_x100 = (uint32_t) ui16_pedal_power_x10 * ui8_power_assist_multiplier_x10;
+  // check for assist without pedal rotation threshold when there is no pedal rotation and standing still
+  if (ui8_assist_without_pedal_rotation_threshold && !ui8_pedal_cadence_RPM && !ui16_wheel_speed_x10)
+  {
+    if (ui16_adc_pedal_torque_delta > (100 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 4; }
+  }
+  
+  // calculate power assist by multiplying human power with the power assist multiplier
+  uint32_t ui32_power_assist_x100 = ((uint32_t) ui16_pedal_torque_x100 * ui8_pedal_cadence_RPM * ui8_power_assist_multiplier_x10) / 96; // see note below
+  
+  /*------------------------------------------------------------------------
+
+    NOTE: regarding the human power calculation
+    
+    (1) Formula: power = torque * rotations per second * 2 * pi
+    (2) Formula: power = torque * rotations per minute * 2 * pi / 60
+    (3) Formula: power = torque * rotations per minute * 0.1047
+    (4) Formula: power = torque * 100 * rotations per minute * 0.001047
+    (5) Formula: power = torque * 100 * rotations per minute / 955
+    (6) Formula: power * 10  =  torque * 100 * rotations per minute / 96
+    
+  ------------------------------------------------------------------------*/
   
   // calculate target current
   uint16_t ui16_battery_current_target_x10 = (ui32_power_assist_x100 * 100) / ui16_battery_voltage_filtered_x1000;
@@ -384,6 +403,12 @@ static void apply_cadence_assist()
 static void apply_emtb_assist()
 {
   #define eMTB_ASSIST_TARGET_CURRENT_DENOMINATOR      20    // scale the eMTB assist target current
+  
+  // check for assist without pedal rotation threshold when there is no pedal rotation and standing still
+  if (ui8_assist_without_pedal_rotation_threshold && !ui8_pedal_cadence_RPM && !ui16_wheel_speed_x10)
+  {
+    if (ui16_adc_pedal_torque_delta > (100 - ui8_assist_without_pedal_rotation_threshold)) { ui8_pedal_cadence_RPM = 1; }
+  }
   
   if (ui16_adc_pedal_torque_delta && ui8_pedal_cadence_RPM)
   {
@@ -902,18 +927,21 @@ static void get_pedal_torque(void)
   // calculate torque on pedals
   ui16_pedal_torque_x100 = ui16_adc_pedal_torque_delta * m_configuration_variables.ui8_pedal_torque_per_10_bit_ADC_step_x100;
 
-  // calculate crank power
-  ui16_pedal_power_x10 = ((uint32_t) ui16_pedal_torque_x100 * ui8_pedal_cadence_RPM) / 105; // see note below
-
-  /*---------------------------------------------------------
+  // calculate human power
+  ui16_human_power_x10 = ((uint32_t) ui16_pedal_torque_x100 * ui8_pedal_cadence_RPM) / 96; // see note below
+  
+  /*------------------------------------------------------------------------
 
     NOTE: regarding the human power calculation
     
-    Formula: power  =  force  *  rotations per second  *  2  *  pi
-    Formula: power  =  force  *  rotations per minute  *  2  *  pi / 60
+    (1) Formula: power = torque * rotations per second * 2 * pi
+    (2) Formula: power = torque * rotations per minute * 2 * pi / 60
+    (3) Formula: power = torque * rotations per minute * 0.1047
+    (4) Formula: power = torque * 100 * rotations per minute * 0.001047
+    (5) Formula: power = torque * 100 * rotations per minute / 955
+    (6) Formula: power * 10  =  torque * 100 * rotations per minute / 96
     
-    (100 * 2 * pi) / 60 ≈ 1.047 -> 105
-  ---------------------------------------------------------*/
+  ------------------------------------------------------------------------*/
 }
 
 
@@ -1325,9 +1353,9 @@ static void uart_send_package(void)
   ui8_tx_buffer[21] = (uint8_t) (ui16_temp & 0xff);
   ui8_tx_buffer[22] = (uint8_t) (ui16_temp >> 8);
 
-  // pedal power x10
-  ui8_tx_buffer[23] = (uint8_t) (ui16_pedal_power_x10 & 0xff);
-  ui8_tx_buffer[24] = (uint8_t) (ui16_pedal_power_x10 >> 8);
+  // human power x10
+  ui8_tx_buffer[23] = (uint8_t) (ui16_human_power_x10 & 0xff);
+  ui8_tx_buffer[24] = (uint8_t) (ui16_human_power_x10 >> 8);
   
   // cadence sensor pulse high percentage
   ui16_temp = ui16_cadence_sensor_pulse_high_percentage_x10;

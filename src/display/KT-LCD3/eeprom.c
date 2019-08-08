@@ -25,7 +25,7 @@ static const uint8_t ui8_default_array[EEPROM_BYTES_STORED] =
   DEFAULT_VALUE_WH_OFFSET,                                            // 7 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WH_OFFSET,                                            // 8 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_WH_OFFSET,                                            // 9 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_WH_OFFSET,                                            // 1 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_WH_OFFSET,                                            // 10 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_HW_X10_100_PERCENT,                                   // 11 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_HW_X10_100_PERCENT,                                   // 12 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_HW_X10_100_PERCENT,                                   // 13 + EEPROM_BASE_ADDRESS (Array index)
@@ -136,7 +136,9 @@ static const uint8_t ui8_default_array[EEPROM_BYTES_STORED] =
   DEFAULT_VALUE_TEMPERATURE_FIELD_STATE,                              // 118 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_0,           // 119 + EEPROM_BASE_ADDRESS (Array index)
   DEFAULT_VALUE_CADENCE_SENSOR_PULSE_HIGH_PERCENTAGE_X10_1,           // 120 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD               // 121 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_LIGHTS_CONFIGURATION,                                 // 121 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_LIGHTS_STATE,                                         // 122 + EEPROM_BASE_ADDRESS (Array index)
+  DEFAULT_VALUE_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD               // 123 + EEPROM_BASE_ADDRESS (Array index)
 };
 
 
@@ -424,8 +426,14 @@ void EEPROM_controller(uint8_t ui8_operation)
       ui16_temp += (((uint16_t) ui8_temp << 8) & 0xff00);
       p_configuration_variables->ui16_cadence_sensor_pulse_high_percentage_x10 = ui16_temp;
       
+      
       // assist without pedal rotation threshold
       p_configuration_variables->ui8_assist_without_pedal_rotation_threshold = FLASH_ReadByte(ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD);
+      
+      
+      // lights
+      p_configuration_variables->ui8_lights_configuration = FLASH_ReadByte(ADDRESS_LIGHTS_CONFIGURATION);
+      p_configuration_variables->ui8_lights_state = FLASH_ReadByte(ADDRESS_LIGHTS_STATE);
       
     break;
     
@@ -601,6 +609,11 @@ void EEPROM_controller(uint8_t ui8_operation)
       
       // assist without pedal rotation threshold
       ui8_array[ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_assist_without_pedal_rotation_threshold;
+      
+      // lights
+      ui8_array[ADDRESS_LIGHTS_CONFIGURATION - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_lights_configuration;
+      ui8_array[ADDRESS_LIGHTS_STATE - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_lights_state;
+      
       
       // write array of variables to EEPROM
       for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)

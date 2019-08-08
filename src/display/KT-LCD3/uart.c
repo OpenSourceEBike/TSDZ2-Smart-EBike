@@ -177,7 +177,7 @@ void uart_data_clock (void)
       // pedal torque x100
       p_motor_controller_data->ui16_pedal_torque_x100 = (((uint16_t) ui8_rx_buffer [22]) << 8) + ((uint16_t) ui8_rx_buffer [21]);
       
-      // pedal power x10
+      // human power x10
       p_motor_controller_data->ui16_pedal_power_x10 = (((uint16_t) ui8_rx_buffer [24]) << 8) + ((uint16_t) ui8_rx_buffer [23]);
       
       // cadence sensor pulse high percentage
@@ -284,7 +284,7 @@ void uart_data_clock (void)
       }
       
       // set lights state
-      ui8_tx_buffer[4] = p_motor_controller_data->ui8_lights;
+      ui8_tx_buffer[4] = p_configuration_variables->ui8_lights_state;
 
       switch (ui8_message_ID)
       {

@@ -16,16 +16,47 @@
 
 void pwm_init_bipolar_4q (void)
 {
+  
+  
+  /****************************************************************************/
+  
+  
   // verify if PWM N channels are active on option bytes, if not, enable
-  FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
-  if (FLASH_ReadOptionByte (0x4803) != 0x20)
+  if (FLASH_ReadOptionByte(0x4803) != 0x20)
   {
-    FLASH_Unlock (FLASH_MEMTYPE_DATA);
+    FLASH_Unlock(FLASH_MEMTYPE_DATA);
     FLASH_EraseOptionByte(0x4803);
     FLASH_ProgramOptionByte(0x4803, 0x20);
-    FLASH_Lock (FLASH_MEMTYPE_DATA);
+    FLASH_Lock(FLASH_MEMTYPE_DATA);
   }
-
+  
+/*   // verify if PWM N channels are active on option bytes, if not, enable
+  if (FLASH_ReadOptionByte(0x4803) != 0x20)
+  {
+    // unlock memory
+    FLASH_Unlock(FLASH_MEMTYPE_DATA);
+    
+    // wait until data EEPROM area unlocked flag is set
+    while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET) {}
+    
+    FLASH_EraseOptionByte(0x4803);
+    
+    // wait until end of programming (write or erase operation) flag is set
+    while (FLASH_GetFlagStatus(FLASH_FLAG_EOP) == RESET) {}
+    
+    FLASH_ProgramOptionByte(0x4803, 0x20);
+    
+    // wait until end of programming (write or erase operation) flag is set
+    while (FLASH_GetFlagStatus(FLASH_FLAG_EOP) == RESET) {}
+    
+    // lock memory
+    FLASH_Lock(FLASH_MEMTYPE_DATA);
+  } */
+  
+  
+  /****************************************************************************/
+  
+  
   TIM1_TimeBaseInit(0, // TIM1_Prescaler = 0
         TIM1_COUNTERMODE_CENTERALIGNED1,
         (512 - 1), // clock = 16MHz; counter period = 1024; PWM freq = 16MHz / 1024 = 15.625kHz;

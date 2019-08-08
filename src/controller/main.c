@@ -78,8 +78,8 @@ int main (void)
   pas_init();
   wheel_speed_sensor_init();
   hall_sensor_init();
+  EEPROM_init(); // needed for pwm_init_bipolar_4q
   pwm_init_bipolar_4q();
-  EEPROM_init();
   enableInterrupts();
 
   while (1)
