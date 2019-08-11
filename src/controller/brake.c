@@ -21,7 +21,7 @@ void brake_init (void)
   // brake pin as external input pin interrupt
   GPIO_Init(BRAKE__PORT, BRAKE__PIN, GPIO_MODE_IN_FL_IT); // with external interrupt
 
-  // initialize the interrupt sensitivity
+  // initialize the interrupt operation
   EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOC, EXTI_SENSITIVITY_RISE_FALL);
 }
 

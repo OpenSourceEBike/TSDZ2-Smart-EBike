@@ -697,24 +697,27 @@ static void apply_throttle()
                                                         (uint8_t) 0,
                                                         (uint8_t) ui8_adc_battery_current_max);
                                                         
-  // set motor acceleration
-  ui16_duty_cycle_ramp_up_inverse_step = map((uint32_t) ui16_wheel_speed_x10,
-                                             (uint32_t) 40,
-                                             (uint32_t) 400,
-                                             (uint32_t) THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT,
-                                             (uint32_t) THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN);
-                                             
-  ui16_duty_cycle_ramp_down_inverse_step = map((uint32_t) ui16_wheel_speed_x10,
+  if (ui8_adc_battery_current_target_throttle > ui8_adc_battery_current_target)
+  {
+    // set motor acceleration
+    ui16_duty_cycle_ramp_up_inverse_step = map((uint32_t) ui16_wheel_speed_x10,
                                                (uint32_t) 40,
                                                (uint32_t) 400,
-                                               (uint32_t) PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT,
-                                               (uint32_t) PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN);
+                                               (uint32_t) THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT,
+                                               (uint32_t) THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN);
                                                
-  // set battery current target
-  ui8_adc_battery_current_target = ui8_adc_battery_current_target_throttle;
-  
-  // set duty cycle target
-  ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX;
+    ui16_duty_cycle_ramp_down_inverse_step = map((uint32_t) ui16_wheel_speed_x10,
+                                                 (uint32_t) 40,
+                                                 (uint32_t) 400,
+                                                 (uint32_t) PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT,
+                                                 (uint32_t) PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN);
+                                                 
+    // set battery current target
+    ui8_adc_battery_current_target = ui8_adc_battery_current_target_throttle;
+    
+    // set duty cycle target
+    ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX;
+  }
 }
 
 
