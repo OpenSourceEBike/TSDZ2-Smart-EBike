@@ -87,21 +87,6 @@
 
 
 
-// throttle
-#define THROTTLE_FILTER_COEFFICIENT                               1   // see note below
-#define ADC_THROTTLE_THRESHOLD                                    10  // value in ADC 8 bits step
-
-
-/*---------------------------------------------------------
-  NOTE: regarding throttle
-
-  Possible values: 0, 1, 2, 3, 4, 5, 6
-  0 equals to no filtering and no delay, higher values 
-  will increase filtering but will also add a bigger delay.
----------------------------------------------------------*/
-
-
-
 // throttle ADC values
 #define ADC_THROTTLE_MIN_VALUE                                    47
 #define ADC_THROTTLE_MAX_VALUE                                    176
@@ -171,8 +156,8 @@
 
 
 
-// EEPROM memory variables default values
-#define DEFAULT_VALUE_BATTERY_MAX_CURRENT                         10  // 10 amps
+// default values
+#define DEFAULT_VALUE_BATTERY_CURRENT_MAX                         10  // 10 amps
 #define DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10                50  // 500 watts
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0           134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8)) = 390
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1           1

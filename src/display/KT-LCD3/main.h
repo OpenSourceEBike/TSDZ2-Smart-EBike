@@ -250,8 +250,9 @@
 
 
 // default value lights
-#define DEFAULT_VALUE_LIGHTS_CONFIGURATION                          0
+#define DEFAULT_VALUE_LIGHTS_MODE                                   0
 #define DEFAULT_VALUE_LIGHTS_STATE                                  0
+#define DEFAULT_VALUE_LIGHTS_CONFIGURATION                          0
 
 
 

@@ -16,15 +16,14 @@
 static const uint8_t ui8_default_array[EEPROM_BYTES_STORED] = 
 {
   DEFAULT_VALUE_KEY,                                          // 0 + EEPROM_BASE_ADDRESS (Array index)
-  DEFAULT_VALUE_BATTERY_MAX_CURRENT,                          // 1 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10,                 // 2 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0,            // 3 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1,            // 4 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_WHEEL_PERIMETER_0,                            // 5 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_WHEEL_PERIMETER_1,                            // 6 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_WHEEL_SPEED_MAX,                              // 7 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_MOTOR_TYPE,                                   // 8 + EEPROM_BASE_ADDRESS
-  DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100         // 9 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10,                 // 1 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0,            // 2 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1,            // 3 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_WHEEL_PERIMETER_0,                            // 4 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_WHEEL_PERIMETER_1,                            // 5 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_WHEEL_SPEED_MAX,                              // 6 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_MOTOR_TYPE,                                   // 7 + EEPROM_BASE_ADDRESS
+  DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100         // 8 + EEPROM_BASE_ADDRESS
 };
 
 
@@ -116,8 +115,6 @@ void EEPROM_controller(uint8_t ui8_operation)
     
     
     case READ_FROM_MEMORY:
-    
-      p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte (ADDRESS_BATTERY_MAX_CURRENT);
       
       p_configuration_variables->ui8_motor_power_x10 = FLASH_ReadByte(ADDRESS_MOTOR_POWER_X10);
       
@@ -147,7 +144,6 @@ void EEPROM_controller(uint8_t ui8_operation)
     
       ui8_array[0] = DEFAULT_VALUE_KEY;
       
-      ui8_array[ADDRESS_BATTERY_MAX_CURRENT - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_battery_max_current;
       ui8_array[ADDRESS_MOTOR_POWER_X10 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui8_motor_power_x10;
       
       ui8_array[ADDRESS_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0 - EEPROM_BASE_ADDRESS] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;

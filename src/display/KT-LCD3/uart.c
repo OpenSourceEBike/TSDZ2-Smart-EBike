@@ -15,9 +15,9 @@
 #include "lcd.h"
 #include "common.h"
 
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   26  // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
-#define UART_NUMBER_DATA_BYTES_TO_SEND      7   // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
-#define UART_MAX_NUMBER_MESSAGE_ID          6   // change this value depending on how many different packages there is to send
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   26  // change this value depending on how many data bytes there are to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_NUMBER_DATA_BYTES_TO_SEND      7   // change this value depending on how many data bytes there are to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_MAX_NUMBER_MESSAGE_ID          6   // change this value depending on how many different packages there are to send
 
 volatile uint8_t  ui8_received_package_flag = 0;
 volatile uint8_t  ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
@@ -348,8 +348,9 @@ void uart_data_clock (void)
         break;
 
         case 4:
-        
-          ui8_tx_buffer[5] = 0;
+          
+          // lights configuration
+          ui8_tx_buffer[5] = p_configuration_variables->ui8_lights_configuration;
           
           // assist without pedal rotation threshold
           ui8_tx_buffer[6] = p_configuration_variables->ui8_assist_without_pedal_rotation_threshold;

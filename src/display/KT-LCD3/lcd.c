@@ -79,14 +79,13 @@ static struct_configuration_variables configuration_variables;
 
 // global system variables
 static volatile uint16_t ui16_timer3_counter = 0;
-static uint16_t   ui16_battery_voltage_filtered_x1000;
+static uint16_t   ui16_battery_voltage_filtered_x1000 = 30000;
 static uint16_t   ui16_battery_current_filtered_x10;
-static uint16_t   ui16_battery_power_filtered_x10;
+static uint16_t   ui16_battery_power_filtered;
 static uint16_t   ui16_pedal_torque_filtered = 0;
-static uint16_t   ui16_weight_on_pedal_x10 = 0;
-static uint16_t   ui16_pedal_power_filtered = 0;
+static uint16_t   ui16_pedal_power_step_filtered = 0;
 static uint8_t    ui8_pedal_cadence_RPM_filtered = 0;
-static volatile uint32_t ui32_wh_sum_x10 = 0;
+static volatile uint32_t ui32_wh_sum = 0;
 static uint32_t   ui32_wh_x10 = 0;
 static uint8_t    ui8_config_wh_x10_offset;
 static uint16_t   ui16_battery_SOC_percentage;
@@ -204,6 +203,7 @@ void lcd_enable_lights_symbol(uint8_t ui8_state);
 void lcd_enable_cruise_symbol(uint8_t ui8_state);
 void lcd_enable_torque_symbol(uint8_t ui8_state);
 void lcd_enable_Model_3_symbol(uint8_t ui8_state);
+void lcd_enable_street_mode_symbol(uint8_t ui8_state);
 void lcd_enable_temperature_1_symbol(uint8_t ui8_state);
 void lcd_enable_odometer_point_symbol(uint8_t ui8_state);
 void lcd_enable_battery_power_1_symbol(uint8_t ui8_state);
@@ -229,9 +229,9 @@ void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER)
     ui8_100ms_timmer_counter = 0;
     
     // measure consumed watt-hours
-    if (ui16_battery_power_filtered_x10 > 0)
+    if (ui16_battery_power_filtered > 0)
     {
-      ui32_wh_sum_x10 += ui16_battery_power_filtered_x10;
+      ui32_wh_sum += ui16_battery_power_filtered;
     }
   }
   
@@ -446,14 +446,25 @@ void lcd_execute_menu_config (void)
         case 7:
           lcd_enable_cruise_symbol(1);
         break;
+
+        case 8:
+          lcd_print(88, TIME_SECOND_FIELD, 0);
+          lcd_print(888, TIME_MINUTE_FIELD, 0);
+          lcd_print(88888, ODOMETER_FIELD, 1);
+          lcd_print(888, TEMPERATURE_FIELD, 1);
+        break;
         
+        case 9:
+          lcd_enable_street_mode_symbol(1);
+        break;
+
         case 10:
           lcd_enable_A_symbol(1);
         break;
         
         case 11:
           lcd_enable_Model_3_symbol(1);
-        break;          
+        break;
       }
     }
   
@@ -658,8 +669,8 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
 
     case 6:
     
-      // lights configuration
-      lcd_var_number.p_var_number = &configuration_variables.ui8_lights_configuration;
+      // light mode
+      lcd_var_number.p_var_number = &configuration_variables.ui8_light_mode;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
       lcd_var_number.ui32_max_value = 2;
@@ -678,7 +689,7 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
     
     case 7:
     
-      // backlight off brightness
+      // backlight day time brightness
       ui32_temp = configuration_variables.ui8_lcd_backlight_off_brightness * 5;
       
       lcd_var_number.p_var_number = &ui32_temp;
@@ -701,7 +712,7 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
 
     case 8:
     
-      // backlight on brightness
+      // backlight night time brightness
       ui32_temp = configuration_variables.ui8_lcd_backlight_on_brightness * 5;
       
       lcd_var_number.p_var_number = &ui32_temp;
@@ -875,7 +886,7 @@ void lcd_execute_menu_config_submenu_battery(void)
       }
       
       // keep reseting these values
-      ui32_wh_sum_x10 = 0;
+      ui32_wh_sum = 0;
       ui32_wh_x10 = 0;
 
       lcd_var_number.p_var_number = &configuration_variables.ui32_wh_x10_offset;
@@ -1579,6 +1590,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
 {
   var_number_t lcd_var_number;
   
+  static uint16_t ui16_weight_on_pedal_x10;
   static uint8_t ui8_hold_down_enabled;
   
   switch (ui8_lcd_menu_config_submenu_state)
@@ -1626,12 +1638,23 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     break;
     
     case 3:
-    
-    // weight on pedal from pedal torque conversion
-    if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
-    {
-      lcd_print(ui16_weight_on_pedal_x10, ODOMETER_FIELD, 1);
-    }
+      
+      ui16_weight_on_pedal_x10 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 10) / 167;
+      
+      /*-----------------------------------------------------------------
+        
+        NOTE: regarding the weight on pedal calculation
+        
+        Force (Nm) = Weight (Kg) * 9.81 * 0.17 (0.17 = arm cranks size)
+        
+        Weight (kg) = Force (Nm) / 9.81 * 0.17 (0.17 = arm cranks size)
+      -----------------------------------------------------------------*/
+      
+      // weight on pedal from pedal torque conversion
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(ui16_weight_on_pedal_x10, ODOMETER_FIELD, 1);
+      }
     
     break;
     
@@ -1693,6 +1716,20 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     
     case 5:
       
+      // lights configuration
+      lcd_var_number.p_var_number = &configuration_variables.ui8_lights_configuration;
+      lcd_var_number.ui8_size = 8;
+      lcd_var_number.ui8_decimal_digit = 0;
+      lcd_var_number.ui32_max_value = 6;
+      lcd_var_number.ui32_min_value = 0;
+      lcd_var_number.ui32_increment_step = 1;
+      lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+      lcd_configurations_print_number(&lcd_var_number);
+      
+    break;
+    
+    case 6:
+      
       // motor temperature control or throttle control
       lcd_var_number.p_var_number = &configuration_variables.ui8_optional_ADC_function;
       lcd_var_number.ui8_size = 8;
@@ -1705,7 +1742,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       
     break;
 
-    case 6:
+    case 7:
     
       // motor temperature limit min
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_min_value_to_limit;
@@ -1721,7 +1758,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
 
     break;
 
-    case 7:
+    case 8:
       
       // motor temperature limit max
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_temperature_max_value_to_limit;
@@ -1743,7 +1780,7 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
   }
   
-  submenu_state_controller(7);
+  submenu_state_controller(8);
 }
 
 
@@ -2040,7 +2077,7 @@ void energy(void)
 
 
   // calculate watt-hours since power on
-  ui32_wh_since_power_on_x10 = ui32_wh_sum_x10 / 36000; //  wh_x10 = wh_sum_x10  /  (3600 * 10)
+  ui32_wh_since_power_on_x10 = ui32_wh_sum / 3600;
   
   // calculate watt-hours since last full charge
   ui32_wh_x10 = configuration_variables.ui32_wh_x10_offset + ui32_wh_since_power_on_x10;
@@ -2133,7 +2170,7 @@ void battery_symbol_field(void)
   #define LI_ION_CELL_VOLTS_17_x100    344
   #define LI_ION_CELL_VOLTS_0_x100     330
   
-  // calculate battery voltage that takes into consideration current and internal battery pack resistance
+  // calculate battery voltage that takes internal battery pack resistance into consideration
   uint16_t ui16_battery_voltage_internal_resistance_adjusted_x100 = ((uint32_t) configuration_variables.ui16_battery_pack_resistance_x1000 * ui16_battery_current_filtered_x10) / 100;
   
   // add voltage value
@@ -2179,8 +2216,10 @@ void battery_symbol_field(void)
 
 
 void power_field(void)
-{ 
-  lcd_print(ui16_battery_power_filtered_x10 / 10, BATTERY_POWER_FIELD, 0);
+{
+  uint16_t ui16_battery_power_step_filtered = ui16_battery_power_filtered / 10;
+  
+  lcd_print(ui16_battery_power_step_filtered * 10, BATTERY_POWER_FIELD, 0);
   lcd_enable_motor_symbol(1);
   lcd_enable_w_symbol(1);
 }
@@ -2317,7 +2356,7 @@ void assist_level_field(void)
   static uint8_t ui8_street_mode_assist_symbol_state;
   
   // display either assist level or eMTB symbol
-  if (motor_controller_data.ui8_riding_mode == eMTB_ASSIST_MODE)
+  if (configuration_variables.ui8_assist_level > configuration_variables.ui8_number_of_assist_levels)
   {
     lcd_enable_E_symbol(1);
   }
@@ -2695,7 +2734,7 @@ void odometer_field(void)
         {
           // pedal power
           case 0:
-            lcd_print(ui16_pedal_power_filtered, ODOMETER_FIELD, 0);
+            lcd_print(ui16_pedal_power_step_filtered, ODOMETER_FIELD, 0);
           break;
 
           // pedal cadence
@@ -3615,39 +3654,66 @@ void lcd_enable_A_symbol(uint8_t ui8_state)
   if (ui8_state) { ui8_lcd_frame_buffer[ui8_lcd_field_offset[ASSIST_LEVEL_FIELD]] |= 231; }
 }
 
+void lcd_enable_street_mode_symbol(uint8_t ui8_state)
+{
+  if (ui8_state) { ui8_lcd_frame_buffer[ui8_lcd_field_offset[ASSIST_LEVEL_FIELD]] |= 23; }
+}
+
 
 
 void filter_variables()
 {
-  ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 60);
-  //ui16_battery_voltage_filtered_x1000 = motor_controller_data.ui16_battery_voltage_x1000;
   
-  ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 60);
-  //ui16_battery_current_filtered_x10 = motor_controller_data.ui8_battery_current_x10;
   
-  uint32_t ui32_battery_power_x10_temp = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
-  ui16_battery_power_filtered_x10 = filter(ui32_battery_power_x10_temp, ui16_battery_power_filtered_x10, 60);
-  //ui16_battery_power_filtered_x10 = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
+  /****************************************************************************/
   
-  ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 60);
-  //ui8_pedal_cadence_RPM_filtered = motor_controller_data.ui8_pedal_cadence_RPM;
   
-  ui16_pedal_torque_filtered = filter(motor_controller_data.ui16_pedal_torque_x100 / 100, ui16_pedal_torque_filtered, 60);
-  //ui16_pedal_torque_filtered = motor_controller_data.ui16_pedal_torque_x100 / 100;
+  // battery voltage filtering  
+  ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 70);
   
-  ui16_pedal_power_filtered = filter(motor_controller_data.ui16_pedal_power_x10 / 10, ui16_pedal_power_filtered, 60);
-  //ui16_pedal_power_filtered = motor_controller_data.ui16_pedal_power_x10 / 10;
+  
+  /****************************************************************************/
+  
+  
+  // battery current filtering
+  ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 70);
+  
+  
+  /****************************************************************************/
+  
+  
+  // battery power filtering
+  uint32_t ui32_battery_power_temp = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 10000;
+  ui16_battery_power_filtered = filter(ui32_battery_power_temp, ui16_battery_power_filtered, 70);
+  
+  
+  /****************************************************************************/
+  
+  
+  // pedal cadence filtering
+  ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 70);
 
-  ui16_weight_on_pedal_x10 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 10) / 167;
   
-  /*-----------------------------------------------------------------
-    
-    NOTE: regarding the weight on pedal calculation
-    
-    Force (Nm) = Weight (Kg) * 9.81 * 0.17 (0.17 = arm cranks size)
-    
-    Weight (kg) = Force (Nm) / 9.81 * 0.17 (0.17 = arm cranks size)
-  -----------------------------------------------------------------*/
+  
+  /****************************************************************************/
+  
+  
+  // pedal torque filtering
+  ui16_pedal_torque_filtered = filter(motor_controller_data.ui16_pedal_torque_x100 / 100, ui16_pedal_torque_filtered, 70);
+  
+  
+  /****************************************************************************/
+  
+  
+  // human power filtering
+  
+  static uint16_t ui16_pedal_power_x10_filtered;
+  
+  ui16_pedal_power_x10_filtered = filter(motor_controller_data.ui16_pedal_power_x10, ui16_pedal_power_x10_filtered, 70);
+  ui16_pedal_power_step_filtered = ui16_pedal_power_x10_filtered / 100;
+  ui16_pedal_power_step_filtered = ui16_pedal_power_step_filtered * 10;
+  
+  /****************************************************************************/
 }
 
 
@@ -3692,9 +3758,9 @@ void lcd_init (void)
   lcd_set_frame_buffer();
   lcd_update();
   
-  // set lights and backlight brightness
-  if (configuration_variables.ui8_lights_configuration == 0) { configuration_variables.ui8_lights_state = 0; }
-  else if (configuration_variables.ui8_lights_configuration == 1) { configuration_variables.ui8_lights_state = 1; }
+  // set lights state and backlight brightness
+  if (configuration_variables.ui8_light_mode == 0) { configuration_variables.ui8_lights_state = 0; }
+  else if (configuration_variables.ui8_light_mode == 1) { configuration_variables.ui8_lights_state = 1; }
   
   if (configuration_variables.ui8_lights_state) { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_on_brightness); }
   else { lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_off_brightness); }

@@ -18,7 +18,6 @@ extern volatile uint16_t ui16_cadence_sensor_ticks_counter_min_speed_adjusted;
 
 typedef struct _configuration_variables
 {
-  uint8_t ui8_battery_max_current;
   uint8_t ui8_motor_power_x10;
   uint16_t ui16_battery_low_voltage_cut_off_x10;
   uint16_t ui16_wheel_perimeter;
@@ -34,11 +33,6 @@ typedef struct _configuration_variables
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
   uint8_t ui8_optional_ADC_function;
-  uint8_t ui8_motor_temperature_min_value_to_limit;
-  uint8_t ui8_motor_temperature_max_value_to_limit;
-  uint8_t ui8_temperature_current_limiting_value;
-  uint16_t ui16_motor_temperature_x2;
-  uint8_t ui8_motor_temperature;
 } struct_configuration_variables;
 
 

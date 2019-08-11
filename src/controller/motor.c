@@ -783,7 +783,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       case ADVANCED_MODE:
         
         #define CADENCE_SENSOR_ADVANCED_MODE_TICKS_COUNTER_MAX            150   // CADENCE_SENSOR_TICKS_COUNTER_MAX / 2
-        #define CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD    1000  // software based Schmitt trigger to stop motor jitter when at resolution limits
+        #define CADENCE_SENSOR_ADVANCED_MODE_SCHMITT_TRIGGER_THRESHOLD    500   // software based Schmitt trigger to stop motor jitter when at resolution limits
         
         // set the ticks counter limit depending on current wheel speed and pin state
         if (ui8_cadence_sensor_pin_1_state) { ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks_counter_min_high; }
