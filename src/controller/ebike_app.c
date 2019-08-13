@@ -1073,7 +1073,7 @@ static void check_system()
 void ebike_control_lights(void)
 {
   #define DEFAULT_FLASH_ON_COUNTER_MAX      3
-  #define DEFAULT_FLASH_OFF_COUNTER_MAX     2
+  #define DEFAULT_FLASH_OFF_COUNTER_MAX     1
   #define BRAKING_FLASH_ON_COUNTER_MAX      1
   #define BRAKING_FLASH_OFF_COUNTER_MAX     1
   
@@ -1254,6 +1254,48 @@ void ebike_control_lights(void)
       
     break;
     
+    case 7:
+      
+      // check brake state
+      if (ui8_brakes_enabled)
+      {
+        // set lights
+        lights_set_state(ui8_brakes_enabled);
+      }
+      else if (ui8_lights_state)
+      {
+        // set lights
+        lights_set_state(ui8_default_flash_state);
+      }
+      else
+      {
+        // set lights
+        lights_set_state(ui8_lights_state);
+      }
+      
+    break;
+    
+    case 8:
+      
+      // check brake state
+      if (ui8_brakes_enabled)
+      {
+        // set lights
+        lights_set_state(ui8_braking_flash_state);
+      }
+      else if (ui8_lights_state)
+      {
+        // set lights
+        lights_set_state(ui8_default_flash_state);
+      }
+      else
+      {
+        // set lights
+        lights_set_state(ui8_lights_state);
+      }
+      
+    break;
+    
     default:
     
       // set lights
@@ -1275,6 +1317,9 @@ void ebike_control_lights(void)
     
     (5) lights ON when enabled, but ON when braking regardless if lights are enabled
     (6) lights ON when enabled, but BRAKE-FLASHING when braking regardless if lights are enabled
+    
+    (7) lights FLASHING when enabled, but ON when braking regardless if lights are enabled
+    (8) lights FLASHING when enabled, but BRAKE-FLASHING when braking regardless if lights are enabled
     
   ------------------------------------------------------------------------------------------------------------------*/
 }

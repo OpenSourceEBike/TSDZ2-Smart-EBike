@@ -83,7 +83,8 @@ static uint16_t   ui16_battery_voltage_filtered_x1000 = 30000;
 static uint16_t   ui16_battery_current_filtered_x10 = 0;
 static uint16_t   ui16_battery_power_filtered_x10 = 0;
 static uint16_t   ui16_battery_power_step_filtered = 0;
-static uint16_t   ui16_pedal_torque_filtered_x100 = 0;
+static uint16_t   ui16_pedal_weight_filtered_x100 = 0;
+static uint16_t   ui16_pedal_weight_x100 = 0;
 static uint16_t   ui16_pedal_power_filtered_x10 = 0;
 static uint16_t   ui16_pedal_power_step_filtered = 0;
 static uint8_t    ui8_pedal_cadence_RPM_filtered = 0;
@@ -1592,7 +1593,6 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
 {
   var_number_t lcd_var_number;
   
-  static uint16_t ui16_weight_on_pedal_x10;
   static uint8_t ui8_hold_down_enabled;
   
   switch (ui8_lcd_menu_config_submenu_state)
@@ -1641,21 +1641,10 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
     
     case 3:
       
-      ui16_weight_on_pedal_x10 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 10) / 167;
-      
-      /*-----------------------------------------------------------------
-        
-        NOTE: regarding the weight on pedal calculation
-        
-        Force (Nm) = Weight (Kg) * 9.81 * 0.17 (0.17 = arm cranks size)
-        
-        Weight (kg) = Force (Nm) / 9.81 * 0.17 (0.17 = arm cranks size)
-      -----------------------------------------------------------------*/
-      
       // weight on pedal from pedal torque conversion
       if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
       {
-        lcd_print(ui16_weight_on_pedal_x10, ODOMETER_FIELD, 1);
+        lcd_print(ui16_pedal_weight_x100 / 10, ODOMETER_FIELD, 1);
       }
     
     break;
@@ -1722,11 +1711,13 @@ void lcd_execute_menu_config_submenu_advanced_setup(void)
       lcd_var_number.p_var_number = &configuration_variables.ui8_lights_configuration;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 6;
+      lcd_var_number.ui32_max_value = 8;
       lcd_var_number.ui32_min_value = 0;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
+      lcd_enable_lights_symbol(1);
       
     break;
     
@@ -2748,8 +2739,8 @@ void odometer_field(void)
           
           case 2:
             
-            // pedal torque
-            lcd_print(ui16_pedal_torque_filtered_x100 / 100, ODOMETER_FIELD, 0);
+            // pedal weight
+            lcd_print(ui16_pedal_weight_filtered_x100 / 10, ODOMETER_FIELD, 1);
             
           break;
         }
@@ -3669,7 +3660,7 @@ void lcd_enable_street_mode_symbol(uint8_t ui8_state)
 
 void filter_variables()
 {
-  #define FILTER_VARIABLES_COUNTER_MAX    10    // 10 -> every 100 ms, this matches the time it takes to receive new variables from the motor controller
+  #define FILTER_VARIABLES_COUNTER_MAX    10    // 10 -> filter every 100 ms, this matches the time it takes to receive new variables from the motor controller
   
   static uint8_t ui8_filter_variables_counter;
   
@@ -3680,27 +3671,38 @@ void filter_variables()
     ui8_filter_variables_counter = 0;
     
     // battery voltage  
-    ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 50);
+    ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 60);
     
     // battery current
     ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 50);
     
     // battery power
     uint32_t ui32_battery_power_temp_x10 = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
-    ui16_battery_power_filtered_x10 = filter(ui32_battery_power_temp_x10, ui16_battery_power_filtered_x10, 50);
+    ui16_battery_power_filtered_x10 = filter(ui32_battery_power_temp_x10, ui16_battery_power_filtered_x10, 70);
     ui16_battery_power_step_filtered = ui16_battery_power_filtered_x10 / 100;
     ui16_battery_power_step_filtered = ui16_battery_power_step_filtered * 10;
     
     // pedal cadence
     ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 50);
     
-    // pedal torque
-    ui16_pedal_torque_filtered_x100 = filter(motor_controller_data.ui16_pedal_torque_x100, ui16_pedal_torque_filtered_x100, 50);
-    
     // human power
-    ui16_pedal_power_filtered_x10 = filter(motor_controller_data.ui16_pedal_power_x10, ui16_pedal_power_filtered_x10, 50);
+    ui16_pedal_power_filtered_x10 = filter(motor_controller_data.ui16_pedal_power_x10, ui16_pedal_power_filtered_x10, 70);
     ui16_pedal_power_step_filtered = ui16_pedal_power_filtered_x10 / 100;
     ui16_pedal_power_step_filtered = ui16_pedal_power_step_filtered * 10;
+    
+    // pedal weight
+    uint16_t ui16_pedal_weight_temp_x100 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 100) / 167;
+    ui16_pedal_weight_filtered_x100 = filter(ui16_pedal_weight_temp_x100, ui16_pedal_weight_filtered_x100, 50);
+    ui16_pedal_weight_x100 = ui16_pedal_weight_temp_x100;
+    
+    /*-----------------------------------------------------------------
+      
+      NOTE: regarding the weight on pedal calculation
+      
+      Force (Nm) = Weight (Kg) * 9.81 * 0.17 (0.17 = arm cranks size)
+      
+      Weight (kg) = Force (Nm) / 9.81 * 0.17 (0.17 = arm cranks size)
+    -----------------------------------------------------------------*/
   }
 }
 
