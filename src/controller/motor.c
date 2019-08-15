@@ -1001,6 +1001,10 @@ void read_battery_voltage(void)
   ui16_adc_battery_voltage_accumulated -= ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
   ui16_adc_battery_voltage_accumulated += ui16_adc_read_battery_voltage_10b();
   ui16_adc_battery_voltage_filtered = ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
+  
+  // prototype filter, ask Leon
+/*   ui16_adc_battery_voltage_filtered = (ui16_adc_read_battery_voltage_10b() + ui16_adc_battery_voltage_accumulated) >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
+  ui16_adc_battery_voltage_accumulated = ui16_adc_battery_voltage_filtered; */
 }
 
 

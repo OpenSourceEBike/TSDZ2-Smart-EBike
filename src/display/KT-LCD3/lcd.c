@@ -79,7 +79,7 @@ static struct_configuration_variables configuration_variables;
 
 // global system variables
 static volatile uint16_t ui16_timer3_counter = 0;
-static uint16_t   ui16_battery_voltage_filtered_x1000 = 30000;
+static uint16_t   ui16_battery_voltage_filtered_x1000 = 32000;
 static uint16_t   ui16_battery_current_filtered_x10 = 0;
 static uint16_t   ui16_battery_power_filtered_x10 = 0;
 static uint16_t   ui16_battery_power_step_filtered = 0;
@@ -1940,8 +1940,8 @@ void temperature_field(void)
         // if function is enabled -> display motor temperature
         if (configuration_variables.ui8_optional_ADC_function == TEMPERATURE_CONTROL)
         {
-          lcd_print (motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
-          lcd_enable_temperature_degrees_symbol (1);
+          lcd_print(motor_controller_data.ui8_motor_temperature, TEMPERATURE_FIELD, 1);
+          lcd_enable_temperature_degrees_symbol(1);
         }
       break;
       
@@ -3678,7 +3678,7 @@ void filter_variables()
     
     // battery power
     uint32_t ui32_battery_power_temp_x10 = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
-    ui16_battery_power_filtered_x10 = filter(ui32_battery_power_temp_x10, ui16_battery_power_filtered_x10, 70);
+    ui16_battery_power_filtered_x10 = filter(ui32_battery_power_temp_x10, ui16_battery_power_filtered_x10, 72);
     ui16_battery_power_step_filtered = ui16_battery_power_filtered_x10 / 100;
     ui16_battery_power_step_filtered = ui16_battery_power_step_filtered * 10;
     

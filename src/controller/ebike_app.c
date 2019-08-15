@@ -268,10 +268,9 @@ static void ebike_control_motor (void)
   {
     // reset motor control variables (safety)
     ui16_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
-    ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
+    ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN;
     ui8_controller_adc_battery_current_target = 0;
     ui8_controller_duty_cycle_target = 0;
-    ui8_g_duty_cycle = 0;
   }
 }
 
@@ -662,7 +661,7 @@ static void apply_cadence_sensor_calibration()
     if (ui16_cadence_sensor_pulse_high_percentage_x10_temp < CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN) { ui16_cadence_sensor_pulse_high_percentage_x10_temp = CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN; }
     
     // filter the cadence sensor pulse high percentage
-    ui16_cadence_sensor_pulse_high_percentage_x10 = filter(ui16_cadence_sensor_pulse_high_percentage_x10_temp, ui16_cadence_sensor_pulse_high_percentage_x10, 95);
+    ui16_cadence_sensor_pulse_high_percentage_x10 = filter(ui16_cadence_sensor_pulse_high_percentage_x10_temp, ui16_cadence_sensor_pulse_high_percentage_x10, 90);
   }
   
   // set motor acceleration
