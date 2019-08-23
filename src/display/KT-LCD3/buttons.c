@@ -36,8 +36,9 @@ uint8_t UP_DOWN_LONG_CLICK = 0;
 uint8_t ONOFF_UP_LONG_CLICK = 0;
 uint8_t ONOFF_DOWN_LONG_CLICK = 0;
 
-#define LONG_CLICK_THRESHOLD   100   // 100  ->  1.0 seconds
-#define CLICK_THRESHOLD        30    // 30  ->  0.3 seconds
+#define LONG_CLICK_THRESHOLD          80     // 80    ->  0.8 seconds
+#define CLICK_LONG_CLICK_THRESHOLD    100    // 100   ->  1.0 seconds
+#define CLICK_THRESHOLD               30     // 30    ->  0.3 seconds
 
 uint8_t buttons_get_up_state (void)
 {
@@ -200,7 +201,7 @@ void buttons_clock (void)
       ui8_onoff_button_state_counter++;
 
       // event click, but this time it is: click + long click
-      if (ui8_onoff_button_state_counter > LONG_CLICK_THRESHOLD)
+      if (ui8_onoff_button_state_counter > CLICK_LONG_CLICK_THRESHOLD)
       {
         ONOFF_CLICK_LONG_CLICK = 1;
         ui8_onoff_button_state = 2;
@@ -329,7 +330,7 @@ void buttons_clock (void)
       ui8_up_button_state_counter++;
 
       // event click, but this time it is: click + long click
-      if (ui8_up_button_state_counter > LONG_CLICK_THRESHOLD)
+      if (ui8_up_button_state_counter > CLICK_LONG_CLICK_THRESHOLD)
       {
         UP_CLICK_LONG_CLICK = 1;
         ui8_up_button_state = 2;
@@ -459,7 +460,7 @@ void buttons_clock (void)
       ui8_down_button_state_counter++;
 
       // event click, but this time it is: click + long click
-      if (ui8_down_button_state_counter > LONG_CLICK_THRESHOLD)
+      if (ui8_down_button_state_counter > CLICK_LONG_CLICK_THRESHOLD)
       {
         DOWN_CLICK_LONG_CLICK = 1;
         ui8_down_button_state = 2;

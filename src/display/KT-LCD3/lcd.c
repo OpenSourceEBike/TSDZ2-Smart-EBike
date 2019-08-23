@@ -166,6 +166,7 @@ void submenu_state_controller(uint8_t ui8_state_max_number);
 void advance_on_subfield(uint8_t* ui8_p_state, uint8_t ui8_state_max_number);
 void odometer_increase_field_state(void);
 uint8_t reset_variable_check(void);
+//void change_variable(uint32_t *ui32_variable, uint32_t ui32_min_value, uint32_t ui32_max_value, uint32_t ui32_increment_step);
 
 
 // LCD functions
@@ -499,7 +500,7 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
   uint32_t ui32_temp;
   uint16_t ui16_temp;
   
-  switch(ui8_lcd_menu_config_submenu_state)
+  switch (ui8_lcd_menu_config_submenu_state)
   {
     case 0:
     
@@ -522,13 +523,11 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
         {
           lcd_enable_mil_symbol(1);
           lcd_enable_mph_symbol(1);
-          lcd_enable_temperature_farneight_symbol(1);
         }
         else
         {
           lcd_enable_km_symbol(1);
           lcd_enable_kmh_symbol(1);
-          lcd_enable_temperature_degrees_symbol(1);
         }
       }
 
@@ -584,10 +583,21 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
-    
+      
+/*       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        change_variable(&configuration_variables.ui16_wheel_perimeter, 750, 3000, 1);
+      }
+      
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(configuration_variables.ui16_wheel_perimeter, ODOMETER_FIELD, 0);
+      }
+       */
     break;
     
     case 3:
+    
       // motor voltage type
       lcd_var_number.p_var_number = &configuration_variables.ui8_motor_type;
       lcd_var_number.ui8_size = 8;
@@ -597,9 +607,21 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
+      
+/*       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        change_variable(&configuration_variables.ui8_motor_type, 0, 3, 1);
+      }
+      
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(configuration_variables.ui8_motor_type, ODOMETER_FIELD, 0);
+      } */
+      
     break;
     
     case 4:
+    
       // motor power limit
       ui16_temp = configuration_variables.ui8_target_max_battery_power_div25 * 25;
       lcd_var_number.p_var_number = &ui16_temp;
@@ -682,6 +704,16 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
       lcd_configurations_print_number(&lcd_var_number);
       
+/*       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        change_variable(&configuration_variables.ui8_light_mode, 0, 2, 1);
+      }
+      
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(configuration_variables.ui8_light_mode, ODOMETER_FIELD, 0);
+      } */
+      
       lcd_enable_lights_symbol(1);
       
       // set backlight brightness after user has configured settings, looks nicer this way
@@ -694,6 +726,16 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
     
       // backlight day time brightness
       ui32_temp = configuration_variables.ui8_lcd_backlight_off_brightness * 5;
+      
+/*       if (ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        change_variable(&ui32_temp, 0, 100, 5);
+      }
+      
+      if (ui8_lcd_menu_flash_state || !ui8_lcd_menu_config_submenu_change_variable_enabled)
+      {
+        lcd_print(ui32_temp, ODOMETER_FIELD, 0);
+      } */
       
       lcd_var_number.p_var_number = &ui32_temp;
       lcd_var_number.ui8_size = 32;
@@ -1170,7 +1212,7 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
       lcd_var_number.p_var_number = &configuration_variables.ui8_eMTB_assist_sensitivity;
       lcd_var_number.ui8_size = 8;
       lcd_var_number.ui8_decimal_digit = 0;
-      lcd_var_number.ui32_max_value = 8;
+      lcd_var_number.ui32_max_value = 20;
       lcd_var_number.ui32_min_value = 1;
       lcd_var_number.ui32_increment_step = 1;
       lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
@@ -2279,10 +2321,15 @@ void riding_mode_controller(void)
   
 
   // set walk assist or cruise
-
+  
+  #define BUTTON_DEBOUNCE_COUNTER_MAX                 100 // 100 -> 1.0 seconds, do not set over 255
+  #define BUTTON_DEBOUNCE_COUNTER_MAX_WALK_ASSIST     50 // 50 -> 0.5 seconds, do not set over 255
+  #define BUTTON_DEBOUNCE_COUNTER_MAX_CRUISE          20 // 20 -> 0.2 seconds, do not set over 255
+  
   static uint8_t ui8_walk_assist_activated;
   static uint8_t ui8_cruise_activated;
   static uint8_t ui8_long_hold_down_button;
+  static uint8_t ui8_button_debounce_counter;
   
   if (DOWN_LONG_CLICK)
   {
@@ -2291,8 +2338,22 @@ void riding_mode_controller(void)
   
   if (ui8_long_hold_down_button)
   {
+    // clear down click long click if button accidentally bounces when using Walk Assist or Cruise
+    DOWN_CLICK_LONG_CLICK = 0;
+    
     // if down button is pressed
     if (buttons_get_down_state())
+    {
+      // increment and limit button debounce counter to max
+      if (ui8_button_debounce_counter < BUTTON_DEBOUNCE_COUNTER_MAX) { ++ui8_button_debounce_counter; };
+    }
+    else
+    {
+      // decrement and keep button debounce counter to zero
+      if (ui8_button_debounce_counter > 0) { --ui8_button_debounce_counter; };
+    }
+    
+    if (ui8_button_debounce_counter)
     {
       // enable walk assist or cruise if...
       if ((configuration_variables.ui8_walk_assist_function_enabled) &&
@@ -2307,6 +2368,9 @@ void riding_mode_controller(void)
         
         // set flag indicating that walk assist was activated first during this button event
         ui8_walk_assist_activated = 1;
+        
+        // limit button debounce counter
+        if (ui8_button_debounce_counter > BUTTON_DEBOUNCE_COUNTER_MAX_WALK_ASSIST) { ui8_button_debounce_counter = BUTTON_DEBOUNCE_COUNTER_MAX_WALK_ASSIST; };
       }
       else if ((configuration_variables.ui8_cruise_function_enabled) &&
                (motor_controller_data.ui16_wheel_speed_x10 > CRUISE_THRESHOLD_SPEED_X10) &&
@@ -2319,23 +2383,25 @@ void riding_mode_controller(void)
         
         // set flag indicating that cruise was activated first during this button event
         ui8_cruise_activated = 1;
+        
+        // limit button debounce counter
+        if (ui8_button_debounce_counter > BUTTON_DEBOUNCE_COUNTER_MAX_CRUISE) { ui8_button_debounce_counter = BUTTON_DEBOUNCE_COUNTER_MAX_CRUISE; };
+      }
+      else
+      {
+        // reset button debounce counter
+        ui8_button_debounce_counter = 0;
       }
     }
-    else // button not longer pressed
-    { 
+    else
+    {
       // reset flags for walk assist and cruise activated
       ui8_walk_assist_activated = 0;
       ui8_cruise_activated = 0;
       
-      // reset button event flag
+      // reset long button hold flag
       ui8_long_hold_down_button = 0;
     }
-  }
-  else
-  {
-    // reset flags for walk assist and cruise activated
-    ui8_walk_assist_activated = 0;
-    ui8_cruise_activated = 0;
   }
 }
 
@@ -2434,7 +2500,7 @@ void lights(void)
 
 
 
-void odometer_increase_field_state (void)
+void odometer_increase_field_state(void)
 {
   // increment odometer field state and check if out of bounds
   if (++configuration_variables.ui8_odometer_field_state > 8) // case 0 -> case 8, 9 odometer field states
@@ -2446,7 +2512,7 @@ void odometer_increase_field_state (void)
 
 
 
-void odometer_start_show_field_number (void)
+void odometer_start_show_field_number(void)
 {
   ui8_start_odometer_show_field_number = 1;
   ui8_odometer_show_field_number_counter = 0;
@@ -2454,7 +2520,7 @@ void odometer_start_show_field_number (void)
 
 
 
-uint8_t reset_variable_check (void)
+uint8_t reset_variable_check(void)
 {
   static uint8_t ui8_odometer_reset_distance_counter_state;
   static uint16_t ui16_odometer_reset_distance_counter;
@@ -3909,10 +3975,10 @@ void change_variable(uint32_t *ui32_variable, uint32_t ui32_min_value, uint32_t 
     ui8_long_click_started = 1;
   }
 
-  // trigger at every 100 ms if UP/DOWN LONG CLICK
-  if((ui8_long_click_started == 1) && (buttons_get_up_state() || buttons_get_down_state()))
+  // trigger at every X ms if UP/DOWN LONG CLICK
+  if ((ui8_long_click_started == 1) && (buttons_get_up_state() || buttons_get_down_state()))
   {
-    if(++ui8_long_click_counter > 10)
+    if (++ui8_long_click_counter > 9)
     {
       ui8_long_click_counter = 0;
       ui8_long_click_trigger = 1;

@@ -240,7 +240,7 @@
 
 // default value for eMTB assist
 #define DEFAULT_VALUE_EMTB_ASSIST_FUNCTION_ENABLED                  0
-#define DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY                       2
+#define DEFAULT_VALUE_EMTB_ASSIST_SENSITIVITY                       10
 
 
 
