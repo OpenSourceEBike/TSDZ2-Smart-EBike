@@ -53,6 +53,7 @@ typedef struct _configuration_variables
   uint8_t ui8_eMTB_assist_function_enabled;
   uint8_t ui8_eMTB_assist_sensitivity;
   uint8_t ui8_walk_assist_function_enabled;
+  uint8_t ui8_walk_assist_button_bounce_time;
   uint8_t ui8_walk_assist_level[9];
   uint8_t ui8_cruise_function_enabled;
   uint8_t ui8_cruise_function_set_target_speed_enabled;

@@ -44,8 +44,8 @@ int32_t map_inverse(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, 
 
 uint8_t ui8_min(uint8_t value_a, uint8_t value_b)
 {
-  if (value_a < value_b) return value_a;
-  else return value_b;
+  if (value_a < value_b) { return value_a; }
+  else { return value_b; }
 }
 
 

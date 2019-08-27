@@ -138,7 +138,8 @@
 #define ADDRESS_LIGHTS_STATE                                                122
 #define ADDRESS_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD                     123
 #define ADDRESS_LIGHTS_CONFIGURATION                                        124
-#define EEPROM_BYTES_STORED                                                 125
+#define ADDRESS_WALK_ASSIST_BUTTON_BOUNCE_TIME                              125
+#define EEPROM_BYTES_STORED                                                 126
 
 
 #define DEFAULT_VALUE_KEY     202

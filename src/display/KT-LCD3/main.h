@@ -155,6 +155,7 @@
 
 // default values for walk assist function
 #define DEFAULT_VALUE_WALK_ASSIST_FUNCTION_ENABLED                  0   // disabled by default
+#define DEFAULT_VALUE_WALK_ASSIST_BUTTON_BOUNCE_TIME                0   // 0 milliseconds
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_1                           20
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_2                           25
 #define DEFAULT_VALUE_WALK_ASSIST_LEVEL_3                           30

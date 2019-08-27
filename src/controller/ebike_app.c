@@ -496,6 +496,7 @@ static void apply_walk_assist()
 {
   #define WALK_ASSIST_DUTY_CYCLE_RAMP_UP_INVERSE_STEP     200
   #define WALK_ASSIST_DUTY_CYCLE_MAX                      80
+  #define WALK_ASSIST_ADC_BATTERY_CURRENT_MAX             80
   
   if (ui16_wheel_speed_x10 < WALK_ASSIST_THRESHOLD_SPEED_X10)
   {
@@ -510,7 +511,7 @@ static void apply_walk_assist()
     ui16_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
     
     // set battery current target
-    ui8_adc_battery_current_target = ui8_adc_battery_current_max;
+    ui8_adc_battery_current_target = ui8_min(WALK_ASSIST_ADC_BATTERY_CURRENT_MAX, ui8_adc_battery_current_max);
     
     // set duty cycle target
     ui8_duty_cycle_target = ui8_walk_assist_duty_cycle_target;

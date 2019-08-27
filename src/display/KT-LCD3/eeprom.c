@@ -139,7 +139,8 @@ static const uint8_t ui8_default_array[EEPROM_BYTES_STORED] =
   DEFAULT_VALUE_LIGHTS_MODE,                                          // 121
   DEFAULT_VALUE_LIGHTS_STATE,                                         // 122
   DEFAULT_VALUE_ASSIST_WITHOUT_PEDAL_ROTATION_THRESHOLD,              // 123
-  DEFAULT_VALUE_LIGHTS_CONFIGURATION                                  // 124
+  DEFAULT_VALUE_LIGHTS_CONFIGURATION,                                 // 124
+  DEFAULT_VALUE_WALK_ASSIST_BUTTON_BOUNCE_TIME                        // 125
 };
 
 
@@ -450,6 +451,9 @@ void EEPROM_controller(uint8_t ui8_operation)
       p_configuration_variables->ui8_lights_state = ui8_array[ADDRESS_LIGHTS_STATE];
       p_configuration_variables->ui8_lights_configuration = ui8_array[ADDRESS_LIGHTS_CONFIGURATION];
       
+      // walk assist button bounce time
+      p_configuration_variables->ui8_walk_assist_button_bounce_time = ui8_array[ADDRESS_WALK_ASSIST_BUTTON_BOUNCE_TIME];
+      
     break;
     
     
@@ -629,6 +633,9 @@ void EEPROM_controller(uint8_t ui8_operation)
       ui8_array[ADDRESS_LIGHTS_MODE] = p_configuration_variables->ui8_light_mode;
       ui8_array[ADDRESS_LIGHTS_STATE] = p_configuration_variables->ui8_lights_state;
       ui8_array[ADDRESS_LIGHTS_CONFIGURATION] = p_configuration_variables->ui8_lights_configuration;
+
+      // walk assist button bounce time
+      ui8_array[ADDRESS_WALK_ASSIST_BUTTON_BOUNCE_TIME] = p_configuration_variables->ui8_walk_assist_button_bounce_time;
       
       // write array of variables to EEPROM
       for (ui8_i = EEPROM_BYTES_STORED; ui8_i > 0; ui8_i--)

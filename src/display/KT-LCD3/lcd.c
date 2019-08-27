@@ -1237,7 +1237,9 @@ void lcd_execute_menu_config_submenu_eMTB_assist(void)
 void lcd_execute_menu_config_submenu_walk_assist(void)
 {
   var_number_t lcd_var_number;
-
+  
+  uint16_t ui16_temp;
+  
   if (ui8_lcd_menu_config_submenu_state == 0)
   {
     // enable/disable walk assist function
@@ -1255,10 +1257,31 @@ void lcd_execute_menu_config_submenu_walk_assist(void)
       lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
     }
   }
+  else if (ui8_lcd_menu_config_submenu_state == 1)
+  {
+    // set walk assist button bounce time
+    ui16_temp = configuration_variables.ui8_walk_assist_button_bounce_time * 10;
+    
+    lcd_var_number.p_var_number = &ui16_temp;
+    lcd_var_number.ui8_size = 16;
+    lcd_var_number.ui8_decimal_digit = 0;
+    lcd_var_number.ui32_max_value = 1000;
+    lcd_var_number.ui32_min_value = 0;
+    lcd_var_number.ui32_increment_step = 10;
+    lcd_var_number.ui8_odometer_field = ODOMETER_FIELD;
+    lcd_configurations_print_number(&lcd_var_number);
+    
+    configuration_variables.ui8_walk_assist_button_bounce_time = ui16_temp / 10;
+    
+    if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
+    {
+      lcd_print(ui8_lcd_menu_config_submenu_state, WHEEL_SPEED_FIELD, 0);
+    }
+  }
   else
   {
     // value of each walk assist power value
-    lcd_var_number.p_var_number = &configuration_variables.ui8_walk_assist_level[(ui8_lcd_menu_config_submenu_state - 1)];
+    lcd_var_number.p_var_number = &configuration_variables.ui8_walk_assist_level[(ui8_lcd_menu_config_submenu_state - 2)];
     lcd_var_number.ui8_size = 8;
     lcd_var_number.ui8_decimal_digit = 0;
     lcd_var_number.ui32_max_value = 100;
@@ -1270,13 +1293,13 @@ void lcd_execute_menu_config_submenu_walk_assist(void)
     if (ui8_lcd_menu_flash_state || ui8_lcd_menu_config_submenu_change_variable_enabled)
     {
       lcd_enable_assist_symbol(1);
-      lcd_print(ui8_lcd_menu_config_submenu_state, ASSIST_LEVEL_FIELD, 1);
+      lcd_print(ui8_lcd_menu_config_submenu_state - 1, ASSIST_LEVEL_FIELD, 1);
     }
   }
   
   lcd_enable_walk_symbol(1);
   
-  submenu_state_controller(configuration_variables.ui8_number_of_assist_levels);
+  submenu_state_controller(configuration_variables.ui8_number_of_assist_levels + 1);
 }
 
 
@@ -2261,13 +2284,20 @@ void power_field(void)
 
 void riding_mode_controller(void)
 {
-  // reset riding mode (safety)
-  motor_controller_data.ui8_riding_mode = OFF_MODE;
-
-
+  static uint8_t ui8_long_hold_down_button;
+  
+  
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
-  // check button events
+  
+  // reset riding mode (safety)
+  motor_controller_data.ui8_riding_mode = OFF_MODE;
+  
+  
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  
+  // check button events and set assist level
   
   if (UP_CLICK)
   {
@@ -2285,7 +2315,7 @@ void riding_mode_controller(void)
     }
   }
   
-  if (DOWN_CLICK)
+  if (DOWN_CLICK && !ui8_long_hold_down_button)
   {
     // decrement assist level
     if (configuration_variables.ui8_assist_level > 0)
@@ -2293,11 +2323,12 @@ void riding_mode_controller(void)
       --configuration_variables.ui8_assist_level;
     }
   }
-
+  
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // set riding mode
+  
+  
+  // set default riding mode
 
   if ((configuration_variables.ui8_assist_level > 0) && (configuration_variables.ui8_assist_level <= configuration_variables.ui8_number_of_assist_levels))
   {
@@ -2319,16 +2350,14 @@ void riding_mode_controller(void)
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
-
+  
   // set walk assist or cruise
   
-  #define BUTTON_DEBOUNCE_COUNTER_MAX                 100 // 100 -> 1.0 seconds, do not set over 255
-  #define BUTTON_DEBOUNCE_COUNTER_MAX_WALK_ASSIST     50 // 50 -> 0.5 seconds, do not set over 255
-  #define BUTTON_DEBOUNCE_COUNTER_MAX_CRUISE          20 // 20 -> 0.2 seconds, do not set over 255
+  #define BUTTON_DEBOUNCE_COUNTER_MAX                 100   // 100 -> 1.0 seconds, do not set over 255
+  #define BUTTON_DEBOUNCE_COUNTER_MAX_CRUISE          20    // 20 -> 0.2 seconds, do not set over 255
   
   static uint8_t ui8_walk_assist_activated;
   static uint8_t ui8_cruise_activated;
-  static uint8_t ui8_long_hold_down_button;
   static uint8_t ui8_button_debounce_counter;
   
   if (DOWN_LONG_CLICK)
@@ -2338,7 +2367,9 @@ void riding_mode_controller(void)
   
   if (ui8_long_hold_down_button)
   {
-    // clear down click long click if button accidentally bounces when using Walk Assist or Cruise
+    // clear DOWN button events if button accidentally bounces when using Walk Assist or Cruise
+    DOWN_CLICK = 0;
+    DOWN_LONG_CLICK = 0;
     DOWN_CLICK_LONG_CLICK = 0;
     
     // if down button is pressed
@@ -2370,7 +2401,7 @@ void riding_mode_controller(void)
         ui8_walk_assist_activated = 1;
         
         // limit button debounce counter
-        if (ui8_button_debounce_counter > BUTTON_DEBOUNCE_COUNTER_MAX_WALK_ASSIST) { ui8_button_debounce_counter = BUTTON_DEBOUNCE_COUNTER_MAX_WALK_ASSIST; };
+        if (ui8_button_debounce_counter > configuration_variables.ui8_walk_assist_button_bounce_time) { ui8_button_debounce_counter = configuration_variables.ui8_walk_assist_button_bounce_time; };
       }
       else if ((configuration_variables.ui8_cruise_function_enabled) &&
                (motor_controller_data.ui16_wheel_speed_x10 > CRUISE_THRESHOLD_SPEED_X10) &&
@@ -3740,7 +3771,7 @@ void filter_variables()
     ui16_battery_voltage_filtered_x1000 = filter(motor_controller_data.ui16_battery_voltage_x1000, ui16_battery_voltage_filtered_x1000, 60);
     
     // battery current
-    ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 50);
+    ui16_battery_current_filtered_x10 = filter(motor_controller_data.ui8_battery_current_x10, ui16_battery_current_filtered_x10, 60);
     
     // battery power
     uint32_t ui32_battery_power_temp_x10 = ((uint32_t) motor_controller_data.ui16_battery_voltage_x1000 * motor_controller_data.ui8_battery_current_x10) / 1000;
@@ -3749,16 +3780,16 @@ void filter_variables()
     ui16_battery_power_step_filtered = ui16_battery_power_step_filtered * 10;
     
     // pedal cadence
-    ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 50);
+    ui8_pedal_cadence_RPM_filtered = filter(motor_controller_data.ui8_pedal_cadence_RPM, ui8_pedal_cadence_RPM_filtered, 52);
     
     // human power
-    ui16_pedal_power_filtered_x10 = filter(motor_controller_data.ui16_pedal_power_x10, ui16_pedal_power_filtered_x10, 70);
+    ui16_pedal_power_filtered_x10 = filter(motor_controller_data.ui16_pedal_power_x10, ui16_pedal_power_filtered_x10, 72);
     ui16_pedal_power_step_filtered = ui16_pedal_power_filtered_x10 / 100;
     ui16_pedal_power_step_filtered = ui16_pedal_power_step_filtered * 10;
     
     // pedal weight
     uint16_t ui16_pedal_weight_temp_x100 = ((uint32_t) motor_controller_data.ui16_pedal_torque_x100 * 100) / 167;
-    ui16_pedal_weight_filtered_x100 = filter(ui16_pedal_weight_temp_x100, ui16_pedal_weight_filtered_x100, 50);
+    ui16_pedal_weight_filtered_x100 = filter(ui16_pedal_weight_temp_x100, ui16_pedal_weight_filtered_x100, 52);
     ui16_pedal_weight_x100 = ui16_pedal_weight_temp_x100;
     
     /*-----------------------------------------------------------------
