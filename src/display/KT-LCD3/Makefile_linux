@@ -20,6 +20,8 @@ PNAME = main
 #Directory for helpers
 IDIR = ../../common/STM8S_StdPeriph_Lib/inc
 SDIR = ../../common/STM8S_StdPeriph_Lib/src
+SDIR1 = ../../common
+IDIR1 = ../../common
 
 # In case you ever want a different name for the main source file
 MAINSRC = $(PNAME).c
@@ -36,6 +38,7 @@ EXTRASRCS = \
 	$(SDIR)/stm8s_tim3.c \
 	$(SDIR)/stm8s_uart2.c \
 	$(SDIR)/stm8s_flash.c \
+  $(SDIR1)/common.c \
 	gpio.c \
 	ht162.c \
 	adc.c \
@@ -44,14 +47,13 @@ EXTRASRCS = \
 	uart.c \
 	eeprom.c \
 	buttons.c \
-	utils.c \
 
-HEADERS = gpio.h main.h adc.h timers.h lcd.h uart.h eeprom.h ht162.h buttons.h pins.h config.h utils.h
+HEADERS = gpio.h main.h adc.h timers.h lcd.h uart.h eeprom.h ht162.h buttons.h pins.h
 
 # The list of .rel files can be derived from the list of their source files
 RELS = $(EXTRASRCS:.c=.rel)
 
-INCLUDES = -I$(IDIR) -I. -I../../
+INCLUDES = -I$(IDIR) -I$(IDIR1) -I. -I../../
 CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre --opt-code-size
 ELF_FLAGS = --out-fmt-elf --debug
 LIBS     = 
@@ -95,6 +97,17 @@ clean:
 	@rm -rf $(SDIR)/*.elf
 	@rm -rf $(SDIR)/*.bin
 	@rm -rf $(SDIR)/*.adb
+	@rm -rf $(SDIR1)/*.asm
+	@rm -rf $(SDIR1)/*.rel
+	@rm -rf $(SDIR1)/*.lk
+	@rm -rf $(SDIR1)/*.lst
+	@rm -rf $(SDIR1)/*.rst
+	@rm -rf $(SDIR1)/*.sym
+	@rm -rf $(SDIR1)/*.cdb
+	@rm -rf $(SDIR1)/*.map
+	@rm -rf $(SDIR1)/*.elf
+	@rm -rf $(SDIR1)/*.bin
+	@rm -rf $(SDIR1)/*.adb
 	@rm -rf *.asm
 	@rm -rf *.rel
 	@rm -rf *.lk

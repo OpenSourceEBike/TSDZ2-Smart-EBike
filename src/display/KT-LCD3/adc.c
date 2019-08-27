@@ -41,3 +41,8 @@ uint16_t ui16_adc_read_battery_voltage_10b (void)
 
   return ADC1_GetConversionValue ();
 }
+
+
+// Battery voltage (read on LCD3):
+// 30.0V --> 447 | 0.0671 volts per each ADC unit
+// 40.0V --> 595 | 0.0672 volts per each ADC unit

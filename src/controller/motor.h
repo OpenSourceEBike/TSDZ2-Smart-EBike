@@ -11,36 +11,44 @@
 
 #include <stdint.h>
 
+
 // motor states
 #define BLOCK_COMMUTATION 			                1
 #define SINEWAVE_INTERPOLATION_60_DEGREES 	    2
 
-#define MOTOR_CONTROLLER_STATE_OK			          1
-#define MOTOR_CONTROLLER_STATE_BRAKE			      2
 
+// power variables
+extern volatile uint16_t ui16_controller_duty_cycle_ramp_up_inverse_step;
+extern volatile uint16_t ui16_controller_duty_cycle_ramp_down_inverse_step;
+extern volatile uint16_t ui16_adc_battery_voltage_filtered;
+extern volatile uint8_t ui8_adc_battery_voltage_cut_off;
+extern volatile uint8_t ui8_adc_battery_current_filtered;
+extern volatile uint8_t ui8_controller_adc_battery_current_target;
 extern volatile uint8_t ui8_g_duty_cycle;
-extern volatile uint8_t ui8_g_adc_motor_phase_current_offset;
-extern volatile uint8_t ui8_g_adc_battery_current;
+extern volatile uint8_t ui8_controller_duty_cycle_target;
 extern volatile uint8_t ui8_g_foc_angle;
 
-/***************************************************************************************/
-// Motor interface
+
+// cadence sensor
+extern volatile uint16_t ui16_cadence_sensor_ticks;
+extern volatile uint16_t ui16_cadence_sensor_ticks_counter_min_high;
+extern volatile uint16_t ui16_cadence_sensor_ticks_counter_min_low;
+extern volatile uint8_t ui8_cadence_sensor_pulse_state;
+
+
+// wheel speed sensor
+extern volatile uint16_t ui16_wheel_speed_sensor_ticks;
+extern volatile uint32_t ui32_wheel_speed_sensor_ticks_total;
+
+
 void hall_sensor_init (void); // must be called before using the motor
-void motor_init (void); // must be called before using the motor
 void motor_enable_PWM (void);
 void motor_disable_PWM (void);
-void motor_set_pwm_duty_cycle_ramp_up_inverse_step (uint16_t value); // each step = 64us
-void motor_set_pwm_duty_cycle_ramp_down_inverse_step (uint16_t value); // each step = 64us
-uint16_t ui16_motor_get_motor_speed_erps (void);
-void motor_controller_set_state (uint8_t state);
-void motor_controller_reset_state (uint8_t state);
-uint8_t motor_controller_state_is_set (uint8_t state);
-void motor_controller (void);
-uint8_t motor_get_adc_battery_current_filtered_10b (void);
-uint16_t motor_get_adc_battery_voltage_filtered_10b (void);
-void motor_set_adc_battery_voltage_cut_off (uint8_t ui8_value);
 void motor_enable_pwm(void);
 void motor_disable_pwm(void);
-/***************************************************************************************/
+uint16_t ui16_motor_get_motor_speed_erps (void);
+void motor_controller (void);
+
+uint8_t motor_get_adc_battery_current_filtered_10b (void);
 
 #endif /* _MOTOR_H_ */

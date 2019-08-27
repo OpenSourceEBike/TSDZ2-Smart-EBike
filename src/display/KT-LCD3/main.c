@@ -16,8 +16,8 @@
 #include "lcd.h"
 #include "uart.h"
 #include "ht162.h"
-#include "config.h"
 #include "eeprom.h"
+
 
 // With SDCC, interrupt service routine function prototypes must be placed in the file that contains main()
 // in order for an vector for the interrupt to be placed in the the interrupt vector space.  It's acceptable
@@ -42,20 +42,21 @@
 void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
 void TIM3_UPD_OVF_BRK_IRQHandler(void) __interrupt(TIM3_UPD_OVF_BRK_IRQHANDLER);
 
+
 int main (void)
 {
   uint16_t ui16_timer3_counter;
   uint16_t ui16_10ms_loop_counter = 0;
 
   // set clock at the max 16 MHz
-  CLK_HSIPrescalerConfig (CLK_PRESCALER_HSIDIV1);
+  CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
   gpio_init();
   timer1_init();
   timer3_init();
   uart2_init();
   adc_init();
-  eeprom_init();
-  lcd_init(); // must be after eeprom_init();
+  EEPROM_init();
+  lcd_init();
 
   // block until users releases the buttons
   while (buttons_get_onoff_state() || buttons_get_down_state() || buttons_get_up_state());

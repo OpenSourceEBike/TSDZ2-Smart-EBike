@@ -64,12 +64,11 @@ int main (void)
 
   uint16_t ui16_temp = 0, ui16_throttle_value_filtered = 0;
 
-  //set clock at the max 16MHz
+  // set clock at the max 16 MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
 
   brake_init();
   while (brake_is_set()) ; // hold here while brake is pressed -- this is a protection for development
-  eeprom_init();
   lights_init();
   uart2_init();
   timer2_init();
@@ -79,12 +78,11 @@ int main (void)
   pas_init();
   wheel_speed_sensor_init();
   hall_sensor_init();
+  EEPROM_init(); // needed for pwm_init_bipolar_4q
   pwm_init_bipolar_4q();
-  motor_init();
-  eeprom_init_variables();
   enableInterrupts();
 
-  while(1)
+  while (1)
   {
     // because of continue; at the end of each if code block that will stop the while (1) loop there,
     // the first if block code will have the higher priority over any others

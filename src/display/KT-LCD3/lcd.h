@@ -11,26 +11,20 @@
 
 #include "main.h"
 #include "stm8s_gpio.h"
-#include "common/common.h"
 
 typedef struct _motor_controller_data
 {
-  uint16_t ui16_adc_battery_voltage;
-  uint8_t ui8_battery_current_x5;
-  uint8_t ui8_motor_controller_state_1;
+  uint8_t ui8_riding_mode;
+  uint16_t ui16_battery_voltage_x1000;
+  uint8_t ui8_battery_current_x10;
   uint8_t ui8_adc_throttle;
   uint8_t ui8_throttle;
-  uint8_t ui8_adc_pedal_torque_sensor;
-  uint8_t ui8_pedal_torque_sensor;
+  uint16_t ui16_adc_pedal_torque_sensor;
   uint8_t ui8_duty_cycle;
-  uint8_t ui8_error_states;
+  uint8_t ui8_controller_system_state;
   uint16_t ui16_wheel_speed_x10;
   uint8_t ui8_braking;
-  uint8_t ui8_pedal_cadence;
-  uint8_t ui8_lights;
-  uint8_t ui8_street_mode_enabled;
-  uint8_t ui8_walk_assist_enabled;
-  uint8_t ui8_cruise_enabled;
+  uint8_t ui8_pedal_cadence_RPM;
   uint16_t ui16_motor_speed_erps;
   uint8_t ui8_foc_angle;
   uint8_t ui8_temperature_current_limiting_value;
@@ -43,8 +37,28 @@ typedef struct _motor_controller_data
 
 typedef struct _configuration_variables
 {
+  uint16_t ui16_cadence_sensor_pulse_high_percentage_x10;
+  uint8_t ui8_assist_without_pedal_rotation_threshold;
+  uint8_t ui8_light_mode;
+  uint8_t ui8_lights_state;
+  uint8_t ui8_lights_configuration;
   uint8_t ui8_assist_level;
   uint8_t ui8_number_of_assist_levels;
+  uint8_t ui8_power_assist_function_enabled;
+  uint8_t ui8_power_assist_level[9];
+  uint8_t ui8_torque_assist_function_enabled;
+  uint8_t ui8_torque_assist_level[9];
+  uint8_t ui8_cadence_assist_function_enabled;
+  uint8_t ui8_cadence_assist_level[9];
+  uint8_t ui8_eMTB_assist_function_enabled;
+  uint8_t ui8_eMTB_assist_sensitivity;
+  uint8_t ui8_walk_assist_function_enabled;
+  uint8_t ui8_walk_assist_button_bounce_time;
+  uint8_t ui8_walk_assist_level[9];
+  uint8_t ui8_cruise_function_enabled;
+  uint8_t ui8_cruise_function_set_target_speed_enabled;
+  uint8_t ui8_cruise_function_target_speed_kph;
+  uint8_t ui8_cruise_function_target_speed_mph;
   uint16_t ui16_wheel_perimeter;
   uint8_t ui8_wheel_max_speed;
   uint8_t ui8_wheel_max_speed_imperial;
@@ -72,15 +86,9 @@ typedef struct _configuration_variables
   uint16_t ui16_battery_voltage_reset_wh_counter_x10;
   uint16_t ui16_battery_pack_resistance_x1000;
   uint8_t ui8_motor_type;
-  uint8_t ui8_cadence_rpm_min;
-  uint8_t ui8_assist_level_factor [9];
-  uint8_t ui8_startup_motor_power_boost_feature_enabled;
-  uint8_t ui8_startup_motor_power_boost_state;
-  uint8_t ui8_startup_motor_power_boost_time;
-  uint8_t ui8_startup_motor_power_boost_fade_time;
-  uint8_t ui8_startup_motor_power_boost_factor [9];
+  uint8_t ui8_pedal_torque_per_10_bit_ADC_step_x100;
   uint16_t ui16_adc_motor_temperature_10b;
-  uint8_t ui8_temperature_limit_feature_enabled;
+  uint8_t ui8_optional_ADC_function;
   uint8_t ui8_motor_temperature_min_value_to_limit;
   uint8_t ui8_motor_temperature_max_value_to_limit;
   uint8_t ui8_temperature_field_state;
@@ -88,21 +96,17 @@ typedef struct _configuration_variables
   uint8_t ui8_lcd_backlight_on_brightness;
   uint8_t ui8_lcd_backlight_off_brightness;
   uint8_t ui8_street_mode_function_enabled;
-  uint8_t ui8_street_mode_enabled_on_startup;
+  uint8_t ui8_street_mode_enabled;
   uint8_t ui8_street_mode_speed_limit;
   uint8_t ui8_street_mode_power_limit_enabled;
   uint8_t ui8_street_mode_power_limit_div25;
   uint8_t ui8_street_mode_throttle_enabled;
+  uint8_t ui8_street_mode_cruise_enabled;
   uint16_t ui16_distance_since_power_on_x10;
   uint32_t ui32_odometer_x10;
   uint32_t ui32_trip_x10;
-  uint8_t ui8_ramp_up_amps_per_second_x10;
-  uint8_t ui8_walk_assist_function_enabled;
-  uint8_t ui8_walk_assist_level_factor[10];
-  uint8_t ui8_cruise_function_enabled;
-  uint8_t ui8_cruise_function_set_target_speed_enabled;
-  uint8_t ui8_cruise_function_target_speed_kph;
-  uint8_t ui8_cruise_function_target_speed_mph;
+  uint8_t ui8_motor_acceleration;
+  uint8_t ui8_cadence_sensor_mode;
   uint8_t ui8_show_cruise_function_set_target_speed;
   uint8_t ui8_wheel_speed_field_state;
   uint8_t ui8_show_distance_data_odometer_field;
@@ -116,11 +120,12 @@ typedef struct _configuration_variables
   uint8_t ui8_main_screen_power_menu_enabled;
 } struct_configuration_variables;
 
+
+
 // menu definitions
 #define MAIN_MENU               0
 #define POWER_MENU              1
 #define CONFIGURATION_MENU      2
-
 
 #define LCD_FRAME_BUFFER_SIZE   32 // LCD RAM has 32*8 bits
 

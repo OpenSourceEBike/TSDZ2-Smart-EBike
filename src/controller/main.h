@@ -12,15 +12,39 @@
 
 //#define DEBUG_UART
 
-#define PWM_CYCLES_COUNTER_MAX                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
-#define PWM_CYCLES_SECOND                         15625L  // 1 / 64us(PWM period)
-#define PWM_DUTY_CYCLE_MAX                        254
-#define PWM_DUTY_CYCLE_MIN                        20
-#define MIDDLE_PWM_DUTY_CYCLE_MAX                 (PWM_DUTY_CYCLE_MAX/2)
 
 
-// motor rotor offset 
-#define MOTOR_ROTOR_OFFSET_ANGLE                  10
+// motor 
+#define PWM_CYCLES_COUNTER_MAX                                    3125    // 5 erps minimum speed -> 1/5 = 200 ms; 200 ms / 64 us = 3125
+#define PWM_CYCLES_SECOND                                         15625   // 1 / 64us(PWM period)
+#define PWM_DUTY_CYCLE_MAX                                        254
+#define MIDDLE_PWM_DUTY_CYCLE_MAX                                 (PWM_DUTY_CYCLE_MAX / 2)
+
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT               160     // 160 -> 160 * 64 us for every duty cycle increment
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN                   20      // 20 -> 20 * 64 us for every duty cycle increment
+
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT             40      // 40 -> 40 * 64 us for every duty cycle decrement
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN                 10      // 10 -> 10 * 64 us for every duty cycle decrement
+
+/*---------------------------------------------------------
+  NOTE: regarding duty cycle (PWM) ramping
+  
+  Do not change these values if not sure of the effects!
+  
+  A lower value of the duty cycle inverse step will mean
+  a faster acceleration. Be careful not to choose too
+  low values.
+---------------------------------------------------------*/
+
+
+
+#define MOTOR_ROTOR_OFFSET_ANGLE                                  10
+#define MOTOR_ROTOR_ANGLE_90                                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_150                                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_210                                     (148 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_270                                     (191 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_330                                     (233 + MOTOR_ROTOR_OFFSET_ANGLE)
+#define MOTOR_ROTOR_ANGLE_30                                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 /*---------------------------------------------------------
   NOTE: regarding motor rotor offset 
@@ -31,41 +55,11 @@
   for the lowest battery current possible.
 ---------------------------------------------------------*/
 
-#define MOTOR_ROTOR_ANGLE_90                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_150                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_210                     (148 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_270                     (191 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_330                     (233 + MOTOR_ROTOR_OFFSET_ANGLE)
-#define MOTOR_ROTOR_ANGLE_30                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 
+#define MOTOR_OVER_SPEED_ERPS                                     520     // motor max speed, protection max value | 30 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700     // experimental motor speed to allow a higher cadence
 
-// motor phase current
-#define ADC_MOTOR_PHASE_CURRENT_MAX               48 // 30 amps (0.625 amps each unit)
-
-
-
-// battery current
-#define ADC_BATTERY_CURRENT_MAX                   29 // 18 amps (0.625 amps each step)
-
-/*---------------------------------------------------------
-  NOTE: regarding ADC_BATTERY_CURRENT_MAX
-  
-  This is the maximum current in ADC steps that the motor 
-  will be able to draw from the battery. A higher value 
-  will give higher torque figures but the limit of the 
-  controller is 16 A and it should not be exceeded.
----------------------------------------------------------*/
-
-
-
-// motor maximum rotation
-#define MOTOR_OVER_SPEED_ERPS                                     520 // motor max speed, protection max value | 30 points for the sinewave at max speed
-#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL                        700 // experimental motor speed to allow a higher cadence
-
-
-
-// motor start interpolation
 #define MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES           10
 
 /*---------------------------------------------------------
@@ -79,33 +73,16 @@
 
 
 
-// duty cycle (PWM) ramping
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                       20  // 20 -> 20 * 64 us for every duty cycle increment
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP                     20
+#define ADC_10_BIT_BATTERY_CURRENT_MAX                            90      // 18 amps (0.2 amps per 10 bit ADC step)
+#define ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX                        150     // 30 amps (0.2 amps per 10 bit ADC step)
 
 /*---------------------------------------------------------
-  NOTE: regarding duty cycle (PWM) ramping
+  NOTE: regarding ADC battery current max
   
-  Choose appropriate duty cycle (PWM) ramp up/down step. 
-  A higher value will make the motor acceleration slower.
-  
-  For a 24 V battery, 25 for ramp up seems ok. For a 
-  higher voltage battery, this values should be higher.
----------------------------------------------------------*/
-
-
-
-// throttle
-#define THROTTLE_FILTER_COEFFICIENT                               1   // see note below
-#define ADC_THROTTLE_THRESHOLD                                    10  // value in ADC 8 bits step
-
-
-/*---------------------------------------------------------
-  NOTE: regarding throttle
-
-  Possible values: 0, 1, 2, 3, 4, 5, 6
-  0 equals to no filtering and no delay, higher values 
-  will increase filtering but will also add a bigger delay.
+  This is the maximum current in ADC steps that the motor 
+  will be able to draw from the battery. A higher value 
+  will give higher torque figures but the limit of the 
+  controller is 16 A and it should not be exceeded.
 ---------------------------------------------------------*/
 
 
@@ -124,88 +101,115 @@
 
 
 
-// PAS
-#define PAS_NUMBER_MAGNETS                                        20 // see note below
-#define PAS_NUMBER_MAGNETS_X2                                     (PAS_NUMBER_MAGNETS * 2)
-#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS                  (6250 / PAS_NUMBER_MAGNETS)   // max hard limit to 150 RPM PAS cadence, see note below
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS                  (93750 / PAS_NUMBER_MAGNETS)  // min hard limit to 10 RPM PAS cadence, see note below
+// cadence sensor
+#define CADENCE_SENSOR_NUMBER_MAGNETS                             20
+#define CADENCE_SENSOR_NUMBER_MAGNETS_X2                          (CADENCE_SENSOR_NUMBER_MAGNETS * 2)
 
-/*---------------------------------------------------------
-  NOTE: regarding PAS
+#define CADENCE_SENSOR_TICKS_COUNTER_MAX                          300
+#define CADENCE_SENSOR_TICKS_COUNTER_MIN                          10000
+
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_X10_DEFAULT               500
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MAX                   800
+#define CADENCE_SENSOR_PULSE_PERCENTAGE_X10_MIN                   200
+
+/*-------------------------------------------------------------------------------
+  NOTE: regarding the cadence sensor
   
-  PAS_NUMBER_MAGNETS = 20, was validated on August 2018 
-  by Casainho and jbalat
-
+  CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
+  the cadence sensor. Was validated on August 2018 by Casainho and jbalat
+  
   x = (1/(150RPM/60)) / (0.000064)
   
-  PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS = 
-  (x / PAS_NUMBER_MAGNETS)
----------------------------------------------------------*/
+  6250 / CADENCE_SENSOR_NUMBER_MAGNETS ≈ 313 -> 150 RPM
+  
+  93750 / CADENCE_SENSOR_NUMBER_MAGNETS ≈ 4688 -> 10 RPM
+  
+  CADENCE_SENSOR_TICKS_COUNTER_MAX = x / CADENCE_SENSOR_NUMBER_MAGNETS
+  
+
+  
+  CADENCE_SENSOR_NUMBER_MAGNETS_X2 = 40, this is the number of transitions 
+  in one crank revolution
+  
+  x = (1/(150RPM/60)) / (0.000064)
+  
+  6250 / CADENCE_SENSOR_NUMBER_MAGNETS_X2 ≈ 156 -> 150 RPM
+  
+  93750 / CADENCE_SENSOR_NUMBER_MAGNETS_X2 ≈ 2344 -> 10 RPM, or 5 RPM if set to around 4600
+  
+  CADENCE_SENSOR_TICKS_COUNTER_MAX = x / CADENCE_SENSOR_NUMBER_MAGNETS_X2
+  
+  
+  
+  Cadence is calculated by counting how much time passes between two 
+  transitions. Depending on if all transitions are measured or simply 
+  transitions of the same kind it is important to adjust the calculation of 
+  pedal cadence. If measuring all transistions it is also important to 
+  adjust for the different spacings between the transitions.
+-------------------------------------------------------------------------------*/
 
 
 
 // Wheel speed sensor
-#define WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS                    135   // something like 200 m/h with a 6'' wheel
-#define WHEEL_SPEED_SENSOR_MIN_PWM_CYCLE_TICKS                    32767 // could be a bigger number but will make for a slow detection of stopped wheel speed
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX                      135   // something like 200 m/h with a 6'' wheel
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN                      32767 // could be a bigger number but will make for a slow detection of stopped wheel speed
 
 
 
-// EEPROM memory variables default values
-#define DEFAULT_VALUE_ASSIST_LEVEL_FACTOR_X10                     40  // 4.0
-#define DEFAULT_VALUE_CONFIG_0                                    0
-#define DEFAULT_VALUE_BATTERY_MAX_CURRENT                         10  // 10 amps
+// default values
+#define DEFAULT_VALUE_BATTERY_CURRENT_MAX                         10  // 10 amps
 #define DEFAULT_VALUE_TARGET_BATTERY_MAX_POWER_X10                50  // 500 watts
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_0           134 // 48 V battery, LVC = 39.0 (3.0 * 13): (134 + (1 << 8)) = 390
 #define DEFAULT_VALUE_BATTERY_LOW_VOLTAGE_CUT_OFF_X10_1           1
 #define DEFAULT_VALUE_WHEEL_PERIMETER_0                           2   // 26'' wheel: 2050 mm perimeter (2 + (8 << 8))
 #define DEFAULT_VALUE_WHEEL_PERIMETER_1                           8
-#define DEFAULT_VALUE_WHEEL_MAX_SPEED                             50  // 50 km/h
+#define DEFAULT_VALUE_WHEEL_SPEED_MAX                             50  // 50 km/h
 #define DEFAULT_VALUE_MOTOR_TYPE                                  0
-#define DEFAULT_VALUE_CADENCE_RPM_MIN                             0
+#define DEFAULT_VALUE_PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100       67
 
+/*---------------------------------------------------------
 
+  NOTE: regarding the torque sensor output values
 
+  Torque (force) value needs to be found experimentaly.
+  
+  One torque sensor ADC 10 bit step is equal to 0.38 kg
+  
+  Force (Nm) = 1 Kg * 9.81 * 0.17 (0.17 = arm cranks size)
+---------------------------------------------------------*/
 
-// default values for ramp up
-#define DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND                     5  // 5 amps per second ramp up
 
 
 // ADC battery voltage measurement
-#define ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512               44
-#define ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X256               (ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X512 >> 1)
-#define ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP_INVERSE_X256        (ADC10BITS_BATTERY_VOLTAGE_PER_ADC_STEP_X256 << 2)
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512                  44
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X256                  22
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000                 86
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X10000                863
+#define BATTERY_VOLTAGE_PER_8_BIT_ADC_STEP_X256                   88
 
 /*---------------------------------------------------------
   NOTE: regarding ADC battery voltage measurement
 
-  0.344 per ADC_8bits step:
+  0.344 per ADC 8 bit step:
   
-  17.9 V -->  ADC_8bits  = 52; 
-  40 V   -->  ADC_8bits  = 116; 
+  17.9 V -->  ADC 8 bits value  = 52; 
+  40 V   -->  ADC 8 bits value  = 116; 
   
   This signal is atenuated by the opamp 358.
 ---------------------------------------------------------*/
 
 
 
-// ADC battery current measurement and filter
-#define ADC_BATTERY_CURRENT_PER_ADC_STEP_X512                     102 // 1 A per 5 steps of ADC_10bits
-#define READ_BATTERY_CURRENT_FILTER_COEFFICIENT                   2
-#define READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT                   2
+// ADC battery current measurement
+#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  102
+#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X10                   2
+#define BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10                    8
 
 /*---------------------------------------------------------
-  NOTE: regarding ADC battery current measurement and 
-  filter coefficients 
+  NOTE: regarding battery current ADC
 
-  Possible values: 0, 1, 2, 3, 4, 5, 6
-  0 equals to no filtering and no delay, higher values 
-  will increase filtering but will also add a bigger delay.
+  1 A per 5 steps of ADC 10 bits
 ---------------------------------------------------------*/
-
-
-
-// motor temperature filter coefficient 
-#define READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT                 4
 
 
 
