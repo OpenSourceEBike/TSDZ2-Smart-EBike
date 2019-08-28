@@ -28,6 +28,8 @@ extern volatile uint8_t ui8_g_duty_cycle;
 extern volatile uint8_t ui8_controller_duty_cycle_target;
 extern volatile uint8_t ui8_g_foc_angle;
 
+// brakes
+extern volatile uint8_t ui8_brake_state;
 
 // cadence sensor
 extern volatile uint16_t ui16_cadence_sensor_ticks;

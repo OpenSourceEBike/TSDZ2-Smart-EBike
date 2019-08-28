@@ -81,7 +81,7 @@ int main (void)
   EEPROM_init(); // needed for pwm_init_bipolar_4q
   pwm_init_bipolar_4q();
   enableInterrupts();
-
+  
   while (1)
   {
     // because of continue; at the end of each if code block that will stop the while (1) loop there,

@@ -373,6 +373,10 @@ volatile uint8_t ui8_controller_duty_cycle_target = 0;
 volatile uint8_t ui8_g_foc_angle = 0;
 
 
+// brakes
+volatile uint8_t ui8_brake_state = 0;
+
+
 // cadence sensor
 volatile uint16_t ui16_cadence_sensor_ticks = 0;
 volatile uint16_t ui16_cadence_sensor_ticks_counter_min_high = CADENCE_SENSOR_TICKS_COUNTER_MIN;
@@ -572,7 +576,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     // division by 0: ui16_PWM_cycles_counter_total should never be 0
     // TODO: verifiy if (ui16_PWM_cycles_counter_6 << 8) do not overflow
-    uint8_t ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations take 4.4us
+    uint8_t ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations takes 4.4us
     uint8_t ui8_motor_rotor_angle = ui8_motor_rotor_absolute_angle + ui8_interpolation_angle;
     ui8_svm_table_index = ui8_motor_rotor_angle + ui8_g_foc_angle;
   }
@@ -588,16 +592,40 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   /****************************************************************************/
-
-
-
+  
+  
+  // check brake state
+  // - check if brakes are installed and enabled
+  // - check if coaster brake is engaged
+  // - check if brakes are engaged
+  
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    10
+  
+  // check if brakes are installed and enabled
+  
+  // check if coaster brake is engaged
+  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_adc_pedal_torque_offset - COASTER_BRAKE_TORQUE_THRESHOLD))
+  {
+    // set brake state
+    ui8_brake_state = 1;
+  }
+  else
+  {
+    // set brake state
+    ui8_brake_state = !(GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN));
+  }
+  
+  
+  /****************************************************************************/
+  
+  
+  
   // PWM duty_cycle controller:
   // - limit battery undervoltage
   // - limit battery max current
   // - limit motor max phase current
   // - limit motor max ERPS
   // - ramp up/down PWM duty_cycle value
-  // do not execute all, otherwise duty cycle would be decremented more than onece on each PWM cycle
 
   static uint16_t ui16_counter_duty_cycle_ramp_up;
   static uint16_t ui16_counter_duty_cycle_ramp_down;
@@ -607,7 +635,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
       (ui8_adc_motor_phase_current > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) ||
       (ui16_motor_speed_erps > ui16_max_motor_speed_erps) ||
-      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
+      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) ||
+      (ui8_brake_state))
   {
     // reset duty cycle ramp up counter (filter)
     ui16_counter_duty_cycle_ramp_up = 0;
