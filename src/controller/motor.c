@@ -452,6 +452,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // read hall sensor signals and:
   // - find the motor rotor absolute angle
   // - calc motor speed in erps (ui16_motor_speed_erps)
+  // - check so that motor is not rotating backwards, if it does, set ERPS to 0
 
   // read hall sensors signal pins and mask other pins
   // hall sensors sequence with motor forward rotation: 4, 6, 2, 3, 1, 5
