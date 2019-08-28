@@ -1008,7 +1008,7 @@ static void check_system()
   
   
   // check torque sensor
-  if (((ui16_adc_pedal_torque_offset > 300) || (ui16_adc_pedal_torque_offset < 5)) &&
+  if (((ui16_adc_pedal_torque_offset > 300) || (ui16_adc_pedal_torque_offset < 10) || (ui16_adc_pedal_torque > 400)) &&
       ((ui8_riding_mode == POWER_ASSIST_MODE) || (ui8_riding_mode == TORQUE_ASSIST_MODE) || (ui8_riding_mode == eMTB_ASSIST_MODE)))
   {
     // set error code

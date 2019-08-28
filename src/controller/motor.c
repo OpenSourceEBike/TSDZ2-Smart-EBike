@@ -356,7 +356,6 @@ uint16_t ui16_max_motor_speed_erps = MOTOR_OVER_SPEED_ERPS;
 static volatile uint16_t ui16_motor_speed_erps = 0;
 uint8_t ui8_motor_commutation_type = BLOCK_COMMUTATION;
 uint8_t ui8_hall_sensors_state = 0;
-uint8_t ui8_hall_sensors_state_last = 0;
 uint8_t ui8_half_erps_flag = 0;
 
 
@@ -453,7 +452,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - find the motor rotor absolute angle
   // - calc motor speed in erps (ui16_motor_speed_erps)
   // - check so that motor is not rotating backwards, if it does, set ERPS to 0
-
+  
+  static uint8_t ui8_hall_sensors_state_last;
+  
   // read hall sensors signal pins and mask other pins
   // hall sensors sequence with motor forward rotation: 4, 6, 2, 3, 1, 5
   ui8_hall_sensors_state = ((HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN) >> 5) |
@@ -463,8 +464,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // make sure we run next code only when there is a change on the hall sensors signal
   if (ui8_hall_sensors_state != ui8_hall_sensors_state_last)
   {
-    ui8_hall_sensors_state_last = ui8_hall_sensors_state;
-
     switch (ui8_hall_sensors_state)
     {
       case 3:
@@ -472,7 +471,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       break;
 
       case 1:
-      if (ui8_half_erps_flag == 1)
+      
+      // check half ERPS flag and motor rotational direction
+      if ((ui8_half_erps_flag == 1) && (ui8_hall_sensors_state_last == 3))
       {
         ui8_half_erps_flag = 0;
         ui16_PWM_cycles_counter_total = ui16_PWM_cycles_counter;
@@ -491,22 +492,17 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         // update motor commutation state based on motor speed
         if (ui16_motor_speed_erps > MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES)
         {
-          if (ui8_motor_commutation_type == BLOCK_COMMUTATION)
-          {
-            ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
-          }
+          ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
         }
         else
         {
-          if (ui8_motor_commutation_type == SINEWAVE_INTERPOLATION_60_DEGREES)
-          {
-            ui8_motor_commutation_type = BLOCK_COMMUTATION;
-            ui8_g_foc_angle = 0;
-          }
+          ui8_motor_commutation_type = BLOCK_COMMUTATION;
+          ui8_g_foc_angle = 0;
         }
       }
 
       ui8_motor_rotor_absolute_angle = (uint8_t) MOTOR_ROTOR_ANGLE_210;
+      
       break;
 
       case 5:
@@ -534,8 +530,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       return;
       break;
     }
-
+    
     ui16_PWM_cycles_counter_6 = 1;
+    
+    // update last hall sensor state
+    ui8_hall_sensors_state_last = ui8_hall_sensors_state;
   }
 
 
