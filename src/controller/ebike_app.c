@@ -236,14 +236,12 @@ static void ebike_control_motor (void)
   
   // speed limit
   apply_speed_limit();
-
-  // force target current to 0 if brakes are engaged or if there are errors
-  if (ui8_brakes_engaged || ui8_system_state != NO_ERROR) { ui8_adc_battery_current_target = 0; }
-
+  
   // check if to enable the motor
   if ((!ui8_motor_enabled) &&
-      (ui16_motor_get_motor_speed_erps() == 0) && // only enable motor if stopped, other way something bad can happen due to high currents/regen or similar
-      (ui8_adc_battery_current_target))
+      (ui16_motor_get_motor_speed_erps() == 0) && // only enable motor if stopped, else something bad can happen due to high currents/regen or similar
+      (ui8_adc_battery_current_target) &&
+      (!ui8_brakes_engaged))
   {
     ui8_motor_enabled = 1;
     ui8_g_duty_cycle = 0;
@@ -259,9 +257,16 @@ static void ebike_control_motor (void)
     ui8_motor_enabled = 0;
     motor_disable_pwm();
   }
-
-  // set control parameters
-  if (ui8_motor_enabled && !ui8_brakes_engaged)
+  
+  // reset control parameters if... (safety)
+  if (ui8_brakes_engaged || ui8_system_state != NO_ERROR || !ui8_motor_enabled)
+  {
+    ui16_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
+    ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN;
+    ui8_controller_adc_battery_current_target = 0;
+    ui8_controller_duty_cycle_target = 0;
+  }
+  else
   {
     // limit max current if higher than configured hardware limit (safety)
     if (ui8_adc_battery_current_max > ADC_10_BIT_BATTERY_CURRENT_MAX) { ui8_adc_battery_current_max = ADC_10_BIT_BATTERY_CURRENT_MAX; }
@@ -289,14 +294,6 @@ static void ebike_control_motor (void)
     
     // set target duty cycle in controller
     ui8_controller_duty_cycle_target = ui8_duty_cycle_target;
-  }
-  else
-  {
-    // reset motor control variables (safety)
-    ui16_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
-    ui16_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN;
-    ui8_controller_adc_battery_current_target = 0;
-    ui8_controller_duty_cycle_target = 0;
   }
 }
 

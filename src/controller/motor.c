@@ -489,7 +489,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           ui16_motor_speed_erps = ((uint16_t) PWM_CYCLES_SECOND) / ui16_PWM_cycles_counter_total; 
         }
         else
-        { 
+        {
           ui16_motor_speed_erps = ((uint16_t) PWM_CYCLES_SECOND); 
         }
 
@@ -504,7 +504,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           ui8_g_foc_angle = 0;
         }
       }
-
+      
       ui8_motor_rotor_absolute_angle = (uint8_t) MOTOR_ROTOR_ANGLE_210;
       
       break;
@@ -598,7 +598,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - check if coaster brake is engaged
   // - check if brakes are engaged
   
-  #define COASTER_BRAKE_TORQUE_THRESHOLD    10
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    20
   
   // check if brakes are installed and enabled
   
