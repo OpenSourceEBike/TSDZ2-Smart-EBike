@@ -519,7 +519,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
       case 6:
       ui8_half_erps_flag = 1;
-
       ui8_motor_rotor_absolute_angle = (uint8_t) MOTOR_ROTOR_ANGLE_30;
       break;
 
@@ -594,7 +593,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
   
   
-  // check brake state
+  // brakes
   // - check if brakes are installed and enabled
   // - check if coaster brake is engaged
   // - check if brakes are engaged

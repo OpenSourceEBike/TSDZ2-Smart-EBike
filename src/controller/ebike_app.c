@@ -189,7 +189,7 @@ void ebike_app_controller (void)
   
     NOTE: regarding function call order
     
-    Do not change order of function calls if not absolutely sure it will 
+    Do not change order of functions if not absolutely sure it will 
     not cause any undesirable consequences.
     
   ------------------------------------------------------------------------*/
