@@ -1,7 +1,7 @@
 /*
  * TongSheng TSDZ2 motor controller firmware/
  *
- * Copyright (C) Casainho, 2018.
+ * Copyright (C) Casainho and Leon, 2019.
  *
  * Released under the GPL License, Version 3
  */
@@ -598,7 +598,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - check if coaster brake is engaged
   // - check if brakes are engaged
   
-  #define COASTER_BRAKE_TORQUE_THRESHOLD    20
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    15
   
   // check if brakes are installed and enabled
   

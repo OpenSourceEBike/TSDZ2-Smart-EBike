@@ -1,7 +1,7 @@
 /*
  * TongSheng TSDZ2 motor controller firmware/
  *
- * Copyright (C) Casainho and EndlessCadence, 2018.
+ * Copyright (C) Casainho and EndlessCadence and Leon, 2019.
  *
  * Released under the GPL License, Version 3
  */
