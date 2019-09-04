@@ -1,7 +1,7 @@
 /*
  * TongSheng TSDZ2 motor controller firmware/
  *
- * Copyright (C) Casainho, 2018.
+ * Copyright (C) Casainho and Leon, 2019.
  *
  * Released under the GPL License, Version 3
  */
@@ -356,7 +356,6 @@ uint16_t ui16_max_motor_speed_erps = MOTOR_OVER_SPEED_ERPS;
 static volatile uint16_t ui16_motor_speed_erps = 0;
 uint8_t ui8_motor_commutation_type = BLOCK_COMMUTATION;
 uint8_t ui8_hall_sensors_state = 0;
-uint8_t ui8_hall_sensors_state_last = 0;
 uint8_t ui8_half_erps_flag = 0;
 
 
@@ -372,6 +371,10 @@ volatile uint8_t ui8_controller_adc_battery_current_target = 0;
 volatile uint8_t ui8_g_duty_cycle = 0;
 volatile uint8_t ui8_controller_duty_cycle_target = 0;
 volatile uint8_t ui8_g_foc_angle = 0;
+
+
+// brakes
+volatile uint8_t ui8_brake_state = 0;
 
 
 // cadence sensor
@@ -452,7 +455,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // read hall sensor signals and:
   // - find the motor rotor absolute angle
   // - calc motor speed in erps (ui16_motor_speed_erps)
-
+  // - check so that motor is not rotating backwards, if it does, set ERPS to 0
+  
+  static uint8_t ui8_hall_sensors_state_last;
+  
   // read hall sensors signal pins and mask other pins
   // hall sensors sequence with motor forward rotation: 4, 6, 2, 3, 1, 5
   ui8_hall_sensors_state = ((HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN) >> 5) |
@@ -462,8 +468,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // make sure we run next code only when there is a change on the hall sensors signal
   if (ui8_hall_sensors_state != ui8_hall_sensors_state_last)
   {
-    ui8_hall_sensors_state_last = ui8_hall_sensors_state;
-
     switch (ui8_hall_sensors_state)
     {
       case 3:
@@ -471,7 +475,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       break;
 
       case 1:
-      if (ui8_half_erps_flag == 1)
+      
+      // check half ERPS flag and motor rotational direction
+      if ((ui8_half_erps_flag == 1) && (ui8_hall_sensors_state_last == 3))
       {
         ui8_half_erps_flag = 0;
         ui16_PWM_cycles_counter_total = ui16_PWM_cycles_counter;
@@ -483,29 +489,24 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           ui16_motor_speed_erps = ((uint16_t) PWM_CYCLES_SECOND) / ui16_PWM_cycles_counter_total; 
         }
         else
-        { 
+        {
           ui16_motor_speed_erps = ((uint16_t) PWM_CYCLES_SECOND); 
         }
 
         // update motor commutation state based on motor speed
         if (ui16_motor_speed_erps > MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES)
         {
-          if (ui8_motor_commutation_type == BLOCK_COMMUTATION)
-          {
-            ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
-          }
+          ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
         }
         else
         {
-          if (ui8_motor_commutation_type == SINEWAVE_INTERPOLATION_60_DEGREES)
-          {
-            ui8_motor_commutation_type = BLOCK_COMMUTATION;
-            ui8_g_foc_angle = 0;
-          }
+          ui8_motor_commutation_type = BLOCK_COMMUTATION;
+          ui8_g_foc_angle = 0;
         }
       }
-
+      
       ui8_motor_rotor_absolute_angle = (uint8_t) MOTOR_ROTOR_ANGLE_210;
+      
       break;
 
       case 5:
@@ -518,7 +519,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
       case 6:
       ui8_half_erps_flag = 1;
-
       ui8_motor_rotor_absolute_angle = (uint8_t) MOTOR_ROTOR_ANGLE_30;
       break;
 
@@ -533,8 +533,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       return;
       break;
     }
-
+    
     ui16_PWM_cycles_counter_6 = 1;
+    
+    // update last hall sensor state
+    ui8_hall_sensors_state_last = ui8_hall_sensors_state;
   }
 
 
@@ -572,7 +575,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     // division by 0: ui16_PWM_cycles_counter_total should never be 0
     // TODO: verifiy if (ui16_PWM_cycles_counter_6 << 8) do not overflow
-    uint8_t ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations take 4.4us
+    uint8_t ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations takes 4.4us
     uint8_t ui8_motor_rotor_angle = ui8_motor_rotor_absolute_angle + ui8_interpolation_angle;
     ui8_svm_table_index = ui8_motor_rotor_angle + ui8_g_foc_angle;
   }
@@ -588,16 +591,40 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   /****************************************************************************/
-
-
-
+  
+  
+  // brakes
+  // - check if brakes are installed and enabled
+  // - check if coaster brake is engaged
+  // - check if brakes are engaged
+  
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    15
+  
+  // check if brakes are installed and enabled
+  
+  // check if coaster brake is engaged
+  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_adc_pedal_torque_offset - COASTER_BRAKE_TORQUE_THRESHOLD))
+  {
+    // set brake state
+    ui8_brake_state = 1;
+  }
+  else
+  {
+    // set brake state
+    ui8_brake_state = !(GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN));
+  }
+  
+  
+  /****************************************************************************/
+  
+  
+  
   // PWM duty_cycle controller:
   // - limit battery undervoltage
   // - limit battery max current
   // - limit motor max phase current
   // - limit motor max ERPS
   // - ramp up/down PWM duty_cycle value
-  // do not execute all, otherwise duty cycle would be decremented more than onece on each PWM cycle
 
   static uint16_t ui16_counter_duty_cycle_ramp_up;
   static uint16_t ui16_counter_duty_cycle_ramp_down;
@@ -607,7 +634,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       (ui8_controller_adc_battery_current > ui8_controller_adc_battery_current_target) ||
       (ui8_adc_motor_phase_current > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) ||
       (ui16_motor_speed_erps > ui16_max_motor_speed_erps) ||
-      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
+      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) ||
+      (ui8_brake_state))
   {
     // reset duty cycle ramp up counter (filter)
     ui16_counter_duty_cycle_ramp_up = 0;

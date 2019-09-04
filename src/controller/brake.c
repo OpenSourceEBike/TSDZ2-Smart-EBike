@@ -1,7 +1,7 @@
 /*
  * TongSheng TSDZ2 motor controller firmware/
  *
- * Copyright (C) Casainho, 2018.
+ * Copyright (C) Casainho, 2019.
  *
  * Released under the GPL License, Version 3
  */
@@ -29,14 +29,8 @@ void brake_init (void)
 // brake signal interrupt
 void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER)
 {
-/*   if (brake_is_set())
-  {
-
-  }
-  else
-  {
-
-  } */
+/*   if (brake_is_set()) { }
+  else { } */
 }
 
 
@@ -45,4 +39,3 @@ BitStatus brake_is_set(void)
   if (GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN) == 0) { return 1; }
   else { return 0; }
 }
-
