@@ -593,12 +593,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
   
   
-  // brakes
+  // brakes (consider in slower loop)
   // - check if brakes are installed and enabled
   // - check if coaster brake is engaged
   // - check if brakes are engaged
   
-  #define COASTER_BRAKE_TORQUE_THRESHOLD    22
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    28
   
   // check if brakes are installed and enabled
   
