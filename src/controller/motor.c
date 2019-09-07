@@ -598,7 +598,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - check if coaster brake is engaged
   // - check if brakes are engaged
   
-  #define COASTER_BRAKE_TORQUE_THRESHOLD    15
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    14
   
   // check if brakes are installed and enabled
   
@@ -1030,7 +1030,7 @@ void read_battery_voltage(void)
   ui16_adc_battery_voltage_accumulated += ui16_adc_read_battery_voltage_10b();
   ui16_adc_battery_voltage_filtered = ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
   
-  // prototype filter, ask Leon
+  // prototype filter, do not use, not tuned, ask Leon
 /*   ui16_adc_battery_voltage_filtered = (ui16_adc_read_battery_voltage_10b() + ui16_adc_battery_voltage_accumulated) >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
   ui16_adc_battery_voltage_accumulated = ui16_adc_battery_voltage_filtered; */
 }
