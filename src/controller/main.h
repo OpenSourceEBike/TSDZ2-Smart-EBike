@@ -203,13 +203,6 @@
 // ADC battery current measurement
 #define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  102
 #define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X10                   2
-#define BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10                    8
-
-/*---------------------------------------------------------
-  NOTE: regarding battery current ADC
-
-  1 A per 5 steps of ADC 10 bits
----------------------------------------------------------*/
 
 
 
