@@ -1404,7 +1404,7 @@ static void uart_receive_package(void)
           m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer [6]) << 8) + ((uint16_t) ui8_rx_buffer [5]);
           
           // set low voltage cut off
-          ui8_adc_battery_voltage_cut_off = ((uint32_t) m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 * 100) / BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000;
+          ui8_adc_battery_voltage_cut_off = ((uint32_t) m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 * 25) / BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000;
           
           // wheel max speed
           m_configuration_variables.ui8_wheel_speed_max = ui8_rx_buffer [7];
