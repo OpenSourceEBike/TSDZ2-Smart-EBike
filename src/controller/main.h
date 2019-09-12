@@ -182,7 +182,6 @@
 
 // ADC battery voltage measurement
 #define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512                  44
-#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X256                  22
 #define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000                 87  // conversion value verified with a cheap power meter
 
 /*---------------------------------------------------------
