@@ -73,8 +73,8 @@
 
 
 
-#define ADC_10_BIT_BATTERY_CURRENT_MAX                            90      // 18 amps (0.2 amps per 10 bit ADC step)
-#define ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX                        150     // 30 amps (0.2 amps per 10 bit ADC step)
+#define ADC_10_BIT_BATTERY_CURRENT_MAX                            106     // 18 amps
+#define ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX                        177     // 30 amps
 
 /*---------------------------------------------------------
   NOTE: regarding ADC battery current max
@@ -182,10 +182,7 @@
 
 // ADC battery voltage measurement
 #define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X512                  44
-#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X256                  22
-#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000                 86
-#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X10000                863
-#define BATTERY_VOLTAGE_PER_8_BIT_ADC_STEP_X256                   88
+#define BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000                 87  // conversion value verified with a cheap power meter
 
 /*---------------------------------------------------------
   NOTE: regarding ADC battery voltage measurement
@@ -202,14 +199,7 @@
 
 // ADC battery current measurement
 #define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  102
-#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X10                   2
-#define BATTERY_CURRENT_PER_8_BIT_ADC_STEP_X10                    8
-
-/*---------------------------------------------------------
-  NOTE: regarding battery current ADC
-
-  1 A per 5 steps of ADC 10 bits
----------------------------------------------------------*/
+#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100                  17  // conversion value verified with a cheap power meter
 
 
 
