@@ -123,8 +123,8 @@ static uint16_t   ui16_estimated_range_since_power_on_x10 = 0;
 
 
 // wheel measurement variables
-static uint8_t    ui8_average_measured_wheel_speed_x10 = 0;
-static uint8_t    ui8_max_measured_wheel_speed_x10 = 0;
+static uint16_t ui16_average_measured_wheel_speed_x10 = 0;
+static uint16_t ui16_max_measured_wheel_speed_x10 = 0;
 
 
 // system functions
@@ -753,8 +753,8 @@ void lcd_execute_menu_config_submenu_basic_setup(void)
       lcd_set_backlight_intensity(configuration_variables.ui8_lcd_backlight_off_brightness);
       
     break;
-
-
+    
+    
     case 8:
     
       // backlight night time brightness
@@ -2036,12 +2036,12 @@ void temperature_field(void)
         if (configuration_variables.ui8_units_type)
         {
           // imperial
-          lcd_print (((float) ui8_average_measured_wheel_speed_x10/16), TEMPERATURE_FIELD, 1);
+          lcd_print (((float) ui16_average_measured_wheel_speed_x10/16), TEMPERATURE_FIELD, 1);
         }
         else
         {
           // metric
-          lcd_print (ui8_average_measured_wheel_speed_x10/10, TEMPERATURE_FIELD, 1);
+          lcd_print (ui16_average_measured_wheel_speed_x10/10, TEMPERATURE_FIELD, 1);
         }
       break;
       
@@ -3034,12 +3034,12 @@ void odometer_field(void)
             if (configuration_variables.ui8_units_type)
             {
               // imperial
-              lcd_print(((float) ui8_average_measured_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
+              lcd_print(((float) ui16_average_measured_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
             }
             else
             {
               // metric
-              lcd_print(ui8_average_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+              lcd_print(ui16_average_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
             }
           break;
           
@@ -3056,18 +3056,18 @@ void odometer_field(void)
                 if (configuration_variables.ui8_units_type)
                 {
                   // imperial
-                  lcd_print(((float) ui8_max_measured_wheel_speed_x10 / 1.6), ODOMETER_FIELD, 1);
+                  lcd_print((float) ui16_max_measured_wheel_speed_x10 / 1.6, ODOMETER_FIELD, 1);
                 }
                 else
                 {
                   // metric
-                  lcd_print(ui8_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
+                  lcd_print(ui16_max_measured_wheel_speed_x10, ODOMETER_FIELD, 1);
                 }
               break;
               
               // reset maximum measured wheel speed since power on
               case 1:
-                ui8_max_measured_wheel_speed_x10 = 0;
+                ui16_max_measured_wheel_speed_x10 = 0;
               break;
               
               // display nothing
@@ -3152,21 +3152,14 @@ void odometer_field(void)
 void wheel_speed_field(void)
 {
   // check if wheel speed is higher than maximum measured wheel speed
-  if (motor_controller_data.ui16_wheel_speed_x10 > ui8_max_measured_wheel_speed_x10)
+  if (motor_controller_data.ui16_wheel_speed_x10 > ui16_max_measured_wheel_speed_x10)
   {
     // wheel speed is higher than maximum measured wheel speed so update variable
-    ui8_max_measured_wheel_speed_x10 = motor_controller_data.ui16_wheel_speed_x10;
+    ui16_max_measured_wheel_speed_x10 = motor_controller_data.ui16_wheel_speed_x10;
   }
   
   // calculate average wheel speed since power on in km/s
-  float average_measured_wheel_speed_x10_temp = (float) configuration_variables.ui16_distance_since_power_on_x10 / (float) ui16_seconds_since_power_on;
-  
-  // convert to km/h
-  average_measured_wheel_speed_x10_temp = average_measured_wheel_speed_x10_temp * 3600;
-  
-  // set calculated value to average wheel speed variable
-  ui8_average_measured_wheel_speed_x10 = average_measured_wheel_speed_x10_temp;
-  
+  ui16_average_measured_wheel_speed_x10 = ((uint32_t) configuration_variables.ui16_distance_since_power_on_x10 * 3600) / ui16_seconds_since_power_on;
   
   // show wheel speed only when we should not show odometer field number
   if (ui8_start_odometer_show_field_number == 0)
@@ -3194,12 +3187,12 @@ void wheel_speed_field(void)
       
         if (configuration_variables.ui8_units_type)
         {
-          lcd_print(((float) ui8_average_measured_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
+          lcd_print(((float) ui16_average_measured_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
           lcd_enable_mph_symbol(1);
         }
         else
         {
-          lcd_print(ui8_average_measured_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
+          lcd_print(ui16_average_measured_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
           lcd_enable_kmh_symbol(1);
         }
         
@@ -3212,12 +3205,12 @@ void wheel_speed_field(void)
       
         if (configuration_variables.ui8_units_type)
         {
-          lcd_print(((float) ui8_max_measured_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
+          lcd_print(((float) ui16_max_measured_wheel_speed_x10 / 1.6), WHEEL_SPEED_FIELD, 1);
           lcd_enable_mph_symbol(1);
         }
         else
         {
-          lcd_print(ui8_max_measured_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
+          lcd_print(ui16_max_measured_wheel_speed_x10, WHEEL_SPEED_FIELD, 1);
           lcd_enable_kmh_symbol(1);
         }
         

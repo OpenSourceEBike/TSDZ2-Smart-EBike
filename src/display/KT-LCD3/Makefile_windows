@@ -29,8 +29,8 @@ MAINSRC = $(PNAME).c
 ELF_SECTIONS_TO_REMOVE = -R DATA -R INITIALIZED -R SSEG -R .debug_line -R .debug_loc -R .debug_abbrev -R .debug_info -R .debug_pubnames -R .debug_frame
 
 # These are the sources that must be compiled to .rel files:
-EXTRASRCS = \
-  $(SDIR)/stm8s_iwdg.c \
+	EXTRASRCS = \
+	$(SDIR)/stm8s_iwdg.c \
 	$(SDIR)/stm8s_clk.c \
 	$(SDIR)/stm8s_gpio.c \
 	$(SDIR)/stm8s_adc1.c \
@@ -54,9 +54,9 @@ HEADERS = gpio.h main.h adc.h timers.h lcd.h uart.h eeprom.h ht162.h buttons.h p
 RELS = $(EXTRASRCS:.c=.rel)
 
 INCLUDES = -I$(IDIR) -I$(IDIR1) -I. -I../../
-CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
+CFLAGS = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
 ELF_FLAGS = --out-fmt-ihx --debug
-LIBS     = 
+LIBS =
 
 # This just provides the conventional target name "all"; it is optional
 # Note: I assume you set PNAME via some means not exhibited in your original file
