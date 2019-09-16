@@ -3644,7 +3644,7 @@ void lcd_enable_temperature_farneight_symbol (uint8_t ui8_state)
   if (ui8_state) { ui8_lcd_frame_buffer[9] |= 32; }
 }
 
-void lcd_enable_farneight_symbol (uint8_t ui8_state)
+void lcd_enable_fahrenheit_symbol (uint8_t ui8_state)
 {
   if (ui8_state) { ui8_lcd_frame_buffer[9] |= 1; }
 }

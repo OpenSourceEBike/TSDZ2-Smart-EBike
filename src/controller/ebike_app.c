@@ -556,7 +556,7 @@ static void apply_cruise()
       // reset PID variables
       i16_error = 0;
       i16_last_error = 0;
-      i16_integral = 300; // initialize integral to a value so the motor does not start from zero
+      i16_integral = 320; // initialize integral to a value so the motor does not start from zero
       i16_derivative = 0;
       i16_control_output = 0;
       
