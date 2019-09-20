@@ -29,14 +29,14 @@ MAINSRC = $(PNAME).c
 ELF_SECTIONS_TO_REMOVE = -R DATA -R INITIALIZED -R SSEG -R .debug_line -R .debug_loc -R .debug_abbrev -R .debug_info -R .debug_pubnames -R .debug_frame
 
 # These are the sources that must be compiled to .rel files:
-EXTRASRCS = \
-  $(SDIR)/stm8s_iwdg.c \
+	EXTRASRCS = \
+	$(SDIR)/stm8s_iwdg.c \
 	$(SDIR)/stm8s_itc.c \
 	$(SDIR)/stm8s_clk.c \
 	$(SDIR)/stm8s_gpio.c \
 	$(SDIR)/stm8s_uart2.c \
 	$(SDIR)/stm8s_tim1.c \
-  $(SDIR)/stm8s_tim2.c \
+	$(SDIR)/stm8s_tim2.c \
 	$(SDIR)/stm8s_tim3.c \
 	$(SDIR)/stm8s_exti.c \
 	$(SDIR)/stm8s_adc1.c \
@@ -63,9 +63,9 @@ ebike_app.h pins.h eeprom.h lights.h
 RELS = $(EXTRASRCS:.c=.rel)
 
 INCLUDES = -I$(IDIR) -I$(IDIR1) -I. -I../
-CFLAGS   = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
+CFLAGS = -m$(PLATFORM) -Ddouble=float --std-c99 --nolospre
 ELF_FLAGS = --out-fmt-elf --debug
-LIBS     = 
+LIBS = 
 
 # This just provides the conventional target name "all"; it is optional
 # Note: I assume you set PNAME via some means not exhibited in your original file
@@ -81,7 +81,7 @@ $(PNAME): $(MAINSRC) $(RELS)
 # How to build any .rel file from its corresponding .c file
 # GNU would have you use a pattern rule for this, but that's GNU-specific
 %.rel: %.c $(HEADERS)
-$(CC) -c $(INCLUDES) $(CFLAGS) $(ELF_FLAGS) $(LIBS) -o$< $<
+	$(CC) -c $(INCLUDES) $(CFLAGS) $(ELF_FLAGS) $(LIBS) -o$< $<
 
 # Suffixes appearing in suffix rules we care about.
 # Necessary because .rel is not one of the standard suffixes.
