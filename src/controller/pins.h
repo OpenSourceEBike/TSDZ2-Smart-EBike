@@ -31,7 +31,7 @@
  * PD0                | in  | battery_over_current (PD0 on original firmware configured as: Port D0 alternate function = TIM1_BKIN)
  * PB4  (ADC_AIN4)    | in  | torque sensor signal, this signal is amplified by the opamp
  * PB5  (ADC_AIN5)    | in  | battery_current (14 ADC bits step per 1 amp; this signal amplified by the opamp 358)
- * PB6  (ADC_AIN6)    | in  | battery_voltage (0.344V per ADC 8bits step: 17.9V --> ADC_10bits = 52; 40V --> ADC_10bits = 116; this signal atenuated by the opamp 358)
+ * PB6  (ADC_AIN6)    | in  | battery_voltage (0.344V per ADC 10bits step: 17.9V --> ADC_10bits = 52; 40V --> ADC_10bits = 116; this signal atenuated by the opamp 358)
  *
  * PE5                | in  | Hall_sensor_A
  * PD2                | in  | Hall_sensor_B
