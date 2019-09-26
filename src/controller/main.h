@@ -198,7 +198,7 @@
 
 
 // ADC battery current measurement
-#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  102
+#define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X512                  87
 #define BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100                  17  // conversion value verified with a cheap power meter
 
 
