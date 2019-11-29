@@ -32,8 +32,6 @@ void pwm_init_bipolar_4q (void)
         //(BUT PWM center aligned mode needs twice the frequency)
         1); // will fire the TIM1_IT_UPDATE at every PWM period cycle
 
-//#define DISABLE_PWM_CHANNELS_1_3
-
   TIM1_OC1Init(TIM1_OCMODE_PWM1,
 #ifdef DISABLE_PWM_CHANNELS_1_3
          TIM1_OUTPUTSTATE_DISABLE,

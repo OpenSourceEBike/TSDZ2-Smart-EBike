@@ -23,6 +23,7 @@
 #include "adc.h"
 #include "watchdog.h"
 #include "math.h"
+#include "main.h"
 
 #define SVM_TABLE_LEN   256
 #define SIN_TABLE_LEN   60
@@ -368,7 +369,7 @@ uint16_t ui16_foc_angle_accumulated = 0;
 uint8_t ui8_motor_commutation_type = BLOCK_COMMUTATION;
 volatile uint8_t ui8_motor_controller_state = MOTOR_CONTROLLER_STATE_OK;
 
-uint8_t ui8_hall_sensors_state = 0;
+volatile uint8_t ui8_g_hall_sensors_state = 0;
 uint8_t ui8_hall_sensors_state_last = 0;
 
 uint8_t ui8_half_erps_flag = 0;
@@ -499,16 +500,16 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   // read hall sensors signal pins and mask other pins
   // hall sensors sequence with motor forward rotation: 4, 6, 2, 3, 1, 5
-  ui8_hall_sensors_state = ((HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN) >> 5) |
+  ui8_g_hall_sensors_state = ((HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN) >> 5) |
   ((HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN) >> 1) |
   ((HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN) >> 3);
   
   // make sure we run next code only when there is a change on the hall sensors signal
-  if (ui8_hall_sensors_state != ui8_hall_sensors_state_last)
+  if (ui8_g_hall_sensors_state != ui8_hall_sensors_state_last)
   {
-    ui8_hall_sensors_state_last = ui8_hall_sensors_state;
+    ui8_hall_sensors_state_last = ui8_g_hall_sensors_state;
 
-    switch (ui8_hall_sensors_state)
+    switch (ui8_g_hall_sensors_state)
     {
       case 3:
       ui8_motor_rotor_absolute_angle = (uint8_t) MOTOR_ROTOR_ANGLE_150;
@@ -1259,8 +1260,13 @@ void motor_set_adc_battery_voltage_cut_off (uint8_t ui8_value)
 void motor_enable_pwm(void)
 {
   TIM1_OC1Init(TIM1_OCMODE_PWM1,
+#ifdef DISABLE_PWM_CHANNELS_1_3
+         TIM1_OUTPUTSTATE_DISABLE,
+         TIM1_OUTPUTNSTATE_DISABLE,
+#else
          TIM1_OUTPUTSTATE_ENABLE,
          TIM1_OUTPUTNSTATE_ENABLE,
+#endif
          255, // initial duty_cycle value
          TIM1_OCPOLARITY_HIGH,
          TIM1_OCPOLARITY_HIGH,
@@ -1277,8 +1283,13 @@ void motor_enable_pwm(void)
          TIM1_OCIDLESTATE_SET);
 
   TIM1_OC3Init(TIM1_OCMODE_PWM1,
+#ifdef DISABLE_PWM_CHANNELS_1_3
+         TIM1_OUTPUTSTATE_DISABLE,
+         TIM1_OUTPUTNSTATE_DISABLE,
+#else
          TIM1_OUTPUTSTATE_ENABLE,
          TIM1_OUTPUTNSTATE_ENABLE,
+#endif
          255, // initial duty_cycle value
          TIM1_OCPOLARITY_HIGH,
          TIM1_OCPOLARITY_HIGH,

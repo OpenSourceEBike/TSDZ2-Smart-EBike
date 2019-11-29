@@ -588,14 +588,15 @@ static void uart_send_package(void)
   ui8_tx_buffer[5] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
 
   // brake state
+  ui8_tx_buffer[6] = 0;
   if(motor_controller_state_is_set(MOTOR_CONTROLLER_STATE_BRAKE))
   {
     ui8_tx_buffer[6] |= 1;
   }
-  else
-  {
-    ui8_tx_buffer[6] &= ~1;
-  }
+  // add the hall sensors state, that should be 3 bits only, value from 0 to 7
+  ui8_tx_buffer[6] |= (ui8_g_hall_sensors_state << 1);
+  // add pas pedal position
+  ui8_tx_buffer[6] |= (ui8_g_pas_pedal_right << 4);
 
   // throttle value from ADC
   ui8_tx_buffer[7] = UI8_ADC_THROTTLE;
@@ -724,7 +725,7 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_st
       if(ui16_p_torque_sensor_adc_absolute_steps <
           ui16_p_linearize_array[(ui8_i + 1) * 2])
       {
-        // first interval
+        // first intervalui8_g_hall_sensors_state
         if(ui8_i == 0)
         {
           array[ui8_i] = *ui16_p_torque_sensor_adc_steps;

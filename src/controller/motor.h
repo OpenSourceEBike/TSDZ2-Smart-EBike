@@ -28,6 +28,7 @@ extern volatile uint8_t ui8_g_adc_battery_current;
 extern volatile uint8_t ui8_g_foc_angle;
 extern volatile uint16_t ui16_g_adc_torque_sensor_max_value_per_rotation;
 extern volatile uint8_t ui8_g_pas_pedal_right;
+extern volatile uint8_t ui8_g_hall_sensors_state;
 
 /***************************************************************************************/
 // Motor interface
