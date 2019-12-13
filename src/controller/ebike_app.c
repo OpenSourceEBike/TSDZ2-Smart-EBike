@@ -54,6 +54,7 @@ static uint8_t ui8_m_motor_enabled = 1;
 static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
 volatile uint8_t  ui8_m_torque_sensor_weight = 0;
+volatile uint8_t  ui8_m_torque_sensor_weight_raw = 0;
 volatile uint8_t  ui8_m_torque_sensor_weight_max = 0;
 static volatile uint16_t ui16_m_torque_sensor_adc_steps = 0;
 volatile uint16_t  ui16_torque_sensor_raw = 0;
@@ -617,7 +618,7 @@ static void uart_send_package(void)
   ui8_tx_buffer[9] = UI8_ADC_TORQUE_SENSOR;
 
   // weight in kgs
-  ui8_tx_buffer[10] = ui8_m_torque_sensor_weight;
+  ui8_tx_buffer[10] = ui8_m_torque_sensor_weight_raw;
   
   // PAS cadence
   ui8_tx_buffer[11] = ui8_pas_cadence_rpm;
@@ -823,6 +824,10 @@ static void calc_pedal_force_and_torque(void)
 //  linearize_torque_sensor_to_kgs(&ui16_g_adc_torque_sensor_max_value_per_rotation, &ui8_m_torque_sensor_weight_max, &ui8_pas_pedal_right);
 //  ui16_pedal_torque_max_x100 = (uint16_t) ui8_m_torque_sensor_weight_max * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
 //  ui16_pedal_power_max_x10 = (uint16_t) ((ui16_pedal_torque_max_x100 * (uint32_t) ui8_pas_cadence_rpm) / 150);  // apply the 0.637 factor
+
+  // linearize and calculate weight on pedals
+  // This here is needed to show the raw value to user, on the display. Otherwise, would be always zero while cadence is 0 / pedals not rotating
+  linearize_torque_sensor_to_kgs(&ui16_torque_sensor_raw, &ui8_m_torque_sensor_weight_raw, &ui8_g_pas_pedal_right);
 }
 
 
