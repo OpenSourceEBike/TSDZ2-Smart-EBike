@@ -142,26 +142,26 @@ static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
-  0, 17,
-  252, 17,
-  280, 18,
-  310, 33,
-  344, 88,
-  352, 313,
-  357, 480,
-  360, 500,
+  0, 16,
+  336, 16,
+  364, 18,
+  380, 31,
+  388, 50,
+  404, 115,
+  408, 350,
+  422, 360,
 };
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
   0, 18,
-  248, 18,
-  272, 21,
-  306, 29,
-  356, 60,
-  364, 313,
-  368, 600,
-  370, 750,
+  332, 18,
+  356, 21,
+  372, 31,
+  380, 50,
+  396, 150,
+  402, 233,
+  416, 331,
 };
 
 void ebike_app_init (void)
