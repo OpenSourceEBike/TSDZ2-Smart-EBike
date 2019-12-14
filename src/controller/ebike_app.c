@@ -140,29 +140,29 @@ static uint8_t  apply_boost (uint8_t ui8_pas_cadence, uint8_t ui8_max_current_bo
 static void     apply_boost_fade_out (uint8_t *ui8_target_current);
 
 #define TORQUE_SENSOR_LINEARIZE_NR_POINTS 8
-uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
+uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
-  0, 16,
-  336, 16,
-  364, 18,
-  380, 31,
-  388, 50,
-  404, 115,
-  408, 350,
-  422, 360,
+  { 304, 16 },
+  { 336, 16 },
+  { 364, 18 },
+  { 380, 31 },
+  { 388, 50 },
+  { 404, 150 },
+  { 408, 350 },
+  { 422, 379 },
 };
-uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS * 2] =
+uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2] =
 {
   // ADC 10 bits step, steps_per_kg_x100
-  0, 18,
-  332, 18,
-  356, 21,
-  372, 31,
-  380, 50,
-  396, 150,
-  402, 233,
-  416, 331,
+  { 304, 18 },
+  { 332, 18 },
+  { 356, 21 },
+  { 372, 31 },
+  { 380, 50 },
+  { 396, 150 },
+  { 402, 233 },
+  { 416, 331 },
 };
 
 void ebike_app_init (void)
@@ -696,99 +696,81 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   if (ui8_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX) { ui8_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX; }
 }
 
-static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight, uint8_t *ui8_p_pas_pedal_right)
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint8_t *ui8_weight, uint8_t *ui8_pedal_right)
 {
-  uint16_t array[TORQUE_SENSOR_LINEARIZE_NR_POINTS];
+  uint16_t ui16_array_sum[TORQUE_SENSOR_LINEARIZE_NR_POINTS];
   uint8_t ui8_i;
-  uint8_t ui8_first = 1;
-  uint16_t ui16_p_torque_sensor_adc_absolute_steps;
-  uint16_t *ui16_p_linearize_array;
+  uint16_t ui16_adc_absolute_steps;
+  uint16_t (*ui16_array_linear)[2];
   uint32_t ui32_temp = 0;
 
-  memset(array, 0, TORQUE_SENSOR_LINEARIZE_NR_POINTS * sizeof(array[0]));
+  memset(ui16_array_sum, 0, sizeof(ui16_array_sum));
 
-  if(*ui8_p_pas_pedal_right)
-  {
-    ui16_p_linearize_array = &ui16_torque_sensor_linearize_right[0];
-  }
+  if(*ui8_pedal_right)
+    ui16_array_linear = ui16_torque_sensor_linearize_right;
   else
-  {
-    ui16_p_linearize_array = &ui16_torque_sensor_linearize_left[0];
-  }
+    ui16_array_linear = ui16_torque_sensor_linearize_left;
 
-  if(*ui16_p_torque_sensor_adc_steps > 0)
+  if(*ui16_adc_steps > 0)
   {
-    ui16_p_torque_sensor_adc_absolute_steps = *ui16_p_torque_sensor_adc_steps + ui16_g_adc_torque_sensor_min_value;
+    ui16_adc_absolute_steps = *ui16_adc_steps + ui16_g_adc_torque_sensor_min_value;
 
-    for(ui8_i = 0; ui8_i < TORQUE_SENSOR_LINEARIZE_NR_POINTS; ui8_i++)
+    for(ui8_i = 0; ui8_i < (TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1); ui8_i++)
     {
       // current value is under interval max value
-      if(ui16_p_torque_sensor_adc_absolute_steps <
-          ui16_p_linearize_array[(ui8_i + 1) * 2])
+      if(ui16_adc_absolute_steps < ui16_array_linear[ui8_i + 1][0])
       {
-        // first intervalui8_g_hall_sensors_state
+        // first interval
         if(ui8_i == 0)
         {
-          array[ui8_i] = *ui16_p_torque_sensor_adc_steps;
+          ui16_array_sum[ui8_i] = *ui16_adc_steps;
         }
-        else if(ui8_i < (TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1))
+        else
         {
-          array[ui8_i] = ui16_p_torque_sensor_adc_absolute_steps -
-              ui16_p_linearize_array[ui8_i * 2];
+          ui16_array_sum[ui8_i] = ui16_adc_absolute_steps - ui16_array_linear[ui8_i][0];
         }
 
+        // exit the for loop as this was the last interval
         break;
       }
       // current value is over current interval
       else
       {
-        // first interval
-        if(ui8_first)
-        {
-          if(ui16_g_adc_torque_sensor_min_value >= ui16_p_linearize_array[(ui8_i + 1) * 2])
-          {
-
-          }
-          else
-          {
-            array[ui8_i] = ui16_p_linearize_array[(ui8_i + 1) * 2] - ui16_g_adc_torque_sensor_min_value;
-            ui8_first = 0;
-          }
-        }
-        else if(ui8_i < (TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1))
-        {
-          array[ui8_i] = ui16_p_linearize_array[(ui8_i + 1) * 2] -
-              ui16_p_linearize_array[ui8_i * 2];
-        }
-        else
-        {
-          array[ui8_i] = ui16_p_torque_sensor_adc_absolute_steps -
-              ui16_p_linearize_array[ui8_i * 2];
-
-        }
+        ui16_array_sum[ui8_i] = ui16_array_linear[ui8_i + 1][0] - ui16_array_linear[ui8_i][0];
       }
     }
 
-    // sum the total parcels
-    for(ui8_i = 0; ui8_i < TORQUE_SENSOR_LINEARIZE_NR_POINTS - 2; ui8_i++)
-    {
-      ui32_temp += (array[ui8_i] * ui16_p_linearize_array[((ui8_i + 1) * 2) + 1]);
-    }
-    ui32_temp += (array[TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1] * ui16_p_linearize_array[((TORQUE_SENSOR_LINEARIZE_NR_POINTS - 2 + 1) * 2) + 1]);
+    // count values under min value of array linear
+    if (ui16_g_adc_torque_sensor_min_value < ui16_array_linear[0][0])
+      ui16_array_sum[0] += (ui16_array_linear[0][0] - ui16_g_adc_torque_sensor_min_value);
 
-    *ui8_torque_sensor_weight = (uint8_t) (ui32_temp / 100);
+    // count with the values over max value of array linear
+    if (ui16_adc_absolute_steps > ui16_array_linear[7][0])
+      ui16_array_sum[7] = ui16_adc_absolute_steps - ui16_array_linear[7][0];
+
+    // sum the total parcels
+    for(ui8_i = 0; ui8_i < TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1; ui8_i++)
+    {
+      ui32_temp += ((uint32_t) ui16_array_sum[ui8_i] * (uint32_t) ui16_array_linear[ui8_i + 1][1]);
+    }
+
+    // sum the last parcel
+    ui32_temp += ((uint32_t) ui16_array_sum[7] * (uint32_t) ui16_array_linear[7][1]);
+
+
+    *ui8_weight = (uint8_t) (ui32_temp / 100);
   }
   // no torque_sensor_adc_steps
   else
   {
-    *ui8_torque_sensor_weight = 0;
+    *ui8_weight = 0;
   }
 }
 
 static void calc_pedal_force_and_torque(void)
 {
   uint16_t ui16_pedal_torque_x100;
-  uint16_t ui16_pedal_torque_max_x100;
+//  uint16_t ui16_pedal_torque_max_x100;
   uint8_t ui8_pas_pedal_right = 1;
 
   // calculate power on pedals
