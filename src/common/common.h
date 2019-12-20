@@ -10,10 +10,11 @@
 #define COMMON_COMMON_H_
 
 #define NO_ERROR                                0
-#define ERROR_MOTOR_BLOCKED                     1
-#define ERROR_TORQUE_APPLIED_DURING_POWER_ON    2
-#define ERROR_BRAKE_APPLIED_DURING_POWER_ON     3
-#define ERROR_THROTTLE_APPLIED_DURING_POWER_ON  4
-#define ERROR_NO_SPEED_SENSOR_DETECTED          5
+#define ERROR_NO_CONFIGURATIONS                 (1 << 1)
+#define ERROR_MOTOR_BLOCKED                     (1 << 2)
+#define ERROR_TORQUE_APPLIED_DURING_POWER_ON    (1 << 3)
+#define ERROR_BRAKE_APPLIED_DURING_POWER_ON    	(1 << 4)
+#define ERROR_THROTTLE_APPLIED_DURING_POWER_ON  (1 << 5)
+#define ERROR_NO_SPEED_SENSOR_DETECTED          (1 << 6)
 
 #endif /* COMMON_COMMON_H_ */

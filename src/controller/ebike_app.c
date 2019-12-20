@@ -38,7 +38,7 @@ uint8_t ui8_target_battery_max_power_x10  = ADC_BATTERY_CURRENT_MAX;
 volatile struct_configuration_variables m_configuration_variables;
 
 // variables for various system functions
-volatile uint8_t ui8_system_state = NO_ERROR;
+volatile uint8_t ui8_system_state = ERROR_NO_CONFIGURATIONS; // start with system error because configurations are empty at startup
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
@@ -49,7 +49,7 @@ uint8_t   ui8_pedal_human_power = 0;
 uint16_t  ui16_adc_motor_temperatured_accumulated = 0;
 uint8_t   ui8_m_adc_battery_target_current;
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
-static uint8_t ui8_m_motor_enabled = 1;
+static uint8_t ui8_m_motor_enabled = 0;
 static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
 volatile uint8_t  ui8_m_torque_sensor_weight = 0;
@@ -85,11 +85,11 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   6   // change this value depending on how many data bytes there is to receive ( Package = one start byte + data bytes + two bytes 16 bit CRC )
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   26
 #define UART_NUMBER_DATA_BYTES_TO_SEND      25  // change this value depending on how many data bytes there is to send ( Package = one start byte + data bytes + two bytes 16 bit CRC )
 
 volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE + 3];
+volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
 volatile uint8_t ui8_rx_cnt = 0;
 volatile uint8_t ui8_rx_len = 0;
 volatile uint8_t ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND + 3];
@@ -430,7 +430,6 @@ static void communications_controller (void)
 
 static void uart_receive_package(void)
 {
-  uint32_t ui32_temp;
   uint8_t ui8_len;
   
   if (ui8_received_package_flag)
@@ -461,7 +460,7 @@ static void uart_receive_package(void)
 
 static void uart_send_package(uint8_t ui8_frame_type)
 {
-//  uint16_t ui16_temp;
+  uint32_t ui32_temp;
   uint8_t ui8_len = 3; // 3 bytes: 1 type of frame + 2 CRC bytes
 
   // start up byte
@@ -470,10 +469,114 @@ static void uart_send_package(uint8_t ui8_frame_type)
 
   // prepare payload
   switch (ui8_frame_type) {
+    // periodic data
     case 0:
+
       break;
 
+    // set configurations
     case 1:
+      // assist level
+      m_configuration_variables.ui8_assist_level_factor_x10 = ui8_rx_buffer[3];
+
+      // lights state
+      m_configuration_variables.ui8_lights = (ui8_rx_buffer[4] & (1 << 0)) ? 1: 0;
+
+      // set lights
+      lights_set_state (m_configuration_variables.ui8_lights);
+
+      // walk assist / cruise function
+      m_configuration_variables.ui8_walk_assist = (ui8_rx_buffer[4] & (1 << 1)) ? 1: 0;
+
+      // battery max power target
+      m_configuration_variables.ui8_target_battery_max_power_div25 = ui8_rx_buffer[5];
+
+      // battery low voltage cut-off
+      m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer[7]) << 8) + ((uint16_t) ui8_rx_buffer[6]);
+
+      // calc the value in ADC steps and set it up
+      ui32_temp = ((uint32_t) m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 << 8) / ((uint32_t) ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP_INVERSE_X256);
+      ui32_temp /= 10;
+      motor_set_adc_battery_voltage_cut_off ((uint8_t) ui32_temp);
+
+      // wheel perimeter
+      m_configuration_variables.ui16_wheel_perimeter = (((uint16_t) ui8_rx_buffer[9]) << 8) + ((uint16_t) ui8_rx_buffer[8]);
+
+      // wheel max speed
+      m_configuration_variables.ui8_wheel_max_speed = ui8_rx_buffer[10];
+
+      // battery max current
+      m_configuration_variables.ui8_battery_max_current = ui8_rx_buffer[11];
+
+       // type of motor (36 volt, 48 volt or some experimental type)
+       m_configuration_variables.ui8_motor_type = ui8_rx_buffer[12];
+
+       // startup motor power boost state
+       m_configuration_variables.ui8_startup_motor_power_boost_state = (ui8_rx_buffer[13] & 1);
+
+       // startup power boost max power limit enabled
+       m_configuration_variables.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer[13] & 2) >> 1;
+
+       // startup motor power boost
+       m_configuration_variables.ui8_startup_motor_power_boost_assist_level = ui8_rx_buffer[14];
+
+       // startup motor power boost time
+       m_configuration_variables.ui8_startup_motor_power_boost_time = ui8_rx_buffer[15];
+
+       // startup motor power boost fade time
+       m_configuration_variables.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer [16];
+
+       // startup motor boost enabled
+       m_configuration_variables.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer[17];
+
+       // motor over temperature min value limit
+       m_configuration_variables.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer[18];
+
+       // motor over temperature max value limit
+       m_configuration_variables.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer[19];
+
+       // ramp up, amps per second
+       m_configuration_variables.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer[20];
+
+       // check that value seems correct
+       if (m_configuration_variables.ui8_ramp_up_amps_per_second_x10 < 4 || m_configuration_variables.ui8_ramp_up_amps_per_second_x10 > 100)
+       {
+         // value is not valid, set to default
+         m_configuration_variables.ui8_ramp_up_amps_per_second_x10 = DEFAULT_VALUE_RAMP_UP_AMPS_PER_SECOND_X10;
+       }
+
+       // calculate current step for ramp up
+       ui32_temp = ((uint32_t) 97656) / ((uint32_t) m_configuration_variables.ui8_ramp_up_amps_per_second_x10); // see note below
+       ui16_current_ramp_up_inverse_step = (uint16_t) ui32_temp;
+
+       /*---------------------------------------------------------
+       NOTE: regarding ramp up
+
+       Example of calculation:
+
+       Target ramp up: 5 amps per second
+
+       Every second has 15625 PWM cycles interrupts,
+       one ADC battery current step --> 0.625 amps:
+
+       5 / 0.625 = 8 (we need to do 8 steps ramp up per second)
+
+       Therefore:
+
+       15625 / 8 = 1953 (our default value)
+       ---------------------------------------------------------*/
+
+       // received target speed for cruise
+       ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer[21] * 10);
+
+       // motor temperature limit function or throttle
+       m_configuration_variables.ui8_temperature_limit_feature_enabled = ui8_rx_buffer[22];
+
+       // motor assistance without pedal rotation enable/disable when startup
+       m_configuration_variables.ui8_motor_assistance_startup_without_pedal_rotation = ui8_rx_buffer[23];
+
+      // ok, now we can clear this error/state
+      ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
       break;
 
     // firmware version
@@ -482,6 +585,9 @@ static void uart_send_package(uint8_t ui8_frame_type)
       ui8_tx_buffer[4] = 50;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
+      break;
+
+    default:
       break;
   }
 
@@ -1117,7 +1223,7 @@ void check_system()
   static uint8_t ui8_motor_blocked_reset_counter;
 
   // if the motor blocked error is enabled start resetting it
-  if (ui8_system_state == ERROR_MOTOR_BLOCKED)
+  if (ui8_system_state & ERROR_MOTOR_BLOCKED)
   {
     // increment motor blocked reset counter with 100 milliseconds
     ui8_motor_blocked_reset_counter++;
@@ -1126,7 +1232,7 @@ void check_system()
     if (ui8_motor_blocked_reset_counter > MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD)
     {
       // reset motor blocked error code
-      ui8_system_state = NO_ERROR;
+      ui8_system_state &= ~ERROR_MOTOR_BLOCKED;
       
       // reset the counter that clears the motor blocked error
       ui8_motor_blocked_reset_counter = 0;
@@ -1144,7 +1250,7 @@ void check_system()
       if (ui8_motor_blocked_counter > MOTOR_BLOCKED_COUNTER_THRESHOLD)
       {
         // set motor blocked error code
-        ui8_system_state = ERROR_MOTOR_BLOCKED;
+        ui8_system_state |= ERROR_MOTOR_BLOCKED;
         
         // reset motor blocked counter as the error code is set
         ui8_motor_blocked_counter = 0;
