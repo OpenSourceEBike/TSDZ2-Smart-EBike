@@ -51,11 +51,10 @@ EXTRASRCS = \
 	timers.c \
 	ebike_app.c \
 	utils.c \
-	eeprom.c \
 	lights.c \
 
 HEADERS = watchdog.h torque_sensor.h interrupts.h main.h uart.h pwm.h motor.h wheel_speed_sensor.h brake.h pas.h adc.h timers.h \
-ebike_app.h utils.h pins.h config.h eeprom.h lights.h
+ebike_app.h utils.h pins.h config.h lights.h
 
 # The list of .rel files can be derived from the list of their source files
 RELS = $(EXTRASRCS:.c=.rel)
