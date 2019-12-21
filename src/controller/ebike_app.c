@@ -86,7 +86,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 // UART
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   23
-#define UART_NUMBER_DATA_BYTES_TO_SEND      29
+#define UART_NUMBER_DATA_BYTES_TO_SEND      30
 
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
