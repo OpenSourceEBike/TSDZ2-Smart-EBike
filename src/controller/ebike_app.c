@@ -173,15 +173,15 @@ void ebike_app_init (void)
 
 void ebike_app_controller (void)
 {
-//  throttle_read();
-//  torque_sensor_read();
-//  read_pas_cadence();
-//  calc_pedal_force_and_torque();
-//  calc_wheel_speed();
-//  calc_motor_temperature();
-//  ebike_control_motor();
+  throttle_read();
+  torque_sensor_read();
+  read_pas_cadence();
+  calc_pedal_force_and_torque();
+  calc_wheel_speed();
+  calc_motor_temperature();
+  ebike_control_motor();
   communications_controller();
-//  check_system();
+  check_system();
 }
 
 
