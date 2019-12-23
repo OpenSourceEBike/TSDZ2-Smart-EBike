@@ -19,7 +19,7 @@
 #define EBIKE_APP_STATE_MOTOR_COOL      3
 #define EBIKE_APP_STATE_MOTOR_RUNNING   4
 
-typedef struct _configuration_variables
+typedef struct
 {
   uint8_t ui8_assist_level_factor_x10;
   uint8_t ui8_battery_max_current;
@@ -35,7 +35,7 @@ typedef struct _configuration_variables
   uint8_t configuration_variables;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
   uint8_t ui8_startup_motor_power_boost_assist_level;
-  uint8_t ui8_startup_motor_power_boost_state;
+  uint8_t ui8_startup_motor_power_boost_always;
   uint8_t ui8_startup_motor_power_boost_limit_to_max_power;
   uint8_t ui8_startup_motor_power_boost_time;
   uint8_t ui8_startup_motor_power_boost_fade_time;
@@ -46,7 +46,10 @@ typedef struct _configuration_variables
   uint16_t ui16_motor_temperature_x2;
   uint8_t ui8_motor_temperature;
   uint8_t ui8_ramp_up_amps_per_second_x10;
-} struct_configuration_variables;
+  uint8_t ui8_torque_sensor_calibration_pedal_ground;
+  uint8_t ui8_torque_sensor_calibration_feature_enabled;
+  uint8_t ui8_torque_sensor_calibration_pedal_ground;
+} struct_config_vars;
 
 
 
@@ -67,6 +70,6 @@ extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
 void ebike_app_init (void);
 void ebike_app_controller (void);
-struct_configuration_variables* get_configuration_variables (void);
+struct_config_vars* get_configuration_variables (void);
 
 #endif /* _EBIKE_APP_H_ */

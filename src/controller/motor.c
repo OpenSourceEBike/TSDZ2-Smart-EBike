@@ -451,7 +451,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   static uint8_t ui8_temp;
   
-  struct_configuration_variables *p_configuration_variables;
+  struct_config_vars *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
 
 
@@ -1132,7 +1132,7 @@ void calc_foc_angle (void)
   uint32_t ui32_w_angular_velocity_x16;
   uint16_t ui16_iwl_128;
 
-  struct_configuration_variables *p_configuration_variables;
+  struct_config_vars *p_configuration_variables;
   p_configuration_variables = get_configuration_variables ();
 
   // FOC implementation by calculating the angle between phase current and rotor magnetic flux (BEMF)
