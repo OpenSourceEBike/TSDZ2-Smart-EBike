@@ -48,16 +48,15 @@ typedef struct
   uint8_t ui8_ramp_up_amps_per_second_x10;
   uint8_t ui8_torque_sensor_calibration_pedal_ground;
   uint8_t ui8_torque_sensor_calibration_feature_enabled;
-  uint8_t ui8_torque_sensor_calibration_pedal_ground;
 } struct_config_vars;
 
 
 
-extern volatile uint16_t ui16_current_ramp_up_inverse_step;
+extern volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 extern volatile uint16_t ui16_g_adc_torque_sensor_min_value;
-extern volatile uint8_t ui8_adc_battery_current_offset;
-extern volatile uint8_t ui8_ebike_app_state;
-extern volatile uint8_t ui8_adc_target_battery_max_current;
+extern volatile uint8_t ui8_g_adc_battery_current_offset;
+extern volatile uint8_t ui8_g_ebike_app_state;
+extern volatile uint8_t ui8_g_adc_target_battery_max_current;
 
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_g_pedaling_direction;

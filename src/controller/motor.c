@@ -539,7 +539,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           if (ui8_motor_commutation_type == BLOCK_COMMUTATION)
           {
             ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
-            ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_RUNNING;
+            ui8_g_ebike_app_state = EBIKE_APP_STATE_MOTOR_RUNNING;
           }
         }
         else
@@ -604,7 +604,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_g_foc_angle = 0;
     ui8_motor_commutation_type = BLOCK_COMMUTATION;
     ui8_hall_sensors_state_last = 0; // this way we force execution of hall sensors code next time
-//    if (ui8_ebike_app_state == EBIKE_APP_STATE_MOTOR_RUNNING) { ui8_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP; }
+//    if (ui8_g_ebike_app_state == EBIKE_APP_STATE_MOTOR_RUNNING) { ui8_g_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP; }
   }
 
 
@@ -773,9 +773,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   
   
   // ramp up ADC battery current
-  if (ui8_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
+  if (ui8_g_adc_target_battery_max_current > ui8_controller_adc_battery_max_current)
   {
-    if (ui16_counter_adc_battery_current_ramp_up++ >= ui16_current_ramp_up_inverse_step)
+    if (ui16_counter_adc_battery_current_ramp_up++ >= ui16_g_current_ramp_up_inverse_step)
     {
       // reset counter
       ui16_counter_adc_battery_current_ramp_up = 0;
@@ -784,10 +784,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_controller_adc_battery_max_current++;
     }
   }
-  else if (ui8_adc_target_battery_max_current < ui8_controller_adc_battery_max_current)
+  else if (ui8_g_adc_target_battery_max_current < ui8_controller_adc_battery_max_current)
   {
     // we are not doing a ramp down here, just directly setting to the target value
-    ui8_controller_adc_battery_max_current = ui8_adc_target_battery_max_current;
+    ui8_controller_adc_battery_max_current = ui8_g_adc_target_battery_max_current;
   }
   
 

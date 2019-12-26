@@ -65,8 +65,8 @@ void adc_init (void)
     ui16_adc_battery_current_offset += UI8_ADC_BATTERY_CURRENT;
   }
   ui16_adc_battery_current_offset >>= 4;
-  ui8_adc_battery_current_offset = ui16_adc_battery_current_offset >> 2;
-  ui8_g_adc_motor_phase_current_offset = ui8_adc_battery_current_offset;
+  ui8_g_adc_battery_current_offset = ui16_adc_battery_current_offset >> 2;
+  ui8_g_adc_motor_phase_current_offset = ui8_g_adc_battery_current_offset;
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;

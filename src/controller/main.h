@@ -78,10 +78,25 @@
 /*---------------------------------------------------------
   NOTE: regarding torque sensor
 
-
   Force (Nm) = weight Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/
 #define TORQUE_SENSOR_WEIGHT_TO_FORCE_X100  167
+
+/*---------------------------------------------------------
+  NOTE: regarding torque sensor
+
+  NOTE: the following information is incorrect as the torque sensor output is not linear.
+
+  Torque (force) value found experimentaly.
+
+  Measured with a cheap digital hook scale, we found that
+  each torque sensor unit is equal to 0.52 Nm. Using the
+  scale it was found that 0.33 kg was measured as 1 torque
+  sensor unit.
+
+  Force (Nm) = 1 Kg * 9.18 * 0.17 (0.17 = arm cranks size)
+---------------------------------------------------------*/
+#define PEDAL_TORQUE_X100 52
 
 
 // PAS
