@@ -45,21 +45,26 @@ void adc_init (void)
   //********************************************************************************
   // next code is for "calibrating" the offset value of some ADC channels
 
+  // 6s delay to wait for voltages stabilize (maybe beause capacitors on the circuit)
+  // this was tested on 27.12.2019 by Casainho and lower values like 5s would not work.
+  ui16_counter = TIM3_GetCounter() + 6000;
+  while(TIM3_GetCounter() < ui16_counter) ;
+
   // read and discard few samples of ADC, to make sure the next samples are ok
-  for(ui8_i = 0; ui8_i < 64; ++ui8_i)
+  for(ui8_i = 0; ui8_i < 64; ui8_i++)
   {
-    ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
-    while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms
+    ui16_counter = TIM3_GetCounter() + 2;
+    while(TIM3_GetCounter() < ui16_counter) ; // delay
     adc_trigger();
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
   }
 
   // read and average a few values of ADC battery current
   ui16_adc_battery_current_offset = 0;
-  for(ui8_i = 0; ui8_i < 16; ++ui8_i)
+  for(ui8_i = 0; ui8_i < 16; ui8_i++)
   {
-    ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
-    while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms
+    ui16_counter = TIM3_GetCounter() + 2;
+    while(TIM3_GetCounter() < ui16_counter) ; // delay
     adc_trigger();
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
     ui16_adc_battery_current_offset += UI8_ADC_BATTERY_CURRENT;
@@ -70,10 +75,10 @@ void adc_init (void)
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;
-  for(ui8_i = 0; ui8_i < 16; ++ui8_i)
+  for(ui8_i = 0; ui8_i < 16; ui8_i++)
   {
-    ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
-    while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms
+    ui16_counter = TIM3_GetCounter() + 2;
+    while(TIM3_GetCounter() < ui16_counter) ; // delay
     adc_trigger();
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
     ui16_adc_torque_sensor_offset += ui16_adc_read_torque_sensor_10b();

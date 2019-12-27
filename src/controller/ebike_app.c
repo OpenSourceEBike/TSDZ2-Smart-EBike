@@ -42,12 +42,12 @@ volatile uint8_t ui8_system_state = ERROR_NO_CONFIGURATIONS; // start with syste
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
-uint16_t  ui16_pedal_torque_x10;
-uint16_t  ui16_pedal_power_x10;
-uint16_t  ui16_pedal_power_max_x10;
-uint8_t   ui8_pedal_human_power = 0;
+uint16_t  ui16_m_pedal_torque_x10;
+uint16_t  ui16_m_pedal_power_x10;
+uint16_t  ui16_m_pedal_power_max_x10;
+uint8_t   ui8_m_pedal_human_power = 0;
 uint8_t ui8_pas_pedal_position_right = 0;
-uint16_t  ui16_adc_motor_temperatured_accumulated = 0;
+uint16_t  ui16_m_adc_motor_temperatured_accumulated = 0;
 uint8_t   ui8_m_adc_battery_target_current;
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 static uint8_t ui8_m_motor_enabled = 0;
@@ -55,9 +55,13 @@ static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
 volatile uint8_t  ui8_m_torque_sensor_weight = 0;
 volatile uint8_t  ui8_m_torque_sensor_weight_raw = 0;
+volatile uint8_t  ui8_m_torque_sensor_weight_raw_with_offset = 0;
+uint8_t  ui8_m_torque_sensor_weight_offset = 0;
+uint8_t  ui8_m_first_time_torque_sensor_weight = 1;
 volatile uint8_t  ui8_m_torque_sensor_weight_max = 0;
 static volatile uint16_t ui16_m_torque_sensor_adc_steps = 0;
 volatile uint16_t  ui16_m_torque_sensor_raw = 0;
+volatile uint16_t  ui16_m_adc_torque_sensor_raw = 0;
 volatile uint16_t  ui16_g_adc_torque_sensor_min_value;
 volatile uint8_t  ui8_g_adc_battery_current_offset;
 volatile uint8_t  ui8_g_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
@@ -87,7 +91,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 // UART
 #define UART_NUMBER_DATA_BYTES_TO_RECEIVE   84
-#define UART_NUMBER_DATA_BYTES_TO_SEND      30
+#define UART_NUMBER_DATA_BYTES_TO_SEND      28
 
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
@@ -193,7 +197,7 @@ static void ebike_control_motor (void)
     // 40 * 4 = 160
     if(m_config_vars.ui8_startup_motor_power_boost_assist_level > 0)
     {
-      ui32_temp = (uint32_t) ui16_pedal_torque_x10 * (uint32_t) m_config_vars.ui8_startup_motor_power_boost_assist_level;
+      ui32_temp = (uint32_t) ui16_m_pedal_torque_x10 * (uint32_t) m_config_vars.ui8_startup_motor_power_boost_assist_level;
       ui32_temp /= 10;
 
       // 1.6 = 1 / 0.625 (each adc step for current)
@@ -211,19 +215,19 @@ static void ebike_control_motor (void)
     {
       if(m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation == 0)
       {
-        ui32_temp = (uint32_t) ui16_pedal_power_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
+        ui32_temp = (uint32_t) ui16_m_pedal_power_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
         ui32_temp /= 100;
       }
       else
       {
         if(ui8_pas_cadence_rpm)
         {
-          ui32_temp = (uint32_t) ui16_pedal_power_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
+          ui32_temp = (uint32_t) ui16_m_pedal_power_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
           ui32_temp /= 100;
         }
         else
         {
-          ui32_temp = (uint32_t) ui16_pedal_torque_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
+          ui32_temp = (uint32_t) ui16_m_pedal_torque_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
           ui32_temp /= 100;
         }
       }
@@ -509,18 +513,18 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       }
 
       // ADC torque_sensor
-      ui8_tx_buffer[11] = (uint8_t) (ui16_m_torque_sensor_raw & 0xff);
+      ui8_tx_buffer[11] = (uint8_t) (ui16_m_adc_torque_sensor_raw & 0xff);
       // ADC torque_sensor (higher bits), this bits are shared with wheel speed bits
-      ui8_tx_buffer[7] |= (uint8_t) ((ui16_m_torque_sensor_raw & 0x300) >> 2); //xx00 0000
+      ui8_tx_buffer[7] |= (uint8_t) ((ui16_m_adc_torque_sensor_raw & 0x300) >> 2); //xx00 0000
+
+      // weight in kgs with offset
+      ui8_tx_buffer[12] = ui8_m_torque_sensor_weight_raw_with_offset;
 
       // weight in kgs
-      ui8_tx_buffer[12] = ui8_m_torque_sensor_weight_raw;
+      ui8_tx_buffer[13] = ui8_m_torque_sensor_weight_raw;
 
       // PAS cadence
-      ui8_tx_buffer[13] = ui8_pas_cadence_rpm;
-
-      // pedal human power mapped to 255
-      ui8_tx_buffer[14] = ui8_pedal_human_power;
+      ui8_tx_buffer[14] = ui8_pas_cadence_rpm;
 
       // PWM duty_cycle
       ui8_tx_buffer[15] = ui8_g_duty_cycle;
@@ -544,17 +548,13 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[22] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 8) & 0xff);
       ui8_tx_buffer[23] = (uint8_t) ((ui32_wheel_speed_sensor_tick_counter >> 16) & 0xff);
 
-      // ui16_pedal_torque_x10
-      ui8_tx_buffer[24] = (uint8_t) (ui16_pedal_torque_x10 & 0xff);
-      ui8_tx_buffer[25] = (uint8_t) (ui16_pedal_torque_x10 >> 8);
-
       // ui16_pedal_power_x10
       //  ui8_tx_buffer[24] = (uint8_t) (ui16_pedal_power_x10 & 0xff);
       //  ui8_tx_buffer[25] = (uint8_t) (ui16_pedal_power_x10 >> 8);
-      ui8_tx_buffer[26] = (uint8_t) (ui16_pedal_power_max_x10 & 0xff);
-      ui8_tx_buffer[27] = (uint8_t) (ui16_pedal_power_max_x10 >> 8);
+      ui8_tx_buffer[24] = (uint8_t) (ui16_m_pedal_power_max_x10 & 0xff);
+      ui8_tx_buffer[25] = (uint8_t) (ui16_m_pedal_power_max_x10 >> 8);
 
-      ui8_len += 25;
+      ui8_len += 23;
       break;
 
     // set configurations
@@ -807,20 +807,37 @@ static void calc_pedal_force_and_torque(void)
     ui16_pedal_torque_x100 = (uint16_t) ui16_m_torque_sensor_adc_steps * (uint16_t) PEDAL_TORQUE_X100;
   }
 
-  ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
-  ui16_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
+  ui16_m_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
+  ui16_m_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
 
-  ui16_pedal_power_max_x10 = ui16_pedal_power_x10;
-
-//  // linearize and calculate weight on pedals
-//  // here consider always right pedal as it should always have the higher value
-//  linearize_torque_sensor_to_kgs(&ui16_g_adc_torque_sensor_max_value_per_rotation, &ui8_m_torque_sensor_weight_max, &ui8_pas_pedal_right);
-//  ui16_pedal_torque_max_x100 = (uint16_t) ui8_m_torque_sensor_weight_max * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
-//  ui16_pedal_power_max_x10 = (uint16_t) ((ui16_pedal_torque_max_x100 * (uint32_t) ui8_pas_cadence_rpm) / 150);  // apply the 0.637 factor
+  ui16_m_pedal_power_max_x10 = ui16_m_pedal_power_x10;
 
   // linearize and calculate weight on pedals
   // This here is needed to show the raw value to user, on the display. Otherwise, would be always zero while cadence is 0 / pedals not rotating
   linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_raw, &ui8_m_torque_sensor_weight_raw, &ui8_pas_pedal_position_right);
+
+  // let´s keep the the raw value with offset to send to display and show to user
+  ui8_m_torque_sensor_weight_raw_with_offset = ui8_m_torque_sensor_weight_raw;
+
+  // let´s save the initial weight offset
+  if (ui8_m_first_time_torque_sensor_weight &&
+      (ui8_system_state == NO_ERROR) &&
+      ui16_m_torque_sensor_raw) {
+    ui8_m_first_time_torque_sensor_weight = 0;
+    ui8_m_torque_sensor_weight_offset = ui8_m_torque_sensor_weight_raw;
+
+  // remove the weight offset
+  } else if (ui8_m_first_time_torque_sensor_weight == 0) {
+    if (ui8_m_torque_sensor_weight > ui8_m_torque_sensor_weight_offset)
+      ui8_m_torque_sensor_weight -= ui8_m_torque_sensor_weight_offset;
+    else
+      ui8_m_torque_sensor_weight = 0;
+
+    if (ui8_m_torque_sensor_weight_raw > ui8_m_torque_sensor_weight_offset)
+      ui8_m_torque_sensor_weight_raw -= ui8_m_torque_sensor_weight_offset;
+    else
+      ui8_m_torque_sensor_weight_raw = 0;
+  }
 }
 
 
@@ -846,9 +863,9 @@ static void calc_motor_temperature(void)
   uint16_t ui16_adc_motor_temperatured_filtered_10b;
 
   // low pass filter to avoid possible fast spikes/noise
-  ui16_adc_motor_temperatured_accumulated -= ui16_adc_motor_temperatured_accumulated >> READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT;
-  ui16_adc_motor_temperatured_accumulated += ui16_adc_read_throttle_10b ();
-  ui16_adc_motor_temperatured_filtered_10b = ui16_adc_motor_temperatured_accumulated >> READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT;
+  ui16_m_adc_motor_temperatured_accumulated -= ui16_m_adc_motor_temperatured_accumulated >> READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT;
+  ui16_m_adc_motor_temperatured_accumulated += ui16_adc_read_throttle_10b ();
+  ui16_adc_motor_temperatured_filtered_10b = ui16_m_adc_motor_temperatured_accumulated >> READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT;
 
   m_config_vars.ui16_motor_temperature_x2 = (uint16_t) ((float) ui16_adc_motor_temperatured_filtered_10b / 1.024);
   m_config_vars.ui8_motor_temperature = (uint8_t) (m_config_vars.ui16_motor_temperature_x2 >> 1);
@@ -1171,15 +1188,16 @@ static void read_pas_cadence(void)
   }
 
   if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)
-    ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 0: 1;
-  else
     ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 1: 0;
+  else
+    ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 0: 1;
 }
 
 
 static void torque_sensor_read(void)
 {
-  uint16_t ui16_adc_torque_sensor = ui16_adc_read_torque_sensor_10b();
+  uint16_t ui16_adc_torque_sensor = ui16_m_adc_torque_sensor_raw =
+      ui16_adc_read_torque_sensor_10b();
 
   // remove the offset
   // make sure readed value is higher than the offset

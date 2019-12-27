@@ -41,7 +41,8 @@
 // throttle
 #define THROTTLE_FILTER_COEFFICIENT               1   // see note below
 #define ADC_THROTTLE_THRESHOLD                    10  // value in ADC 8 bits step
-#define ADC_TORQUE_SENSOR_THRESHOLD               24   // value in ADC 12 bits step
+//#define ADC_TORQUE_SENSOR_THRESHOLD               24   // value in ADC 12 bits step
+#define ADC_TORQUE_SENSOR_THRESHOLD               0
 
 /*---------------------------------------------------------
   NOTE: regarding throttle
