@@ -53,10 +53,10 @@ uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 static uint8_t ui8_m_motor_enabled = 0;
 static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
-volatile uint8_t  ui8_m_torque_sensor_weight = 0;
-volatile uint8_t  ui8_m_torque_sensor_weight_raw = 0;
-volatile uint8_t  ui8_m_torque_sensor_weight_raw_with_offset = 0;
-uint8_t  ui8_m_torque_sensor_weight_offset = 0;
+volatile uint16_t  ui16_m_torque_sensor_weight_x10 = 0;
+volatile uint16_t  ui16_m_torque_sensor_weight_raw_x10 = 0;
+volatile uint16_t  ui16_m_torque_sensor_weight_raw_with_offset_x10 = 0;
+uint16_t  ui16_m_torque_sensor_weight_offset_x10 = 0;
 uint8_t  ui8_m_first_time_torque_sensor_weight = 1;
 volatile uint8_t  ui8_m_torque_sensor_weight_max = 0;
 static volatile uint16_t ui16_m_torque_sensor_adc_steps = 0;
@@ -118,7 +118,7 @@ static void check_system(void);
 static void throttle_read(void);
 static void read_pas_cadence(void);
 static void torque_sensor_read(void);
-static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint8_t *ui8_torque_sensor_weight, uint8_t *ui8_p_pas_pedal_right);
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_p_torque_sensor_adc_steps, uint16_t *ui16_torque_sensor_weight, uint8_t *ui8_p_pas_pedal_right);
 static void calc_pedal_force_and_torque(void);
 static void calc_wheel_speed(void);
 static void calc_motor_temperature(void);
@@ -518,10 +518,14 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[7] |= (uint8_t) ((ui16_m_adc_torque_sensor_raw & 0x300) >> 2); //xx00 0000
 
       // weight in kgs with offset
-      ui8_tx_buffer[12] = ui8_m_torque_sensor_weight_raw_with_offset;
+      // NOTE: for some reason, dividing by 10 the ui16_m_torque_sensor_weight_raw_with_offset_x10 does not work,
+      // maybe because is volatine. The solution is first to divide and copy for a temporary local variable
+      ui16_temp = ui16_m_torque_sensor_weight_raw_with_offset_x10 / 10;
+      ui8_tx_buffer[12] = (uint8_t) ui16_temp;
 
       // weight in kgs
-      ui8_tx_buffer[13] = ui8_m_torque_sensor_weight_raw;
+      ui16_temp = ui16_m_torque_sensor_weight_raw_x10 / 10;
+      ui8_tx_buffer[13] = (uint8_t) ui16_temp;
 
       // PAS cadence
       ui8_tx_buffer[14] = ui8_pas_cadence_rpm;
@@ -702,7 +706,7 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   if (ui8_m_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX) { ui8_m_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX; }
 }
 
-static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint8_t *ui8_weight, uint8_t *ui8_pedal_right)
+static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint16_t *ui16_weight_x10, uint8_t *ui8_pedal_right)
 {
   uint16_t ui16_array_sum[TORQUE_SENSOR_LINEARIZE_NR_POINTS];
   uint8_t ui8_i;
@@ -763,20 +767,18 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint8_t *ui
     // sum the last parcel
     ui32_temp += ((uint32_t) ui16_array_sum[7] * (uint32_t) ui16_array_linear[7][1]);
 
-    *ui8_weight = (uint8_t) (ui32_temp / 100);
+    *ui16_weight_x10 = (uint8_t) (ui32_temp / 10);
   }
   // no torque_sensor_adc_steps
   else
   {
-    *ui8_weight = 0;
+    *ui16_weight_x10 = 0;
   }
 }
 
 static void calc_pedal_force_and_torque(void)
 {
   uint16_t ui16_pedal_torque_x100;
-//  uint16_t ui16_pedal_torque_max_x100;
-  uint8_t ui8_pas_pedal_right = 1;
 
   // calculate power on pedals
   // formula for angular velocity in degrees: power  =  force  *  rotations per second  *  2  *  pi
@@ -798,10 +800,40 @@ static void calc_pedal_force_and_torque(void)
   For a quick hack, we can just reduce actual value to 0.637.
 
   */
+
+  // linearize and calculate weight on pedals
+  // This here is needed to show the raw value to user, on the display. Otherwise, would be always zero while cadence is 0 / pedals not rotating
+  linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_raw, &ui16_m_torque_sensor_weight_raw_x10, &ui8_pas_pedal_position_right);
+
+  // let´s keep the the raw value with offset to send to display and show to user
+  ui16_m_torque_sensor_weight_raw_with_offset_x10 = ui16_m_torque_sensor_weight_raw_x10;
+
+  // let´s save the initial weight offset
+  if (ui8_m_first_time_torque_sensor_weight &&
+      (ui8_system_state == NO_ERROR) &&
+      ui16_m_torque_sensor_raw) {
+    ui8_m_first_time_torque_sensor_weight = 0;
+    ui16_m_torque_sensor_weight_offset_x10 = ui16_m_torque_sensor_weight_raw_x10;
+  }
+
   // linearize and calculate weight on pedals
   if (m_config_vars.ui8_torque_sensor_calibration_feature_enabled) {
-    linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_adc_steps, &ui8_m_torque_sensor_weight, &ui8_pas_pedal_position_right);
-    ui16_pedal_torque_x100 = ui8_m_torque_sensor_weight * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X100;
+    linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_adc_steps, &ui16_m_torque_sensor_weight_x10, &ui8_pas_pedal_position_right);
+
+    // remove the weight offset
+    if (ui8_m_first_time_torque_sensor_weight == 0) {
+      if (ui16_m_torque_sensor_weight_x10 > ui16_m_torque_sensor_weight_offset_x10)
+        ui16_m_torque_sensor_weight_x10 -= ui16_m_torque_sensor_weight_offset_x10;
+      else
+        ui16_m_torque_sensor_weight_x10 = 0;
+
+      if (ui16_m_torque_sensor_weight_raw_x10 > ui16_m_torque_sensor_weight_offset_x10)
+        ui16_m_torque_sensor_weight_raw_x10 -= ui16_m_torque_sensor_weight_offset_x10;
+      else
+        ui16_m_torque_sensor_weight_raw_x10 = 0;
+    }
+
+    ui16_pedal_torque_x100 = ui16_m_torque_sensor_weight_x10 * (uint16_t) TORQUE_SENSOR_WEIGHT_TO_FORCE_X10;
   } else {
     // calculate torque on pedals
     ui16_pedal_torque_x100 = (uint16_t) ui16_m_torque_sensor_adc_steps * (uint16_t) PEDAL_TORQUE_X100;
@@ -809,35 +841,7 @@ static void calc_pedal_force_and_torque(void)
 
   ui16_m_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
   ui16_m_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
-
   ui16_m_pedal_power_max_x10 = ui16_m_pedal_power_x10;
-
-  // linearize and calculate weight on pedals
-  // This here is needed to show the raw value to user, on the display. Otherwise, would be always zero while cadence is 0 / pedals not rotating
-  linearize_torque_sensor_to_kgs(&ui16_m_torque_sensor_raw, &ui8_m_torque_sensor_weight_raw, &ui8_pas_pedal_position_right);
-
-  // let´s keep the the raw value with offset to send to display and show to user
-  ui8_m_torque_sensor_weight_raw_with_offset = ui8_m_torque_sensor_weight_raw;
-
-  // let´s save the initial weight offset
-  if (ui8_m_first_time_torque_sensor_weight &&
-      (ui8_system_state == NO_ERROR) &&
-      ui16_m_torque_sensor_raw) {
-    ui8_m_first_time_torque_sensor_weight = 0;
-    ui8_m_torque_sensor_weight_offset = ui8_m_torque_sensor_weight_raw;
-
-  // remove the weight offset
-  } else if (ui8_m_first_time_torque_sensor_weight == 0) {
-    if (ui8_m_torque_sensor_weight > ui8_m_torque_sensor_weight_offset)
-      ui8_m_torque_sensor_weight -= ui8_m_torque_sensor_weight_offset;
-    else
-      ui8_m_torque_sensor_weight = 0;
-
-    if (ui8_m_torque_sensor_weight_raw > ui8_m_torque_sensor_weight_offset)
-      ui8_m_torque_sensor_weight_raw -= ui8_m_torque_sensor_weight_offset;
-    else
-      ui8_m_torque_sensor_weight_raw = 0;
-  }
 }
 
 

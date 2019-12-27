@@ -81,7 +81,7 @@
 
   Force (Nm) = weight Kg * 9.81 * 0.17 (0.17 = arm cranks size)
 ---------------------------------------------------------*/
-#define TORQUE_SENSOR_WEIGHT_TO_FORCE_X100  167
+#define TORQUE_SENSOR_WEIGHT_TO_FORCE_X10  17
 
 /*---------------------------------------------------------
   NOTE: regarding torque sensor
