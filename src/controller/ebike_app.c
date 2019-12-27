@@ -518,14 +518,10 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[7] |= (uint8_t) ((ui16_m_adc_torque_sensor_raw & 0x300) >> 2); //xx00 0000
 
       // weight in kgs with offset
-      // NOTE: for some reason, dividing by 10 the ui16_m_torque_sensor_weight_raw_with_offset_x10 does not work,
-      // maybe because is volatine. The solution is first to divide and copy for a temporary local variable
-      ui16_temp = ui16_m_torque_sensor_weight_raw_with_offset_x10 / 10;
-      ui8_tx_buffer[12] = (uint8_t) ui16_temp;
+      ui8_tx_buffer[12] = (uint8_t) (ui16_m_torque_sensor_weight_raw_with_offset_x10 / 10);
 
       // weight in kgs
-      ui16_temp = ui16_m_torque_sensor_weight_raw_x10 / 10;
-      ui8_tx_buffer[13] = (uint8_t) ui16_temp;
+      ui8_tx_buffer[13] = (uint8_t) (ui16_m_torque_sensor_weight_raw_x10 / 10);
 
       // PAS cadence
       ui8_tx_buffer[14] = ui8_pas_cadence_rpm;
@@ -767,7 +763,7 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint16_t *u
     // sum the last parcel
     ui32_temp += ((uint32_t) ui16_array_sum[7] * (uint32_t) ui16_array_linear[7][1]);
 
-    *ui16_weight_x10 = (uint8_t) (ui32_temp / 10);
+    *ui16_weight_x10 = (uint16_t) (ui32_temp / 10);
   }
   // no torque_sensor_adc_steps
   else
