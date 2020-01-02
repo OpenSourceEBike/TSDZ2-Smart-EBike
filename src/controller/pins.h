@@ -121,4 +121,7 @@
 #define BATTERY_CURRENT__PORT     GPIOB
 #define BATTERY_CURRENT__PIN      GPIO_PIN_5
 
+#define DEBUG__PORT               GPIOA
+#define DEBUG__PIN                GPIO_PIN_2
+
 #endif /* _PINS_H_ */

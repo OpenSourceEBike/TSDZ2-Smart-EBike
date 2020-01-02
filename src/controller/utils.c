@@ -39,24 +39,35 @@ int32_t map_inverse (int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-uint8_t ui8_min (uint8_t value_a, uint8_t value_b)
+uint8_t ui8_min(uint8_t value_a, uint8_t value_b)
 {
   if (value_a < value_b) return value_a;
   else return value_b;
 }
 
-uint8_t ui8_max (uint8_t value_a, uint8_t value_b)
+uint16_t ui16_min(uint16_t value_a, uint16_t value_b)
+{
+  if (value_a < value_b) return value_a;
+  else return value_b;
+}
+
+uint8_t ui8_max(uint8_t value_a, uint8_t value_b)
 {
   if (value_a > value_b) return value_a;
   else return value_b;
 }
 
-void ui8_limit_max (uint8_t *ui8_p_value, uint8_t ui8_max_value)
+void ui8_limit_max(uint8_t *ui8_p_value, uint8_t ui8_max_value)
 {
   if (*ui8_p_value > ui8_max_value) { *ui8_p_value = ui8_max_value; }
 }
 
-void pi_controller (struct_pi_controller_state *pi_controller)
+void ui16_limit_max(uint8_t *ui16_p_value, uint8_t ui16_max_value)
+{
+  if (*ui16_p_value > ui16_max_value) { *ui16_p_value = ui16_max_value; }
+}
+
+void pi_controller(struct_pi_controller_state *pi_controller)
 {
   int16_t i16_error;
   int16_t i16_p_term;

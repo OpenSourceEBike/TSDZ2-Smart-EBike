@@ -41,8 +41,6 @@
 // throttle
 #define THROTTLE_FILTER_COEFFICIENT               1   // see note below
 #define ADC_THROTTLE_THRESHOLD                    10  // value in ADC 8 bits step
-//#define ADC_TORQUE_SENSOR_THRESHOLD               24   // value in ADC 12 bits step
-#define ADC_TORQUE_SENSOR_THRESHOLD               0
 
 /*---------------------------------------------------------
   NOTE: regarding throttle
@@ -160,10 +158,8 @@
   This signal is atenuated by the opamp 358.
 ---------------------------------------------------------*/
 
-
-
 // ADC battery current measurement and filter
-#define ADC_BATTERY_CURRENT_PER_ADC_STEP_X512                     102 // 1 A per 5 steps of ADC_10bits
+#define ADC10BITS_BATTERY_CURRENT_PER_ADC_STEP_X512                     80 // 1A per 6.4 steps of ADC_10bits (0.156A per each ADC step)
 #define ADC_BATTERY_VOLTAGE_MIN                                   (uint8_t) ((float) (BATTERY_LI_ION_CELLS_NUMBER * LI_ION_CELL_VOLTS_0) / ADC8BITS_BATTERY_VOLTAGE_PER_ADC_STEP)
 #define READ_BATTERY_CURRENT_FILTER_COEFFICIENT                   2
 #define READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT                   2

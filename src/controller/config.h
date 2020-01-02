@@ -17,8 +17,8 @@
 // BATTERY
 
 // This is the current that motor will draw from the battery
-// Higher value will give higher torque and the limit of the controller is 16 amps
-#define ADC_BATTERY_CURRENT_MAX 29 // 18 amps (0.625 amps each unit)
+// Higher value will give higher torque and the limit of the controller is 18 amps
+#define ADC_BATTERY_CURRENT_MAX 115 // 18 amps (0.156 amps each unit)
 
 // Considering the follow voltage values for each li-ion battery cell
 // State of charge 		| voltage

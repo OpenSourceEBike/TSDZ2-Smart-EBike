@@ -47,8 +47,9 @@ void adc_init (void)
 
   // 6s delay to wait for voltages stabilize (maybe beause capacitors on the circuit)
   // this was tested on 27.12.2019 by Casainho and lower values like 5s would not work.
-  ui16_counter = TIM3_GetCounter() + 6000;
-  while(TIM3_GetCounter() < ui16_counter) ;
+//  ui16_counter = TIM3_GetCounter() + 6000;
+//  while(TIM3_GetCounter() < ui16_counter) ;
+//  DEBUG
 
   // read and discard few samples of ADC, to make sure the next samples are ok
   for(ui8_i = 0; ui8_i < 64; ui8_i++)
@@ -67,11 +68,10 @@ void adc_init (void)
     while(TIM3_GetCounter() < ui16_counter) ; // delay
     adc_trigger();
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
-    ui16_adc_battery_current_offset += UI8_ADC_BATTERY_CURRENT;
+    ui16_adc_battery_current_offset += UI16_ADC_10_BIT_BATTERY_CURRENT;
   }
-  ui16_adc_battery_current_offset >>= 4;
-  ui8_g_adc_battery_current_offset = ui16_adc_battery_current_offset >> 2;
-  ui8_g_adc_motor_phase_current_offset = ui8_g_adc_battery_current_offset;
+  ui16_g_adc_battery_current_offset = ui16_adc_battery_current_offset >> 4;
+  ui16_g_adc_motor_phase_current_offset = ui16_g_adc_battery_current_offset;
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;
@@ -81,11 +81,9 @@ void adc_init (void)
     while(TIM3_GetCounter() < ui16_counter) ; // delay
     adc_trigger();
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
-    ui16_adc_torque_sensor_offset += ui16_adc_read_torque_sensor_10b();
+    ui16_adc_torque_sensor_offset += UI16_ADC_10_BIT_TORQUE_SENSOR;
   }
-  ui16_adc_torque_sensor_offset >>= 4;
-
-  ui16_g_adc_torque_sensor_min_value = ui16_adc_torque_sensor_offset + ADC_TORQUE_SENSOR_THRESHOLD;
+  ui16_g_adc_torque_sensor_min_value = ui16_adc_torque_sensor_offset >> 4;
 }
 
 static void adc_trigger (void)
@@ -93,61 +91,5 @@ static void adc_trigger (void)
   // trigger ADC conversion of all channels (scan conversion, buffered)
   ADC1->CSR &= 0x07; // clear EOC flag first (selected also channel 7)
   ADC1->CR1 |= ADC1_CR1_ADON; // Start ADC1 conversion
-}
-
-uint16_t ui16_adc_read_battery_current_10b (void)
-{
-  uint16_t temph;
-  uint8_t templ;
-
-  templ = *(uint8_t*)(0x53EB);
-  temph = *(uint8_t*)(0x53EA);
-
-  temph = ((uint16_t) temph) << 2 | ((uint16_t) templ);
-  
-  // we ignore low values temph < 5 to avoid issues with other consumers than the motor
-  // Piecewise linear is better than a step, to avoid limit cycles.
-  // in     --> outr
-  // 0 -  5 --> 0 - 0
-  // 5 - 15 --> 0 - 15
-  if (temph <= 5)
-    return 0;
-  if (temph > 15)
-    return temph;
-  temph -= 5;
-  return temph+(temph>>1);
-}
-
-uint16_t ui16_adc_read_torque_sensor_10b (void)
-{
-  uint16_t temph;
-  uint8_t templ;
-
-  templ = *(uint8_t*)(0x53E9);
-  temph = *(uint8_t*)(0x53E8);
-
-  return ((uint16_t) temph) << 2 | ((uint16_t) templ);
-}
-
-uint16_t ui16_adc_read_throttle_10b (void)
-{
-  uint16_t temph;
-  uint8_t templ;
-
-  templ = *(uint8_t*)(0x53EF);
-  temph = *(uint8_t*)(0x53EE);
-
-  return ((uint16_t) temph) << 2 | ((uint16_t) templ);
-}
-
-uint16_t ui16_adc_read_battery_voltage_10b (void)
-{
-  uint16_t temph;
-  uint8_t templ;
-
-  templ = *(uint8_t*)(0x53ED);
-  temph = *(uint8_t*)(0x53EC);
-
-  return ((uint16_t) temph) << 2 | ((uint16_t) templ);
 }
 

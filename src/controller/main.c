@@ -66,8 +66,11 @@ int main (void)
   //set clock at the max 16MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
 
-  brake_init();
-  while (brake_is_set()) ; // hold here while brake is pressed -- this is a protection for development
+//  brake_init();
+//  while (brake_is_set()) ; // hold here while brake is pressed -- this is a protection for development
+
+  GPIO_Init(DEBUG__PORT, DEBUG__PIN, GPIO_MODE_OUT_PP_LOW_SLOW);
+
   lights_init();
   uart2_init();
   timer2_init();

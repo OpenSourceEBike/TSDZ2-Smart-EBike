@@ -13,9 +13,9 @@
 // PLEASE NOTE: while debuging using STLinkV2, watchdog seems to be disable and to test, you will need to run without the debugger
 void watchdog_init (void)
 {
-  IWDG_Enable ();
-  IWDG_WriteAccessCmd (IWDG_WriteAccess_Enable);
-  IWDG_SetPrescaler (IWDG_Prescaler_4);
+  IWDG_Enable();
+  IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+  IWDG_SetPrescaler(IWDG_Prescaler_4);
 
 //  Timeout period
 //  The timeout period can be configured through the IWDG_PR and IWDG_RLR registers. It
@@ -29,6 +29,6 @@ void watchdog_init (void)
 //
 //  0.0159 = 2 * (1 / 128000) * 4 * 255
 //  R = 255
-  IWDG_SetReload (255); // ~16ms
-  IWDG_ReloadCounter ();
+  IWDG_SetReload(255); // ~16ms
+  IWDG_ReloadCounter();
 }
