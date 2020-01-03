@@ -47,9 +47,8 @@ void adc_init (void)
 
   // 6s delay to wait for voltages stabilize (maybe beause capacitors on the circuit)
   // this was tested on 27.12.2019 by Casainho and lower values like 5s would not work.
-//  ui16_counter = TIM3_GetCounter() + 6000;
-//  while(TIM3_GetCounter() < ui16_counter) ;
-//  DEBUG
+  ui16_counter = TIM3_GetCounter() + 6000;
+  while(TIM3_GetCounter() < ui16_counter) ;
 
   // read and discard few samples of ADC, to make sure the next samples are ok
   for(ui8_i = 0; ui8_i < 64; ui8_i++)
@@ -70,8 +69,9 @@ void adc_init (void)
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
     ui16_adc_battery_current_offset += UI16_ADC_10_BIT_BATTERY_CURRENT;
   }
-  ui16_g_adc_battery_current_offset = ui16_adc_battery_current_offset >> 4;
-  ui16_g_adc_motor_phase_current_offset = ui16_g_adc_battery_current_offset;
+  ui16_g_adc_motor_current_offset =
+      ui16_g_adc_battery_current_offset =
+          ui16_adc_battery_current_offset >> 4;
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;
