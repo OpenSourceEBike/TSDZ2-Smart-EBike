@@ -452,10 +452,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   static uint8_t ui8_temp;
 
   struct_config_vars *p_configuration_variables;
-
-//DEBUG
-DEBUG__PORT->ODR |= DEBUG__PIN;
-
   p_configuration_variables = get_configuration_variables ();
 
 
@@ -471,9 +467,6 @@ DEBUG__PORT->ODR |= DEBUG__PIN;
   ADC1->CR1 |= ADC1_CR1_ADON;
   while (!(ADC1->CSR & ADC1_FLAG_EOC)) ;
   ui16_g_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
-
-//DEBUG
-ui8_g_duty_cycle = 100;
 
   // calculate motor phase current ADC value
   if (ui8_g_duty_cycle > 0)
@@ -501,10 +494,6 @@ ui8_g_duty_cycle = 100;
   ui8_g_hall_sensors_state = ((HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN) >> 5) |
   ((HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN) >> 1) |
   ((HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN) >> 3);
-  
-//DEBUG
-ui8_g_hall_sensors_state = (ui8_g_hall_sensors_state + 1) % 6;
-ui8_g_hall_sensors_state++;
 
   // make sure we run next code only when there is a change on the hall sensors signal
   if (ui8_g_hall_sensors_state != ui8_hall_sensors_state_last)
@@ -529,8 +518,6 @@ ui8_g_hall_sensors_state++;
         if (ui16_PWM_cycles_counter_total > 0) 
         {
           ui16_motor_speed_erps = ((uint16_t) PWM_CYCLES_SECOND) / ui16_PWM_cycles_counter_total;
-// DEBUG
-ui16_motor_speed_erps = 100;
         }
         else
         { 
@@ -636,10 +623,7 @@ ui16_motor_speed_erps = 100;
   // we need to put phase voltage 90 degrees ahead of rotor position, to get current 90 degrees ahead and have max torque per amp
   ui8_svm_table_index -= 63;
   
-  
   /****************************************************************************/
-
-
   // PWM duty_cycle controller:
   // - limit battery undervoltage
   // - limit battery max current
@@ -653,9 +637,6 @@ ui16_motor_speed_erps = 100;
   {
     // reset counter
     ui8_current_controller_counter = 0;
-
-//DEBUG
-ui16_controller_adc_battery_max_current = 120;
     
     // if battery max current or phase current is too much, reduce duty cycle
     if((ui16_g_adc_battery_current > ui16_controller_adc_battery_max_current) ||
@@ -710,8 +691,6 @@ ui16_controller_adc_battery_max_current = 120;
 
   /****************************************************************************/
   // calculate final PWM duty_cycle values to be applied to TIMER1
-//DEBUG
-ui8_g_duty_cycle = 100;
   // scale and apply PWM duty_cycle for the 3 phases
   // phase A is advanced 240 degrees over phase B
   ui8_temp = ui8_svm_table [(uint8_t) (ui8_svm_table_index + 171 /* 240º */)];
@@ -803,12 +782,6 @@ ui8_g_duty_cycle = 100;
   {
     ui8_pas_state = 1;
   }
-
-// DEBUG
-if (ui8_pas_state)
-  ui8_pas_state = 0;
-else
-  ui8_pas_state = 1;
 
   // PAS signal did change
   if(ui8_pas_state != ui8_pas_state_old)
@@ -1013,32 +986,29 @@ else
 
   /****************************************************************************/
   // reload watchdog timer, every PWM cycle to avoid automatic reset of the microcontroller
-  if (ui8_first_time_run_flag)
-  { // from the init of watchdog up to first reset on PWM cycle interrupt,
-    // it can take up to 250ms and so we need to init here inside the PWM cycle
-    ui8_first_time_run_flag = 0;
-    watchdog_init();
-  }
-  else
-  {
-    IWDG->KR = IWDG_KEY_REFRESH; // reload watch dog timer counter
-
-    // if the main loop counteris not reset that it is blocked, so, reset the system
-    ++ui16_main_loop_wdt_cnt_1;
-    if (ui16_main_loop_wdt_cnt_1 > 7812) // 500ms
-    {
-      // reset system
-      //  resets a STM8 microcontroller.
-      //  It activates the Window Watchdog, which resets all because its seventh bit is null.
-      //  See page 127 of  RM0016 (STM8S and STM8AF microcontroller family) for more details.
-      WWDG->CR = 0x80;
-    }
-  }
+//  if (ui8_first_time_run_flag)
+//  { // from the init of watchdog up to first reset on PWM cycle interrupt,
+//    // it can take up to 250ms and so we need to init here inside the PWM cycle
+//    ui8_first_time_run_flag = 0;
+//    watchdog_init();
+//  }
+//  else
+//  {
+//    IWDG->KR = IWDG_KEY_REFRESH; // reload watch dog timer counter
+//
+//    // if the main loop counteris not reset that it is blocked, so, reset the system
+//    ++ui16_main_loop_wdt_cnt_1;
+//    if (ui16_main_loop_wdt_cnt_1 > 15624) // 1 second
+//    {
+//      // reset system
+//      //  resets a STM8 microcontroller.
+//      //  It activates the Window Watchdog, which resets all because its seventh bit is null.
+//      //  See page 127 of  RM0016 (STM8S and STM8AF microcontroller family) for more details.
+////      WWDG->CR = 0x80;
+//    }
+//  }
 
   /****************************************************************************/
-
-//DEBUG
-DEBUG__PORT->ODR &= ~DEBUG__PIN;
 
   // clears the TIM1 interrupt TIM1_IT_UPDATE pending bit
   TIM1->SR1 = (uint8_t)(~(uint8_t)TIM1_IT_CC4);

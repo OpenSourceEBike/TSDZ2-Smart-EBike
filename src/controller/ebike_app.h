@@ -66,7 +66,6 @@ extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;
 
 extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
-void ebike_app_init (void);
 void ebike_app_controller (void);
 struct_config_vars* get_configuration_variables (void);
 

@@ -148,11 +148,6 @@ static void apply_boost_fade_out(uint16_t *ui16_target_current);
 uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 
-void ebike_app_init(void)
-{
-  ebike_app_set_battery_max_current(ADC_BATTERY_CURRENT_MAX);
-}
-
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
 {
@@ -186,9 +181,9 @@ static void ebike_control_motor(void)
   ui16_adc_max_battery_power_current = 0;
 
   // controller works with no less than 15V so calculate the target current only for higher voltages
-  if(ui16_battery_voltage_filtered > 15)
+  if (ui16_battery_voltage_filtered > 15)
   {
-    if(m_config_vars.ui8_startup_motor_power_boost_assist_level > 0)
+    if (m_config_vars.ui8_startup_motor_power_boost_assist_level > 0)
     {
       ui32_temp = (uint32_t) ui16_m_pedal_torque_x10 * (uint32_t) m_config_vars.ui8_startup_motor_power_boost_assist_level;
       ui32_temp /= 10;
@@ -196,7 +191,7 @@ static void ebike_control_motor(void)
       // 6.410 = 1 / 0.156 (each ADC step for current)
       // 6.410 * 8 = ~51
       ui32_temp = (ui32_temp * 51) / ((uint32_t) ui16_battery_voltage_filtered);
-      ui16_adc_max_battery_current_boost_state = ui32_temp >> 1;
+      ui16_adc_max_battery_current_boost_state = ui32_temp >> 3;
       ui16_limit_max(&ui16_adc_max_battery_current_boost_state, 1023);
     }
     else
@@ -204,23 +199,18 @@ static void ebike_control_motor(void)
       // nothing
     }
 
-    if(m_config_vars.ui8_assist_level_factor_x10 > 0)
+    if (m_config_vars.ui8_assist_level_factor_x10 > 0)
     {
-      if(m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation == 0)
+      if (m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation == 0)
       {
         ui32_temp = (uint32_t) ui16_m_pedal_power_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
         ui32_temp /= 100;
       }
       else
       {
-        if(ui8_pas_cadence_rpm)
+        if (ui8_pas_cadence_rpm)
         {
           ui32_temp = (uint32_t) ui16_m_pedal_power_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
-          ui32_temp /= 100;
-        }
-        else
-        {
-          ui32_temp = (uint32_t) ui16_m_pedal_torque_x10 * (uint32_t) m_config_vars.ui8_assist_level_factor_x10;
           ui32_temp /= 100;
         }
       }
@@ -228,8 +218,15 @@ static void ebike_control_motor(void)
       // 6.410 = 1 / 0.156 (each ADC step for current)
       // 6.410 * 8 = ~51
       ui32_temp = (ui32_temp * 51) / ((uint32_t) ui16_battery_voltage_filtered);
-      ui16_adc_max_battery_current = ui32_temp >> 1;
+      ui16_adc_max_battery_current = ui32_temp >> 3;
       ui16_limit_max(&ui16_adc_max_battery_current, 1023);
+
+      if (ui8_pas_cadence_rpm &&
+          ui16_m_pedal_power_x10 == 0)
+      {
+        ui16_adc_max_battery_current = 1;
+      }
+
       ui16_m_adc_battery_target_current = ui16_adc_max_battery_current;
     }
     else
@@ -654,7 +651,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     // firmware version
     case 2:
       ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 50;
+      ui8_tx_buffer[4] = 51;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
       break;
