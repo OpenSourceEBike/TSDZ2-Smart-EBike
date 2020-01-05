@@ -47,6 +47,7 @@ typedef struct
   uint8_t ui8_ramp_up_amps_per_second_x10;
   uint8_t ui8_torque_sensor_calibration_pedal_ground;
   uint8_t ui8_torque_sensor_calibration_feature_enabled;
+  uint8_t ui8_battery_current_min_adc;
 } struct_config_vars;
 
 

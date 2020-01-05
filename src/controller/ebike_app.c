@@ -90,7 +90,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   84
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   85
 #define UART_NUMBER_DATA_BYTES_TO_SEND      28
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -164,21 +164,19 @@ void ebike_app_controller(void)
 
 static void ebike_control_motor(void)
 {
-  static uint32_t ui32_temp;
+  uint32_t ui32_temp = 0;
   uint8_t ui8_tmp_pas_cadence_rpm;
   uint16_t ui16_adc_max_battery_current;
   uint16_t ui16_adc_max_battery_power_current = 0;
   uint8_t ui8_boost_enabled_and_applied = 0;
-  uint16_t ui16_adc_max_battery_current_boost_state;
+  uint16_t ui16_adc_max_battery_current_boost_state = 0;
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage();
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
   ui8_m_brake_is_set = brake_is_set();
 
   // make sure this vars are reset to avoid repetion code on next elses
-  ui16_adc_max_battery_current_boost_state = 0;
   ui16_m_adc_battery_target_current = 0;
-  ui16_adc_max_battery_power_current = 0;
 
   // controller works with no less than 15V so calculate the target current only for higher voltages
   if (ui16_battery_voltage_filtered > 15)
@@ -221,10 +219,11 @@ static void ebike_control_motor(void)
       ui16_adc_max_battery_current = ui32_temp >> 3;
       ui16_limit_max(&ui16_adc_max_battery_current, 1023);
 
+      // if user is rotating the pedals, force use the min current value
       if (ui8_pas_cadence_rpm &&
-          ui16_m_pedal_power_x10 == 0)
+          ui16_adc_max_battery_current < m_config_vars.ui8_battery_current_min_adc)
       {
-        ui16_adc_max_battery_current = 1;
+        ui16_adc_max_battery_current = m_config_vars.ui8_battery_current_min_adc;
       }
 
       ui16_m_adc_battery_target_current = ui16_adc_max_battery_current;
@@ -324,10 +323,11 @@ static void ebike_control_motor(void)
   }
 
   // check to see if we should disable the motor
-  if(ui8_m_motor_enabled &&
+  if(ui8_system_state != NO_ERROR ||
+      (ui8_m_motor_enabled &&
       ui16_motor_get_motor_speed_erps() == 0 &&
       ui16_m_adc_battery_target_current == 0 &&
-      ui8_g_duty_cycle == 0)
+      ui8_g_duty_cycle == 0))
   {
     ui8_m_motor_enabled = 0;
     motor_disable_pwm();
@@ -643,6 +643,9 @@ static void communications_process_packages(uint8_t ui8_frame_type)
         ui16_torque_sensor_linearize_right[i][1] = (uint16_t) ui8_rx_buffer[j++];
         ui16_torque_sensor_linearize_right[i][1] |= ((uint16_t) ui8_rx_buffer[j++]) << 8;
       }
+
+      // battery current min ADC
+      m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
 
       // ok, now we can clear this error/state
       ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
