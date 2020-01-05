@@ -427,8 +427,20 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ADC1->CR1 |= ADC1_CR1_ADON;               // start ADC1 conversion
   while (!(ADC1->CSR & ADC1_FLAG_EOC));     // wait for end of conversion
   
-  ui8_controller_adc_battery_current = ui16_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
+  ui16_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
+
+  // we ignore low values of the battery current < 5 to avoid issues with other consumers than the motor
+  // Piecewise linear is better than a step, to avoid limit cycles.
+  // in     --> out
+  // 0 -  5 --> 0 - 0
+  // 5 - 15 --> 0 - 15
+  if (ui16_adc_battery_current <= 5)
+    ui16_adc_battery_current = 0;
+  else if (ui16_adc_battery_current <= 15)
+    ui16_adc_battery_current = (ui16_adc_battery_current + ui16_adc_battery_current >> 1) - 5;
   
+  ui8_controller_adc_battery_current = ui16_adc_battery_current;
+
   // calculate motor phase current ADC value
   if (ui8_g_duty_cycle > 0)
   {
