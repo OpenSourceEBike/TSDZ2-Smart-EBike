@@ -983,31 +983,29 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     }
   }
 
-
   /****************************************************************************/
   // reload watchdog timer, every PWM cycle to avoid automatic reset of the microcontroller
-//  if (ui8_first_time_run_flag)
-//  { // from the init of watchdog up to first reset on PWM cycle interrupt,
-//    // it can take up to 250ms and so we need to init here inside the PWM cycle
-//    ui8_first_time_run_flag = 0;
-//    watchdog_init();
-//  }
-//  else
-//  {
-//    IWDG->KR = IWDG_KEY_REFRESH; // reload watch dog timer counter
-//
-//    // if the main loop counteris not reset that it is blocked, so, reset the system
-//    ++ui16_main_loop_wdt_cnt_1;
-//    if (ui16_main_loop_wdt_cnt_1 > 15624) // 1 second
-//    {
-//      // reset system
-//      //  resets a STM8 microcontroller.
-//      //  It activates the Window Watchdog, which resets all because its seventh bit is null.
-//      //  See page 127 of  RM0016 (STM8S and STM8AF microcontroller family) for more details.
-////      WWDG->CR = 0x80;
-//    }
-//  }
+  if (ui8_first_time_run_flag)
+  { // from the init of watchdog up to first reset on PWM cycle interrupt,
+    // it can take up to 250ms and so we need to init here inside the PWM cycle
+    ui8_first_time_run_flag = 0;
+    watchdog_init();
+  }
+  else
+  {
+    IWDG->KR = IWDG_KEY_REFRESH; // reload watch dog timer counter
 
+    // if the main loop counteris not reset that it is blocked, so, reset the system
+    ++ui16_main_loop_wdt_cnt_1;
+    if (ui16_main_loop_wdt_cnt_1 > 15624) // 1 second
+    {
+      // reset system
+      //  resets a STM8 microcontroller.
+      //  It activates the Window Watchdog, which resets all because its seventh bit is null.
+      //  See page 127 of  RM0016 (STM8S and STM8AF microcontroller family) for more details.
+      WWDG->CR = 0x80;
+    }
+  }
   /****************************************************************************/
 
   // clears the TIM1 interrupt TIM1_IT_UPDATE pending bit
