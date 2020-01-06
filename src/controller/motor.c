@@ -435,9 +435,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // 0 -  5 --> 0 - 0
   // 5 - 15 --> 0 - 15
   if (ui16_adc_battery_current <= 5)
+  {
     ui16_adc_battery_current = 0;
+  }
   else if (ui16_adc_battery_current <= 15)
-    ui16_adc_battery_current = (ui16_adc_battery_current + ui16_adc_battery_current >> 1) - 5;
+  {
+    ui16_adc_battery_current -= 5; // 5 - 15 --> 0 - 10
+    ui16_adc_battery_current += (ui16_adc_battery_current >> 1); // multiply by 1.5: 0 - 10 --> 0 - 15
+  }
   
   ui8_controller_adc_battery_current = ui16_adc_battery_current;
 
