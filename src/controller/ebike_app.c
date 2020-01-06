@@ -473,11 +473,14 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // ADC 10 bits each step current is 0.156
       // 0.156 * 5 = 0.78
       // send battery_current_x5
-      ui8_tx_buffer[5] = (uint8_t) ((float) motor_get_adc_battery_current_filtered() * 0.78);
+      ui8_tx_buffer[5] = (uint8_t) ((ui16_g_adc_battery_current_filtered * 78) / 100);
 
       // wheel speed
-      ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
-      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
+//      ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
+//      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
+ui16_temp = (uint8_t) ((ui16_g_adc_motor_current_filtered * 78) / 500);
+ui8_tx_buffer[6] = (uint8_t) (ui16_temp & 0xff);
+ui8_tx_buffer[7] = (uint8_t) (ui16_temp >> 8);
 
       // brake state
       ui8_tx_buffer[8] = 0;
@@ -1304,7 +1307,7 @@ struct_config_vars* get_configuration_variables (void)
 void check_system()
 {
   #define MOTOR_BLOCKED_COUNTER_THRESHOLD             30    // 30  =>  3 seconds
-  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5  8     // 8  =>  (8 * 0.826) / 5 = 1.3216 ampere  =>  (X) units = ((X * 0.826) / 5) ampere
+  #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5  10     // 10  =>  0.156 each unit
   #define MOTOR_BLOCKED_ERPS_THRESHOLD                10    // 10 ERPS
   #define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD       100   // 100  =>  10 seconds
   
@@ -1330,7 +1333,7 @@ void check_system()
   else
   {
     // if battery current (x5) is over the current threshold (x5) and the motor ERPS is below threshold start setting motor blocked error code
-    if ((motor_get_adc_battery_current_filtered() > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
+    if ((ui16_g_adc_battery_current_filtered > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
     {
       // increment motor blocked counter with 100 milliseconds
       ui8_motor_blocked_counter++;
