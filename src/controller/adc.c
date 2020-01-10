@@ -69,9 +69,7 @@ void adc_init (void)
     while(!ADC1_GetFlagStatus(ADC1_FLAG_EOC)) ; // wait for end of conversion
     ui16_adc_battery_current_offset += UI16_ADC_10_BIT_BATTERY_CURRENT;
   }
-  ui16_g_adc_battery_current_offset =
-      ui16_g_adc_motor_phase_current_offset =
-          ui16_adc_battery_current_offset >> 4;
+  ui16_g_adc_current_offset = ui16_adc_battery_current_offset >> 4;
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;

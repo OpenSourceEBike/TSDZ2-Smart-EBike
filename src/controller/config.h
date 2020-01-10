@@ -20,6 +20,9 @@
 // Higher value will give higher torque and the limit of the controller is 18 amps
 #define ADC_BATTERY_CURRENT_MAX 115 // 18 amps (0.156 amps each unit)
 
+// This value was tested experimentally
+#define ADC_MOTOR_CURRENT_MAX 192 // 30 amps (0.156 amps each unit)
+
 // Considering the follow voltage values for each li-ion battery cell
 // State of charge 		| voltage
 #define LI_ION_CELL_VOLTS_100   4.06

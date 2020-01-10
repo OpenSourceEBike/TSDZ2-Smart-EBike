@@ -399,14 +399,13 @@ uint16_t ui16_adc_battery_voltage_accumulated = 0;
 uint16_t ui16_adc_battery_voltage_filtered_10b;
 
 uint16_t ui16_adc_battery_current_accumulated = 0;
-uint16_t ui16_adc_battery_current_filtered;
+volatile uint16_t ui16_g_adc_battery_current_filtered;
 
 volatile uint16_t ui16_g_adc_battery_current;
 static volatile uint16_t ui16_g_adc_motor_phase_current;
 uint8_t ui8_current_controller_counter = 0;
 
 volatile uint16_t ui16_adc_target_motor_phase_max_current;
-volatile uint16_t ui16_g_adc_motor_phase_current_offset;
 
 uint8_t ui8_pas_state;
 uint8_t ui8_pas_state_old;
@@ -430,7 +429,6 @@ void read_battery_voltage(void);
 void read_battery_current(void);
 void calc_foc_angle(void);
 uint8_t asin_table(uint8_t ui8_inverted_angle_x128);
-void motor_set_phase_current_max(uint16_t ui16_value);
 
 void motor_controller(void)
 {
@@ -438,7 +436,6 @@ void motor_controller(void)
   read_battery_current();
   calc_foc_angle();
 }
-
 
 // Measures did with a 24V Q85 328 RPM motor, rotating motor backwards by hand:
 // Hall sensor A positivie to negative transition | BEMF phase B at max value / top of sinewave
@@ -1048,7 +1045,6 @@ void motor_init(void)
 {
   motor_set_pwm_duty_cycle_ramp_up_inverse_step(PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP); // each step = 64us
   motor_set_pwm_duty_cycle_ramp_down_inverse_step(PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP); // each step = 64us
-  motor_set_phase_current_max(ADC_MOTOR_PHASE_CURRENT_MAX);
 }
 
 void motor_set_pwm_duty_cycle_target(uint8_t ui8_value)
@@ -1071,11 +1067,6 @@ void motor_set_pwm_duty_cycle_ramp_down_inverse_step (uint16_t ui16_value)
   ui16_duty_cycle_ramp_down_inverse_step = ui16_value;
 }
 
-void motor_set_phase_current_max(uint16_t ui16_value)
-{
-  ui16_adc_target_motor_phase_max_current = ui16_g_adc_motor_phase_current_offset + ui16_value;
-}
-
 uint16_t ui16_motor_get_motor_speed_erps(void)
 {
   return ui16_motor_speed_erps;
@@ -1094,7 +1085,7 @@ void read_battery_current(void)
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
   ui16_adc_battery_current_accumulated -= ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
   ui16_adc_battery_current_accumulated += ui16_g_adc_battery_current;
-  ui16_adc_battery_current_filtered = ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
+  ui16_g_adc_battery_current_filtered = ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
 }
 
 void calc_foc_angle(void)
@@ -1125,7 +1116,7 @@ void calc_foc_angle(void)
   // calc I phase current
   if (ui8_g_duty_cycle > 10)
   {
-    ui16_temp = ((uint16_t) ui16_adc_battery_current_filtered) * ADC10BITS_BATTERY_CURRENT_PER_ADC_STEP_X512;
+    ui16_temp = ((uint16_t) ui16_g_adc_battery_current_filtered) * ADC10BITS_BATTERY_CURRENT_PER_ADC_STEP_X512;
     ui32_i_phase_current_x2 = ui16_temp / ui8_g_duty_cycle;
   }
   else
@@ -1222,11 +1213,6 @@ void motor_set_adc_battery_voltage_cut_off(uint8_t ui8_value)
 uint16_t motor_get_adc_battery_voltage_filtered_10b(void)
 {
   return ui16_adc_battery_voltage_filtered_10b;
-}
-
-uint16_t motor_get_adc_battery_current_filtered(void)
-{
-  return ui16_adc_battery_current_filtered;
 }
 
 void motor_enable_pwm(void)
