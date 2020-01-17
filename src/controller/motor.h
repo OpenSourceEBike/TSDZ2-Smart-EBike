@@ -23,13 +23,19 @@
 #define MOTOR_CONTROLLER_STATE_MOTOR_BLOCKED		32
 
 extern volatile uint8_t ui8_g_duty_cycle;
-extern volatile uint16_t ui16_g_adc_motor_phase_current_offset;
+extern volatile uint16_t ui16_g_adc_motor_current_offset;
 extern volatile uint16_t ui16_g_adc_battery_current;
+extern volatile uint16_t ui16_g_adc_motor_current;
 extern volatile uint8_t ui8_g_foc_angle;
 extern volatile uint16_t ui16_g_adc_torque_sensor_max_value_per_rotation;
 extern volatile uint8_t ui8_g_pas_pedal_right;
 extern volatile uint8_t ui8_g_hall_sensors_state;
 extern volatile uint16_t ui16_main_loop_wdt_cnt_1;
+extern volatile uint16_t ui16_g_adc_target_battery_max_current;
+extern volatile uint16_t ui16_g_adc_current_offset;
+extern volatile uint16_t ui16_g_adc_target_motor_max_current;
+extern volatile uint16_t ui16_g_adc_battery_current_filtered;
+extern volatile uint16_t ui16_g_adc_motor_current_filtered;
 
 /***************************************************************************************/
 // Motor interface
@@ -48,7 +54,6 @@ void motor_set_pwm_duty_cycle_target (uint8_t ui8_value);
 void motor_controller (void);
 void motor_set_adc_battery_voltage_cut_off(uint8_t ui8_value);
 uint16_t motor_get_adc_battery_voltage_filtered_10b(void);
-uint16_t motor_get_adc_battery_current_filtered(void);
 void motor_enable_pwm(void);
 void motor_disable_pwm(void);
 /***************************************************************************************/

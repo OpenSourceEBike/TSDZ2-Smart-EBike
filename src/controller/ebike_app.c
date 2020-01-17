@@ -63,10 +63,9 @@ static volatile uint16_t ui16_m_torque_sensor_adc_steps = 0;
 volatile uint16_t ui16_m_torque_sensor_raw = 0;
 volatile uint16_t ui16_m_adc_torque_sensor_raw = 0;
 volatile uint16_t ui16_g_adc_torque_sensor_min_value;
-volatile uint16_t ui16_g_adc_battery_current_offset;
 volatile uint8_t ui8_g_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
-volatile uint16_t ui16_g_adc_target_battery_max_current;
 uint16_t ui16_m_adc_battery_current_max;
+uint16_t ui16_m_adc_motor_current_max;
 volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 
 
@@ -90,7 +89,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   85
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   86
 #define UART_NUMBER_DATA_BYTES_TO_SEND      28
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -112,7 +111,9 @@ static void communications_process_packages(uint8_t ui8_frame_type);
 // system functions
 static void ebike_control_motor(void);
 static void ebike_app_set_battery_max_current(uint8_t ui8_value);
+static void ebike_app_set_motor_max_current(uint8_t ui8_value);
 static void ebike_app_set_target_adc_battery_max_current(uint16_t ui16_value);
+static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value);
 
 static void check_system(void);
 static void throttle_read(void);
@@ -310,7 +311,10 @@ static void ebike_control_motor(void)
   apply_temperature_limiting(&ui16_m_adc_battery_target_current);
 
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR) { ui16_m_adc_battery_target_current = 0; }
+  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR)
+  {
+    ui16_m_adc_battery_target_current = 0;
+  }
 
   // check to see if we should enable the motor
   if(ui8_m_motor_enabled == 0 &&
@@ -338,10 +342,14 @@ static void ebike_control_motor(void)
   {
     // finally set the target battery current to the battery current controller
     ebike_app_set_target_adc_battery_max_current(ui16_m_adc_battery_target_current);
+
+    // no control here, just setup max value
+    ebike_app_set_target_adc_motor_max_current(ADC_MOTOR_CURRENT_MAX);
   }
   else
   {
     ebike_app_set_target_adc_battery_max_current(0);
+    ebike_app_set_target_adc_motor_max_current(0);
     ui8_g_duty_cycle = 0;
   }
 
@@ -473,7 +481,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // ADC 10 bits each step current is 0.156
       // 0.156 * 5 = 0.78
       // send battery_current_x5
-      ui8_tx_buffer[5] = (uint8_t) ((float) motor_get_adc_battery_current_filtered() * 0.78);
+      ui8_tx_buffer[5] = (uint8_t) ((ui16_g_adc_battery_current_filtered * 78) / 100);
 
       // wheel speed
       ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
@@ -533,9 +541,11 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // system state
       ui8_tx_buffer[19] = ui8_system_state;
 
-      // temperature actual limiting value
-      // NOT USED, remove when possible
-      ui8_tx_buffer[20] = 0;
+      // motor current
+      // ADC 10 bits each step current is 0.156
+      // 0.156 * 5 = 0.78
+      // send battery_current_x5
+      ui8_tx_buffer[20] = (uint8_t) ((ui16_g_adc_motor_current_filtered * 78) / 100);
 
       // wheel_speed_sensor_tick_counter
       ui8_tx_buffer[21] = (uint8_t) (ui32_wheel_speed_sensor_tick_counter & 0xff);
@@ -553,6 +563,12 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
     // set configurations
     case 1:
+      // disable the motor to avoid a quick of the motor while configurations are changed
+      // disable the motor, lets hope this is safe to do here, in this way
+      // the motor shold be enabled again on the ebike_control_motor()
+      ui8_m_motor_enabled = 0;
+      motor_disable_pwm();
+
       // battery low voltage cut-off
       m_config_vars.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
 
@@ -647,6 +663,9 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
 
+      // motor max current
+      ebike_app_set_motor_max_current(ui8_rx_buffer[82]);
+
       // ok, now we can clear this error/state
       ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
       break;
@@ -654,7 +673,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     // firmware version
     case 2:
       ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 51;
+      ui8_tx_buffer[4] = 52;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
       break;
@@ -690,7 +709,18 @@ static void ebike_app_set_target_adc_battery_max_current(uint16_t ui16_value)
     ui16_value = ui16_m_adc_battery_current_max;
   }
 
-  ui16_g_adc_target_battery_max_current = ui16_g_adc_battery_current_offset + ui16_value;
+  ui16_g_adc_target_battery_max_current = ui16_g_adc_current_offset + ui16_value;
+}
+
+static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value)
+{
+  // limit max
+  if (ui16_value > ui16_m_adc_motor_current_max)
+  {
+    ui16_value = ui16_m_adc_motor_current_max;
+  }
+
+  ui16_g_adc_target_motor_max_current = ui16_g_adc_current_offset + ui16_value;
 }
 
 // in amps
@@ -702,6 +732,18 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   if (ui16_m_adc_battery_current_max > ADC_BATTERY_CURRENT_MAX)
   {
     ui16_m_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX;
+  }
+}
+
+// in amps
+static void ebike_app_set_motor_max_current(uint8_t ui8_value)
+{
+  // each 1 unit = 0.156 amps (0.156 * 256 = 40)
+  ui16_m_adc_motor_current_max = ((((uint16_t) ui8_value) << 8) / 40);
+
+  if (ui16_m_adc_motor_current_max > ADC_MOTOR_CURRENT_MAX)
+  {
+    ui16_m_adc_motor_current_max = ADC_MOTOR_CURRENT_MAX;
   }
 }
 
@@ -1330,7 +1372,7 @@ void check_system()
   else
   {
     // if battery current (x5) is over the current threshold (x5) and the motor ERPS is below threshold start setting motor blocked error code
-    if ((motor_get_adc_battery_current_filtered() > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
+    if ((ui16_g_adc_battery_current_filtered > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5) && (ui16_motor_get_motor_speed_erps() < MOTOR_BLOCKED_ERPS_THRESHOLD))
     {
       // increment motor blocked counter with 100 milliseconds
       ui8_motor_blocked_counter++;

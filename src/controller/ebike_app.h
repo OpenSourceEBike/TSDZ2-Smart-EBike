@@ -54,9 +54,7 @@ typedef struct
 
 extern volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 extern volatile uint16_t ui16_g_adc_torque_sensor_min_value;
-extern volatile uint16_t ui16_g_adc_battery_current_offset;
 extern volatile uint8_t ui8_g_ebike_app_state;
-extern volatile uint16_t ui16_g_adc_target_battery_max_current;
 
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_g_pedaling_direction;

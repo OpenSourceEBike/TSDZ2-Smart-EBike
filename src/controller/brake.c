@@ -20,15 +20,15 @@ void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER)
 {
   if (brake_is_set())
   {
-    motor_controller_set_state (MOTOR_CONTROLLER_STATE_BRAKE);
+    motor_controller_set_state(MOTOR_CONTROLLER_STATE_BRAKE);
   }
   else
   {
-    motor_controller_reset_state (MOTOR_CONTROLLER_STATE_BRAKE);
+    motor_controller_reset_state(MOTOR_CONTROLLER_STATE_BRAKE);
   }
 }
 
-void brake_init (void)
+void brake_init(void)
 {
   //brake pin as external input pin interrupt
   GPIO_Init(BRAKE__PORT,
