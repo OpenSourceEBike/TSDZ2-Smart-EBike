@@ -387,8 +387,8 @@ uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
 uint16_t ui16_value;
 
-uint16_t ui16_counter_adc_battery_current_ramp_up = 0;
-uint16_t ui16_controller_adc_battery_max_current = 0;
+uint16_t ui16_counter_adc_current_ramp_up = 0;
+uint16_t ui16_controller_adc_max_current = 0;
 
 uint8_t ui8_first_time_run_flag = 1;
 
@@ -643,9 +643,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // reset counter
     ui8_current_controller_counter = 0;
     
-    // if battery max current or phase current is too much, reduce duty cycle
-    if((ui16_g_adc_battery_current > ui16_controller_adc_battery_max_current) ||
-       (ui16_g_adc_motor_current > ui16_g_adc_target_motor_max_current))
+    // if battery max current or motor current ramp up is too much, reduce duty cycle
+    if((ui16_g_adc_battery_current > ui16_g_adc_target_battery_max_current) ||
+       (ui16_g_adc_motor_current > ui16_controller_adc_max_current))
     {
       if(ui8_g_duty_cycle > 0)
       {
@@ -755,21 +755,21 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
   // ramp up ADC battery current
-  if (ui16_g_adc_target_battery_max_current > ui16_controller_adc_battery_max_current)
+  if (ui16_g_adc_target_motor_max_current > ui16_controller_adc_max_current)
   {
-    if (ui16_counter_adc_battery_current_ramp_up++ >= ui16_g_current_ramp_up_inverse_step)
+    if (ui16_counter_adc_current_ramp_up++ >= ui16_g_current_ramp_up_inverse_step)
     {
       // reset counter
-      ui16_counter_adc_battery_current_ramp_up = 0;
+      ui16_counter_adc_current_ramp_up = 0;
       
       // increment current
-      ui16_controller_adc_battery_max_current++;
+      ui16_controller_adc_max_current++;
     }
   }
-  else if (ui16_g_adc_target_battery_max_current < ui16_controller_adc_battery_max_current)
+  else if (ui16_g_adc_target_motor_max_current < ui16_controller_adc_max_current)
   {
     // we are not doing a ramp down here, just directly setting to the target value
-    ui16_controller_adc_battery_max_current = ui16_g_adc_target_battery_max_current;
+    ui16_controller_adc_max_current = ui16_g_adc_target_motor_max_current;
   }
   
   /****************************************************************************/

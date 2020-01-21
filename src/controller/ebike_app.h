@@ -21,7 +21,7 @@
 
 typedef struct
 {
-  uint8_t ui8_assist_level_factor_x10;
+  uint8_t ui8_assist_level_factor_x100;
   uint8_t ui8_battery_max_current;
   uint8_t ui8_motor_power_x10;
   uint16_t ui16_battery_low_voltage_cut_off_x10;
