@@ -21,7 +21,7 @@
 
 typedef struct
 {
-  uint8_t ui8_assist_level_factor_x100;
+  uint16_t ui16_assist_level_factor_x1000;
   uint8_t ui8_battery_max_current;
   uint8_t ui8_motor_power_x10;
   uint16_t ui16_battery_low_voltage_cut_off_x10;
@@ -34,7 +34,7 @@ typedef struct
   uint8_t ui8_target_battery_max_power_div25;
   uint8_t configuration_variables;
   uint8_t ui8_startup_motor_power_boost_feature_enabled;
-  uint8_t ui8_startup_motor_power_boost_assist_level;
+  uint16_t ui16_startup_motor_power_boost_assist_level;
   uint8_t ui8_startup_motor_power_boost_always;
   uint8_t ui8_startup_motor_power_boost_limit_to_max_power;
   uint8_t ui8_startup_motor_power_boost_time;

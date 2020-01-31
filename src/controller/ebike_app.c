@@ -90,7 +90,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   86
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   85
 #define UART_NUMBER_DATA_BYTES_TO_SEND      28
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -168,7 +168,7 @@ static void ebike_control_motor(void)
 {
   uint32_t ui32_temp = 0;
   uint32_t ui32_pedal_power_no_cadence_x10 = 0;
-  uint32_t ui32_assist_level_factor_x100;
+  uint32_t ui32_assist_level_factor_x1000;
   uint32_t ui32_current_amps_x10 = 0;
   uint8_t ui8_tmp_pas_cadence_rpm;
   uint16_t ui16_adc_current;
@@ -186,20 +186,20 @@ static void ebike_control_motor(void)
   // controller works with no less than 15V so calculate the target current only for higher voltages
   if (ui16_battery_voltage_filtered > 15)
   {
-    if (m_config_vars.ui8_assist_level_factor_x100 > 0)
+    if (m_config_vars.ui16_assist_level_factor_x1000 > 0)
     {
-      ui32_assist_level_factor_x100 = (uint32_t) m_config_vars.ui8_assist_level_factor_x100;
+      ui32_assist_level_factor_x1000 = (uint32_t) m_config_vars.ui16_assist_level_factor_x1000;
       // force a min of 10 RPM cadence
       ui32_pedal_power_no_cadence_x10 = (((uint32_t) ui16_m_pedal_torque_x100 * 10) / (uint32_t) 96);
 
       if (m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation == 0 ||
           ui8_pas_cadence_rpm)
       {
-        ui32_current_amps_x10 = ((uint32_t) ui16_m_pedal_power_x10 * ui32_assist_level_factor_x100) / 100;
+        ui32_current_amps_x10 = ((uint32_t) ui16_m_pedal_power_x10 * ui32_assist_level_factor_x1000) / 1000;
       }
       else
       {
-        ui32_current_amps_x10 = (ui32_pedal_power_no_cadence_x10 * ui32_assist_level_factor_x100) / 100;
+        ui32_current_amps_x10 = (ui32_pedal_power_no_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
       }
 
       // 6.410 = 1 / 0.156 (each ADC step for current)
@@ -217,9 +217,9 @@ static void ebike_control_motor(void)
       ui16_m_adc_target_current = ui16_adc_current;
 
       // now calculate the current for BOOST
-      if (m_config_vars.ui8_startup_motor_power_boost_assist_level > 0)
+      if (m_config_vars.ui16_startup_motor_power_boost_assist_level > 0)
       {
-        ui32_current_amps_x10 = (ui32_pedal_power_no_cadence_x10 * (uint32_t) m_config_vars.ui8_startup_motor_power_boost_assist_level) / 100;
+        ui32_current_amps_x10 = (ui32_pedal_power_no_cadence_x10 * (uint32_t) m_config_vars.ui16_startup_motor_power_boost_assist_level) / 100;
 
         // 6.410 = 1 / 0.156 (each ADC step for current)
         // 6.410 * 8 = ~51
@@ -467,19 +467,22 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     // periodic data
     case 0:
       // assist level
-      m_config_vars.ui8_assist_level_factor_x100 = ui8_rx_buffer[3];
+      m_config_vars.ui16_assist_level_factor_x1000 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
 
       // lights state
-      m_config_vars.ui8_lights = (ui8_rx_buffer[4] & (1 << 0)) ? 1: 0;
+      m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
       // set lights
       lights_set_state (m_config_vars.ui8_lights);
 
       // walk assist / cruise function
-      m_config_vars.ui8_walk_assist = (ui8_rx_buffer[4] & (1 << 1)) ? 1: 0;
+      m_config_vars.ui8_walk_assist = (ui8_rx_buffer[5] & (1 << 1)) ? 1: 0;
 
       // battery max power target
-      m_config_vars.ui8_target_battery_max_power_div25 = ui8_rx_buffer[5];
+      m_config_vars.ui8_target_battery_max_power_div25 = ui8_rx_buffer[6];
+
+      // startup motor power boost
+      m_config_vars.ui16_startup_motor_power_boost_assist_level = (((uint16_t) ui8_rx_buffer[8]) << 8) + ((uint16_t) ui8_rx_buffer[7]);
 
       // now send data back
       // ADC 10 bits battery voltage
@@ -604,8 +607,9 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer[9] & 32) >> 5;
       m_config_vars.ui8_motor_type = (ui8_rx_buffer[9] & 64) >> 6;
 
-      // startup motor power boost
-      m_config_vars.ui8_startup_motor_power_boost_assist_level = ui8_rx_buffer[10];
+      // motor max current
+      ebike_app_set_motor_max_current(ui8_rx_buffer[10]);
+
       // startup motor power boost time
       m_config_vars.ui8_startup_motor_power_boost_time = ui8_rx_buffer[11];
       // startup motor power boost fade time
@@ -673,9 +677,6 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
 
-      // motor max current
-      ebike_app_set_motor_max_current(ui8_rx_buffer[82]);
-
       // ok, now we can clear this error/state
       ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
       break;
@@ -683,7 +684,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     // firmware version
     case 2:
       ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 53;
+      ui8_tx_buffer[4] = 54;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
       break;
@@ -992,7 +993,7 @@ static void apply_walk_assist(uint16_t *ui16_p_adc_target_current)
   *ui16_p_adc_target_current = ui16_m_adc_motor_current_max;
 
   // check so that walk assist level factor is not too large (too powerful), if it is -> limit the value
-  if(m_config_vars.ui8_assist_level_factor_x100 > 100)
+  if(m_config_vars.ui16_assist_level_factor_x1000 > 100)
   {
     // limit and set walk assist PWM to some safe value, not too powerful 
     ui8_m_walk_assist_target_duty_cycle = 100;
@@ -1000,7 +1001,7 @@ static void apply_walk_assist(uint16_t *ui16_p_adc_target_current)
   else
   {
     // set walk assist PWM to the target duty cycle from user defined value on display (walk assist level factor)
-    ui8_m_walk_assist_target_duty_cycle = m_config_vars.ui8_assist_level_factor_x100;
+    ui8_m_walk_assist_target_duty_cycle = (uint8_t) m_config_vars.ui16_assist_level_factor_x1000;
   }
 }
 
@@ -1186,7 +1187,7 @@ static void boost_run_statemachine(void)
 static uint8_t apply_boost(uint8_t ui8_pas_cadence, uint16_t ui16_max_current_boost_state, uint16_t *ui16_target_current)
 {
   uint8_t ui8_boost_enable = ui8_startup_boost_enable && // if we are currently on BOOST state
-      m_config_vars.ui8_assist_level_factor_x100 &&
+      m_config_vars.ui16_assist_level_factor_x1000 &&
       ui8_pas_cadence > 0 ? 1 : 0;
 
   if (ui8_boost_enable)
