@@ -414,6 +414,8 @@ volatile uint16_t ui16_g_adc_current_offset;
 volatile uint16_t ui16_g_adc_target_motor_max_current;
 volatile uint16_t ui16_g_adc_battery_over_current;
 
+volatile uint16_t ui16_g_adc_battery_over_current;
+
 uint8_t ui8_pas_state;
 uint8_t ui8_pas_state_old;
 uint8_t ui8_pas_after_first_pulse = 0;
