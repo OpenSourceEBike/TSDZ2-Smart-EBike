@@ -38,7 +38,7 @@ uint8_t ui8_target_battery_max_power_x10  = ADC_BATTERY_CURRENT_MAX;
 volatile struct_config_vars m_config_vars;
 
 // variables for various system functions
-volatile uint8_t ui8_system_state = ERROR_NO_CONFIGURATIONS; // start with system error because configurations are empty at startup
+volatile uint8_t ui8_g_system_state = ERROR_NO_CONFIGURATIONS; // start with system error because configurations are empty at startup
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
@@ -324,7 +324,7 @@ static void ebike_control_motor(void)
   apply_temperature_limiting(&ui16_m_adc_target_current);
 
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR)
+  if(ui8_m_brake_is_set || ui8_g_system_state != NO_ERROR)
   {
     ui16_m_adc_target_current = 0;
   }
@@ -340,7 +340,7 @@ static void ebike_control_motor(void)
   }
 
   // check to see if we should disable the motor
-  if(ui8_system_state != NO_ERROR ||
+  if(ui8_g_system_state != NO_ERROR ||
       (ui8_m_motor_enabled &&
       ui16_motor_get_motor_speed_erps() == 0 &&
       ui16_m_adc_target_current == 0 &&
@@ -552,7 +552,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[18] = ui8_g_foc_angle;
 
       // system state
-      ui8_tx_buffer[19] = ui8_system_state;
+      ui8_tx_buffer[19] = ui8_g_system_state;
 
       // motor current
       // ADC 10 bits each step current is 0.156
@@ -678,13 +678,13 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
 
       // ok, now we can clear this error/state
-      ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
+      ui8_g_system_state &= ~ERROR_NO_CONFIGURATIONS;
       break;
 
     // firmware version
     case 2:
       ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 54;
+      ui8_tx_buffer[4] = 55;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
       break;
@@ -744,6 +744,9 @@ static void ebike_app_set_battery_max_current(uint8_t ui8_value)
   {
     ui16_m_adc_battery_current_max = ADC_BATTERY_CURRENT_MAX;
   }
+
+  // over current is adc_battery_current_max + 3 amps (19 ADC units, at 0.156 amps each unit)
+  ui16_g_adc_battery_over_current = ui16_m_adc_battery_current_max + 19;
 }
 
 // in amps
@@ -860,7 +863,7 @@ static void calc_pedal_force_and_torque(void)
 
   // let´s save the initial weight offset
   if (ui8_m_first_time_torque_sensor_weight &&
-      (ui8_system_state == NO_ERROR) &&
+      (ui8_g_system_state == NO_ERROR) &&
       ui16_m_torque_sensor_raw) {
     ui8_m_first_time_torque_sensor_weight = 0;
     ui16_m_torque_sensor_weight_offset_x10 = ui16_m_torque_sensor_weight_raw_x10;
@@ -1368,7 +1371,7 @@ void check_system()
   static uint8_t ui8_motor_blocked_reset_counter;
 
   // if the motor blocked error is enabled start resetting it
-  if (ui8_system_state & ERROR_MOTOR_BLOCKED)
+  if (ui8_g_system_state & ERROR_MOTOR_BLOCKED)
   {
     // increment motor blocked reset counter with 100 milliseconds
     ui8_motor_blocked_reset_counter++;
@@ -1377,7 +1380,7 @@ void check_system()
     if (ui8_motor_blocked_reset_counter > MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD)
     {
       // reset motor blocked error code
-      ui8_system_state &= ~ERROR_MOTOR_BLOCKED;
+      ui8_g_system_state &= ~ERROR_MOTOR_BLOCKED;
       
       // reset the counter that clears the motor blocked error
       ui8_motor_blocked_reset_counter = 0;
@@ -1395,7 +1398,7 @@ void check_system()
       if (ui8_motor_blocked_counter > MOTOR_BLOCKED_COUNTER_THRESHOLD)
       {
         // set motor blocked error code
-        ui8_system_state |= ERROR_MOTOR_BLOCKED;
+        ui8_g_system_state |= ERROR_MOTOR_BLOCKED;
         
         // reset motor blocked counter as the error code is set
         ui8_motor_blocked_counter = 0;

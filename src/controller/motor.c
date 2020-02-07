@@ -25,6 +25,7 @@
 #include "watchdog.h"
 #include "math.h"
 #include "main.h"
+#include "common/common.h"
 
 #define SVM_TABLE_LEN   256
 #define SIN_TABLE_LEN   60
@@ -411,6 +412,7 @@ volatile uint16_t ui16_g_adc_target_battery_max_current;
 volatile uint16_t ui16_g_adc_current_offset;
 
 volatile uint16_t ui16_g_adc_target_motor_max_current;
+volatile uint16_t ui16_g_adc_battery_over_current;
 
 uint8_t ui8_pas_state;
 uint8_t ui8_pas_state_old;
@@ -429,6 +431,11 @@ uint8_t ui8_wheel_speed_sensor_state = 1;
 uint8_t ui8_wheel_speed_sensor_state_old = 1;
 uint16_t ui16_wheel_speed_sensor_counter = 0;
 uint8_t ui8_wheel_speed_sensor_change_counter = 0;
+
+#define ADC_OVER_CURRENT_ARRAY_SIZE 3
+uint8_t ui8_m_adc_over_current_array_i = ADC_OVER_CURRENT_ARRAY_SIZE;
+uint16_t ui16_m_adc_over_current_array[ADC_OVER_CURRENT_ARRAY_SIZE] = { 0 }; // all elements initialized to 0
+uint16_t ui16_m_adc_battery_over_current_state = 0;
 
 void read_battery_voltage(void);
 void read_battery_current(void);
@@ -455,10 +462,7 @@ void motor_controller(void)
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   static uint8_t ui8_temp;
-
-  struct_config_vars *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
-
+  uint8_t ui8_i;
 
   /****************************************************************************/
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
@@ -472,6 +476,40 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ADC1->CR1 |= ADC1_CR1_ADON;
   while (!(ADC1->CSR & ADC1_FLAG_EOC)) ;
   ui16_g_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
+
+  /****************************************************************************/
+  // Test for battery over current and disable the motor if is the case
+  // update buffer index
+  if (++ui8_m_adc_over_current_array_i >= ADC_OVER_CURRENT_ARRAY_SIZE)
+    ui8_m_adc_over_current_array_i = 0;
+
+  // update new buffer value
+  ui16_m_adc_over_current_array[ui8_m_adc_over_current_array_i] = ui16_g_adc_battery_current;
+
+  // test all values on the buffer
+  for (ui8_i = 0; ui8_i < ADC_OVER_CURRENT_ARRAY_SIZE; ++ui8_i)
+  {
+    if (ui16_m_adc_over_current_array[ui8_i] > ui16_g_adc_battery_over_current)
+    {
+      ui16_m_adc_battery_over_current_state = 1;
+    }
+    else
+    {
+      ui16_m_adc_battery_over_current_state = 0;
+      break; // if any value on the buffer is 0, then the end result must be 0
+    }
+  }
+
+  // disable motor if over current
+  if (ui16_m_adc_battery_over_current_state)
+  {
+    motor_disable_pwm();
+    ui8_g_system_state |= ERROR_OVER_CURRENT;
+  }
+
+  // reset the state variables
+  ui16_m_adc_battery_over_current_state = 0;
+  /****************************************************************************/
 
   // calculate motor current ADC value
   if (ui8_g_duty_cycle > 0)
