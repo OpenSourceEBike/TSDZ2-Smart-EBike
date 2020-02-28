@@ -150,6 +150,9 @@ static void apply_boost_fade_out(uint16_t *ui16_adc_target_current);
 uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 
+static uint8_t m_ui8_got_configurations_timer = 0;
+static uint8_t m_ui8_no_configurations_first_time = 1;
+
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
 {
@@ -322,6 +325,20 @@ static void ebike_control_motor(void)
 
   // motor over temperature protection
   apply_temperature_limiting(&ui16_m_adc_target_current);
+
+  if (ui8_system_state & ERROR_GOT_CONFIGURATIONS) {
+    m_ui8_no_configurations_first_time = 0;
+    m_ui8_got_configurations_timer = 20;
+    ui8_system_state &= ~ERROR_GOT_CONFIGURATIONS;
+  }
+
+  if (m_ui8_got_configurations_timer > 0) {
+    m_ui8_got_configurations_timer--;
+  }
+  else if (m_ui8_no_configurations_first_time == 0)
+  {
+    ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
+  }
 
   // let's force our target current to 0 if brake is set or if there are errors
   if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR)
@@ -579,8 +596,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // disable the motor to avoid a quick of the motor while configurations are changed
       // disable the motor, lets hope this is safe to do here, in this way
       // the motor shold be enabled again on the ebike_control_motor()
-      ui8_m_motor_enabled = 0;
       motor_disable_pwm();
+      ui8_m_motor_enabled = 0;
 
       // battery low voltage cut-off
       m_config_vars.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
@@ -677,8 +694,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
 
-      // ok, now we can clear this error/state
-      ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
+      ui8_system_state |= ERROR_NO_CONFIGURATIONS;
+      ui8_system_state |= ERROR_GOT_CONFIGURATIONS;
       break;
 
     // firmware version
