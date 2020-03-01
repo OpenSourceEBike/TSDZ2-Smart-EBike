@@ -151,7 +151,7 @@ uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 
 static uint8_t m_ui8_got_configurations_timer = 0;
-static uint8_t m_ui8_no_configurations_first_time = 1;
+static uint8_t m_ui8_apply_configurations = 1;
 
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
@@ -327,7 +327,7 @@ static void ebike_control_motor(void)
   apply_temperature_limiting(&ui16_m_adc_target_current);
 
   if (ui8_system_state & ERROR_GOT_CONFIGURATIONS) {
-    m_ui8_no_configurations_first_time = 0;
+    m_ui8_apply_configurations = 0;
     m_ui8_got_configurations_timer = 20;
     ui8_system_state &= ~ERROR_GOT_CONFIGURATIONS;
   }
@@ -335,7 +335,7 @@ static void ebike_control_motor(void)
   if (m_ui8_got_configurations_timer > 0) {
     m_ui8_got_configurations_timer--;
   }
-  else if (m_ui8_no_configurations_first_time == 0)
+  else if (m_ui8_apply_configurations == 0)
   {
     ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
   }
@@ -427,9 +427,11 @@ static void communications_controller(void)
     {
       ui8_frame_type_to_send = ui8_rx_buffer[2];
     }
-
-    ui8_received_package_flag = 0;
-    UART2->CR2 |= (1 << 5); // enable UART2 receive interrupt
+    else
+    {
+      ui8_received_package_flag = 0;
+      UART2->CR2 |= (1 << 5); // enable UART2 receive interrupt
+    }
   }
 
   // we always send the frame_type = 0 every 100ms
@@ -696,6 +698,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
       ui8_system_state |= ERROR_NO_CONFIGURATIONS;
       ui8_system_state |= ERROR_GOT_CONFIGURATIONS;
+      m_ui8_apply_configurations = 1;
       break;
 
     // firmware version
@@ -725,6 +728,12 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   for (ui8_i = 0; ui8_i < (ui8_len + 2); ui8_i++)
   {
     putchar(ui8_tx_buffer[ui8_i]);
+  }
+
+  if (ui8_received_package_flag)
+  {
+    ui8_received_package_flag = 0;
+    UART2->CR2 |= (1 << 5); // enable UART2 receive interrupt
   }
 }
 
