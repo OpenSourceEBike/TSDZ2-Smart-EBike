@@ -704,7 +704,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     // firmware version
     case 2:
       ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 54;
+      ui8_tx_buffer[4] = 55;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
       break;
