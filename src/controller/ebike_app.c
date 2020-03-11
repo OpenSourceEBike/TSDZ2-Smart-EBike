@@ -703,7 +703,10 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 =======
       // ok, now we can clear this error/state
       ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
+<<<<<<< HEAD
 >>>>>>> parent of 637a23d... Added overcurrent protection
+=======
+>>>>>>> parent of fcfcab4... Added over current
       break;
 
     // firmware version
