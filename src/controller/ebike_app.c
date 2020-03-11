@@ -696,15 +696,20 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
 
+<<<<<<< HEAD
       ui8_system_state |= ERROR_NO_CONFIGURATIONS;
       ui8_system_state |= ERROR_GOT_CONFIGURATIONS;
       m_ui8_apply_configurations = 1;
+=======
+      // ok, now we can clear this error/state
+      ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
+>>>>>>> parent of 637a23d... Added overcurrent protection
       break;
 
     // firmware version
     case 2:
       ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 55;
+      ui8_tx_buffer[4] = 54;
       ui8_tx_buffer[5] = 0;
       ui8_len += 3;
       break;
