@@ -37,8 +37,7 @@ void timer3_init (void)
 
   // TIM3 Peripheral Configuration
   TIM3_DeInit();
-//  TIM3_TimeBaseInit(TIM3_PRESCALER_16384, 0xffff); // each incremment at every ~1ms
-  TIM3_TimeBaseInit(TIM3_PRESCALER_8192, 0xffff); // each incremment at every ~1ms
+  TIM3_TimeBaseInit(TIM3_PRESCALER_16384, 0xffff); // each incremment at every ~1ms
   TIM3_Cmd(ENABLE); // TIM3 counter enable
 
   // IMPORTANT: this software delay is needed so timer3 work after this

@@ -456,10 +456,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   static uint8_t ui8_temp;
 
-  struct_config_vars *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
-
-
   /****************************************************************************/
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
   // disable scan mode

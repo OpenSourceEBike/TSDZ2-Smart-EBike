@@ -27,6 +27,7 @@
 #define STATE_NO_PEDALLING                0
 #define STATE_PEDALLING                   2
 
+// BOOST state
 #define BOOST_STATE_BOOST_DISABLED        0
 #define BOOST_STATE_BOOST                 1
 #define BOOST_STATE_FADE                  2
@@ -37,8 +38,31 @@ uint8_t ui8_target_battery_max_power_x10  = ADC_BATTERY_CURRENT_MAX;
 
 volatile struct_config_vars m_config_vars;
 
+// Error state
+#define NO_ERROR                                0
+#define ERROR_NOT_INIT                          (1 << 1)
+#define ERROR_MOTOR_BLOCKED                     (1 << 2)
+#define ERROR_TORQUE_APPLIED_DURING_POWER_ON    (1 << 3)
+#define ERROR_BRAKE_APPLIED_DURING_POWER_ON     (1 << 4)
+#define ERROR_THROTTLE_APPLIED_DURING_POWER_ON  (1 << 5)
+#define ERROR_NO_SPEED_SENSOR_DETECTED          (1 << 6)
+#define ERROR_NO_LOW_VOLTAGE                    (1 << 7)
+
+// Motor init state
+#define MOTOR_INIT_STATE_NO_INIT                0
+#define MOTOR_INIT_STATE_INIT_START_DELAY       1
+#define MOTOR_INIT_STATE_INIT_WAIT_DELAY        2
+#define MOTOR_INIT_OK                           3
+
+// Communications package frame type
+#define COMM_FRAME_TYPE_PERIODIC                      0
+#define COMM_FRAME_TYPE_CONFIGURATIONS                1
+#define COMM_TYPE_FIRMWARE_VERSION                    2
+#define COMM_FRAME_TYPE_CONFIGURATIONS_REPEAT_ANSWER  3
+
 // variables for various system functions
-volatile uint8_t ui8_system_state = ERROR_NO_CONFIGURATIONS; // start with system error because configurations are empty at startup
+volatile uint8_t ui8_m_system_state = ERROR_NOT_INIT; // start with system error because configurations are empty at startup
+volatile uint8_t ui8_m_motor_init_state = MOTOR_INIT_STATE_NO_INIT;
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
@@ -51,7 +75,7 @@ uint8_t ui8_pas_pedal_position_right = 0;
 uint16_t  ui16_m_adc_motor_temperatured_accumulated = 0;
 uint16_t   ui16_m_adc_target_current;
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
-static uint8_t ui8_m_motor_enabled = 0;
+static volatile uint8_t ui8_m_motor_enabled = 0;
 static uint8_t ui8_m_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
 volatile uint16_t  ui16_m_torque_sensor_weight_x10 = 0;
@@ -106,7 +130,6 @@ static uint16_t  ui16_crc_tx;
 volatile uint8_t ui8_message_ID = 0;
 
 static void communications_controller(void);
-static void uart_receive_package(void);
 static void communications_process_packages(uint8_t ui8_frame_type);
 
 // system functions
@@ -151,7 +174,6 @@ uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 
 static uint8_t m_ui8_got_configurations_timer = 0;
-static uint8_t m_ui8_apply_configurations = 1;
 
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
@@ -326,22 +348,26 @@ static void ebike_control_motor(void)
   // motor over temperature protection
   apply_temperature_limiting(&ui16_m_adc_target_current);
 
-  if (ui8_system_state & ERROR_GOT_CONFIGURATIONS) {
-    m_ui8_apply_configurations = 0;
-    m_ui8_got_configurations_timer = 20;
-    ui8_system_state &= ~ERROR_GOT_CONFIGURATIONS;
-  }
-
-  if (m_ui8_got_configurations_timer > 0) {
-    m_ui8_got_configurations_timer--;
-  }
-  else if (m_ui8_apply_configurations == 0)
+  // check if motor init delay has to be done
+  switch (ui8_m_motor_init_state)
   {
-    ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
+    case MOTOR_INIT_STATE_INIT_START_DELAY:
+      m_ui8_got_configurations_timer = 20;
+      ui8_m_motor_init_state = MOTOR_INIT_STATE_INIT_WAIT_DELAY;
+      // no break to execute next code
+
+    case MOTOR_INIT_STATE_INIT_WAIT_DELAY:
+      if (m_ui8_got_configurations_timer > 0) {
+        m_ui8_got_configurations_timer--;
+      }
+      else
+        ui8_m_motor_init_state = MOTOR_INIT_OK;
+        ui8_m_system_state &= ~ERROR_NOT_INIT;
+      break;
   }
 
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set || ui8_system_state != NO_ERROR)
+  if(ui8_m_brake_is_set || (ui8_m_system_state != NO_ERROR))
   {
     ui16_m_adc_target_current = 0;
   }
@@ -357,7 +383,7 @@ static void ebike_control_motor(void)
   }
 
   // check to see if we should disable the motor
-  if(ui8_system_state != NO_ERROR ||
+  if(ui8_m_system_state != NO_ERROR ||
       (ui8_m_motor_enabled &&
       ui16_motor_get_motor_speed_erps() == 0 &&
       ui16_m_adc_target_current == 0 &&
@@ -430,43 +456,21 @@ static void communications_controller(void)
     else
     {
       ui8_received_package_flag = 0;
-      UART2->CR2 |= (1 << 5); // enable UART2 receive interrupt
     }
   }
 
-  // we always send the frame_type = 0 every 100ms
-  communications_process_packages(ui8_frame_type_to_send);
-#endif
-}
-
-static void uart_receive_package(void)
-{
-  uint8_t ui8_len;
-  
-  if (ui8_received_package_flag)
+  switch (ui8_m_motor_init_state)
   {
-    // validation of the package data
-    ui16_crc_rx = 0xffff;
-    
-    // just to make easy next calculations
-    ui8_len = ui8_rx_buffer[1] + 2;
+    default:
+      communications_process_packages(ui8_frame_type_to_send);
+      break;
 
-    for (ui8_i = 2; ui8_i < ui8_len; ui8_i++)
-    {
-      crc16 (ui8_rx_buffer[ui8_i], &ui16_crc_rx);
-    }
-
-    // if CRC is correct read the package (16 bit value and therefore last two bytes)
-    if (((((uint16_t) ui8_rx_buffer[ui8_len - 1]) << 8) +
-          ((uint16_t) ui8_rx_buffer[ui8_len - 2])) == ui16_crc_rx)
-    {
-      // signal that we processed the full package
-      ui8_received_package_flag = 0;
-    }
-
-    // enable UART2 receive interrupt as we are now ready to receive a new package
-    UART2->CR2 |= (1 << 5);
+    case MOTOR_INIT_STATE_INIT_WAIT_DELAY:
+      // keep repeating the answer configurations answer while the init delay, so the display can for get this answer
+      communications_process_packages(COMM_FRAME_TYPE_CONFIGURATIONS_REPEAT_ANSWER);
+      break;
   }
+#endif
 }
 
 static void communications_process_packages(uint8_t ui8_frame_type)
@@ -484,24 +488,27 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   // prepare payload
   switch (ui8_frame_type) {
     // periodic data
-    case 0:
-      // assist level
-      m_config_vars.ui16_assist_level_factor_x1000 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
+    case COMM_FRAME_TYPE_PERIODIC:
+      if (ui8_received_package_flag) // the following RX data is valid only if we received a package
+      {
+        // assist level
+        m_config_vars.ui16_assist_level_factor_x1000 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
 
-      // lights state
-      m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
+        // lights state
+        m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
-      // set lights
-      lights_set_state (m_config_vars.ui8_lights);
+        // set lights
+        lights_set_state (m_config_vars.ui8_lights);
 
-      // walk assist / cruise function
-      m_config_vars.ui8_walk_assist = (ui8_rx_buffer[5] & (1 << 1)) ? 1: 0;
+        // walk assist / cruise function
+        m_config_vars.ui8_walk_assist = (ui8_rx_buffer[5] & (1 << 1)) ? 1: 0;
 
-      // battery max power target
-      m_config_vars.ui8_target_battery_max_power_div25 = ui8_rx_buffer[6];
+        // battery max power target
+        m_config_vars.ui8_target_battery_max_power_div25 = ui8_rx_buffer[6];
 
-      // startup motor power boost
-      m_config_vars.ui16_startup_motor_power_boost_assist_level = (((uint16_t) ui8_rx_buffer[8]) << 8) + ((uint16_t) ui8_rx_buffer[7]);
+        // startup motor power boost
+        m_config_vars.ui16_startup_motor_power_boost_assist_level = (((uint16_t) ui8_rx_buffer[8]) << 8) + ((uint16_t) ui8_rx_buffer[7]);
+      }
 
       // now send data back
       // ADC 10 bits battery voltage
@@ -571,7 +578,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[18] = ui8_g_foc_angle;
 
       // system state
-      ui8_tx_buffer[19] = ui8_system_state;
+      ui8_tx_buffer[19] = ui8_m_system_state;
 
       // motor current
       // ADC 10 bits each step current is 0.156
@@ -594,12 +601,14 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       break;
 
     // set configurations
-    case 1:
+    case COMM_FRAME_TYPE_CONFIGURATIONS:
       // disable the motor to avoid a quick of the motor while configurations are changed
       // disable the motor, lets hope this is safe to do here, in this way
       // the motor shold be enabled again on the ebike_control_motor()
       motor_disable_pwm();
       ui8_m_motor_enabled = 0;
+      ui8_m_system_state |= ERROR_NOT_INIT;
+      ui8_m_motor_init_state = MOTOR_INIT_STATE_INIT_START_DELAY;
 
       // battery low voltage cut-off
       m_config_vars.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
@@ -695,26 +704,22 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
-
-<<<<<<< HEAD
-      ui8_system_state |= ERROR_NO_CONFIGURATIONS;
-      ui8_system_state |= ERROR_GOT_CONFIGURATIONS;
-      m_ui8_apply_configurations = 1;
-=======
-      // ok, now we can clear this error/state
-      ui8_system_state &= ~ERROR_NO_CONFIGURATIONS;
-<<<<<<< HEAD
->>>>>>> parent of 637a23d... Added overcurrent protection
-=======
->>>>>>> parent of fcfcab4... Added over current
       break;
 
     // firmware version
-    case 2:
-      ui8_tx_buffer[3] = 0;
-      ui8_tx_buffer[4] = 54;
-      ui8_tx_buffer[5] = 0;
-      ui8_len += 3;
+    case COMM_TYPE_FIRMWARE_VERSION:
+      ui8_tx_buffer[3] = ui8_m_system_state;
+      ui8_tx_buffer[4] = 0;
+      ui8_tx_buffer[5] = 56;
+      ui8_tx_buffer[6] = 0;
+      ui8_len += 4;
+      break;
+
+    // do nothing but repeat sending the configurations answer
+    case COMM_FRAME_TYPE_CONFIGURATIONS_REPEAT_ANSWER:
+      ui8_tx_buffer[2] = COMM_FRAME_TYPE_CONFIGURATIONS; // change frame type to be configurations
+      ui8_tx_buffer[3] = ui8_m_system_state;
+      ui8_len += 1;
       break;
 
     default:
@@ -738,11 +743,10 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     putchar(ui8_tx_buffer[ui8_i]);
   }
 
-  if (ui8_received_package_flag)
-  {
-    ui8_received_package_flag = 0;
-    UART2->CR2 |= (1 << 5); // enable UART2 receive interrupt
-  }
+  // get ready to get next package
+  ui8_received_package_flag = 0;
+  // enable UART2 receive interrupt
+  UART2->CR2 |= (1 << 5);
 }
 
 // each 1 unit = 0.156 amps
@@ -894,7 +898,7 @@ static void calc_pedal_force_and_torque(void)
 
   // let´s save the initial weight offset
   if (ui8_m_first_time_torque_sensor_weight &&
-      (ui8_system_state == NO_ERROR) &&
+      (ui8_m_system_state == NO_ERROR) &&
       ui16_m_torque_sensor_raw) {
     ui8_m_first_time_torque_sensor_weight = 0;
     ui16_m_torque_sensor_weight_offset_x10 = ui16_m_torque_sensor_weight_raw_x10;
@@ -1345,41 +1349,44 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
   {
     UART2->SR &= (uint8_t)~(UART2_FLAG_RXNE); // this may be redundant
 
-    ui8_byte_received = UART2_ReceiveData8();
-
-    switch (ui8_state_machine)
+    if (ui8_received_package_flag == 0) // only when package were previously processed
     {
-      case 0:
-      if (ui8_byte_received == 0x59) { // see if we get start package byte
-        ui8_rx_buffer[0] = ui8_byte_received;
-        ui8_state_machine = 1;
-      }
-      else
-        ui8_state_machine = 0;
-      break;
+      ui8_byte_received = UART2_ReceiveData8();
 
-      case 1:
-        ui8_rx_buffer[1] = ui8_byte_received;
-        ui8_rx_len = ui8_byte_received;
-        ui8_state_machine = 2;
-      break;
-
-      case 2:
-      ui8_rx_buffer[ui8_rx_cnt + 2] = ui8_byte_received;
-      ++ui8_rx_cnt;
-
-      // reset if it is the last byte of the package and index is out of bounds
-      if (ui8_rx_cnt >= ui8_rx_len)
+      switch (ui8_state_machine)
       {
-        ui8_rx_cnt = 0;
-        ui8_state_machine = 0;
-        ui8_received_package_flag = 1; // signal that we have a full package to be processed
-        UART2->CR2 &= ~(1 << 5); // disable UART2 receive interrupt
-      }
-      break;
+        case 0:
+        if (ui8_byte_received == 0x59) { // see if we get start package byte
+          ui8_rx_buffer[0] = ui8_byte_received;
+          ui8_state_machine = 1;
+        }
+        else
+          ui8_state_machine = 0;
+        break;
 
-      default:
-      break;
+        case 1:
+          ui8_rx_buffer[1] = ui8_byte_received;
+          ui8_rx_len = ui8_byte_received;
+          ui8_state_machine = 2;
+        break;
+
+        case 2:
+        ui8_rx_buffer[ui8_rx_cnt + 2] = ui8_byte_received;
+        ++ui8_rx_cnt;
+
+        // reset if it is the last byte of the package and index is out of bounds
+        if (ui8_rx_cnt >= ui8_rx_len)
+        {
+          ui8_rx_cnt = 0;
+          ui8_state_machine = 0;
+          ui8_received_package_flag = 1; // signal that we have a full package to be processed
+          UART2->CR2 &= ~(1 << 5); // disable UART2 receive interrupt
+        }
+        break;
+
+        default:
+        break;
+      }
     }
   }
 }
@@ -1402,7 +1409,7 @@ void check_system()
   static uint8_t ui8_motor_blocked_reset_counter;
 
   // if the motor blocked error is enabled start resetting it
-  if (ui8_system_state & ERROR_MOTOR_BLOCKED)
+  if (ui8_m_system_state & ERROR_MOTOR_BLOCKED)
   {
     // increment motor blocked reset counter with 100 milliseconds
     ui8_motor_blocked_reset_counter++;
@@ -1411,7 +1418,7 @@ void check_system()
     if (ui8_motor_blocked_reset_counter > MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD)
     {
       // reset motor blocked error code
-      ui8_system_state &= ~ERROR_MOTOR_BLOCKED;
+      ui8_m_system_state &= ~ERROR_MOTOR_BLOCKED;
       
       // reset the counter that clears the motor blocked error
       ui8_motor_blocked_reset_counter = 0;
@@ -1429,7 +1436,7 @@ void check_system()
       if (ui8_motor_blocked_counter > MOTOR_BLOCKED_COUNTER_THRESHOLD)
       {
         // set motor blocked error code
-        ui8_system_state |= ERROR_MOTOR_BLOCKED;
+        ui8_m_system_state |= ERROR_MOTOR_BLOCKED;
         
         // reset motor blocked counter as the error code is set
         ui8_motor_blocked_counter = 0;

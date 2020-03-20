@@ -23,4 +23,10 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<variableList>
+		<variable>
+			<name>Common</name>
+			<value>file:/home/cas/OpenSource-EBike-firmware/TSDZ2-Smart-EBike/src/common</value>
+		</variable>
+	</variableList>
 </projectDescription>
