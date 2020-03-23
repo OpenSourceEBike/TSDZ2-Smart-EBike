@@ -49,20 +49,28 @@ volatile struct_config_vars m_config_vars;
 #define ERROR_NO_LOW_VOLTAGE                    (1 << 7)
 
 // Motor init state
-#define MOTOR_INIT_STATE_NO_INIT                0
-#define MOTOR_INIT_STATE_INIT_START_DELAY       1
-#define MOTOR_INIT_STATE_INIT_WAIT_DELAY        2
-#define MOTOR_INIT_OK                           3
+#define MOTOR_INIT_STATE_RESET                  0
+#define MOTOR_INIT_STATE_NO_INIT                1
+#define MOTOR_INIT_STATE_INIT_START_DELAY       2
+#define MOTOR_INIT_STATE_INIT_WAIT_DELAY        3
+#define MOTOR_INIT_OK                           4
+
+// Motor init status
+#define MOTOR_INIT_STATUS_RESET                 0
+#define MOTOR_INIT_STATUS_GOT_CONFIG            1
+#define MOTOR_INIT_STATUS_INIT_OK               2
 
 // Communications package frame type
-#define COMM_FRAME_TYPE_PERIODIC                      0
-#define COMM_FRAME_TYPE_CONFIGURATIONS                1
-#define COMM_TYPE_FIRMWARE_VERSION                    2
-#define COMM_FRAME_TYPE_CONFIGURATIONS_REPEAT_ANSWER  3
+#define COMM_FRAME_TYPE_ALIVE                         0
+#define COMM_FRAME_TYPE_STATUS                        1
+#define COMM_FRAME_TYPE_PERIODIC                      2
+#define COMM_FRAME_TYPE_CONFIGURATIONS                3
+#define COMM_FRAME_TYPE_FIRMWARE_VERSION              4
 
 // variables for various system functions
 volatile uint8_t ui8_m_system_state = ERROR_NOT_INIT; // start with system error because configurations are empty at startup
-volatile uint8_t ui8_m_motor_init_state = MOTOR_INIT_STATE_NO_INIT;
+volatile uint8_t ui8_m_motor_init_state = MOTOR_INIT_STATE_RESET;
+volatile uint8_t ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
@@ -362,6 +370,7 @@ static void ebike_control_motor(void)
       }
       else
         ui8_m_motor_init_state = MOTOR_INIT_OK;
+        ui8_m_motor_init_status = MOTOR_INIT_STATUS_INIT_OK;
         ui8_m_system_state &= ~ERROR_NOT_INIT;
       break;
   }
@@ -451,7 +460,14 @@ static void communications_controller(void)
     if (((((uint16_t) ui8_rx_buffer[ui8_len + 1]) << 8) +
           ((uint16_t) ui8_rx_buffer[ui8_len])) == ui16_crc_rx)
     {
+      if (ui8_m_motor_init_state == MOTOR_INIT_STATE_RESET)
+        ui8_m_motor_init_state = MOTOR_INIT_STATE_NO_INIT;
+
       ui8_frame_type_to_send = ui8_rx_buffer[2];
+      if (ui8_frame_type_to_send == COMM_FRAME_TYPE_STATUS)
+        communications_process_packages(COMM_FRAME_TYPE_STATUS);
+      else
+        communications_process_packages(ui8_frame_type_to_send);
     }
     else
     {
@@ -459,17 +475,8 @@ static void communications_controller(void)
     }
   }
 
-  switch (ui8_m_motor_init_state)
-  {
-    default:
-      communications_process_packages(ui8_frame_type_to_send);
-      break;
-
-    case MOTOR_INIT_STATE_INIT_WAIT_DELAY:
-      // keep repeating the answer configurations answer while the init delay, so the display can for get this answer
-      communications_process_packages(COMM_FRAME_TYPE_CONFIGURATIONS_REPEAT_ANSWER);
-      break;
-  }
+  if (ui8_m_motor_init_state == MOTOR_INIT_STATE_RESET)
+    communications_process_packages(COMM_FRAME_TYPE_ALIVE);
 #endif
 }
 
@@ -489,26 +496,28 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   switch (ui8_frame_type) {
     // periodic data
     case COMM_FRAME_TYPE_PERIODIC:
-      if (ui8_received_package_flag) // the following RX data is valid only if we received a package
-      {
-        // assist level
-        m_config_vars.ui16_assist_level_factor_x1000 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
 
-        // lights state
-        m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
+      // display will send periodic command after init ok, but now reset so the state machine will be ready for next time
+      if (ui8_m_motor_init_status == MOTOR_INIT_STATUS_INIT_OK)
+        ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
 
-        // set lights
-        lights_set_state (m_config_vars.ui8_lights);
+      // assist level
+      m_config_vars.ui16_assist_level_factor_x1000 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
 
-        // walk assist / cruise function
-        m_config_vars.ui8_walk_assist = (ui8_rx_buffer[5] & (1 << 1)) ? 1: 0;
+      // lights state
+      m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
-        // battery max power target
-        m_config_vars.ui8_target_battery_max_power_div25 = ui8_rx_buffer[6];
+      // set lights
+      lights_set_state (m_config_vars.ui8_lights);
 
-        // startup motor power boost
-        m_config_vars.ui16_startup_motor_power_boost_assist_level = (((uint16_t) ui8_rx_buffer[8]) << 8) + ((uint16_t) ui8_rx_buffer[7]);
-      }
+      // walk assist / cruise function
+      m_config_vars.ui8_walk_assist = (ui8_rx_buffer[5] & (1 << 1)) ? 1: 0;
+
+      // battery max power target
+      m_config_vars.ui8_target_battery_max_power_div25 = ui8_rx_buffer[6];
+
+      // startup motor power boost
+      m_config_vars.ui16_startup_motor_power_boost_assist_level = (((uint16_t) ui8_rx_buffer[8]) << 8) + ((uint16_t) ui8_rx_buffer[7]);
 
       // now send data back
       // ADC 10 bits battery voltage
@@ -609,6 +618,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_m_motor_enabled = 0;
       ui8_m_system_state |= ERROR_NOT_INIT;
       ui8_m_motor_init_state = MOTOR_INIT_STATE_INIT_START_DELAY;
+      ui8_m_motor_init_status = MOTOR_INIT_STATUS_GOT_CONFIG;
 
       // battery low voltage cut-off
       m_config_vars.ui16_battery_low_voltage_cut_off_x10 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
@@ -707,7 +717,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       break;
 
     // firmware version
-    case COMM_TYPE_FIRMWARE_VERSION:
+    case COMM_FRAME_TYPE_FIRMWARE_VERSION:
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
       ui8_tx_buffer[5] = 56;
@@ -715,10 +725,12 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_len += 4;
       break;
 
-    // do nothing but repeat sending the configurations answer
-    case COMM_FRAME_TYPE_CONFIGURATIONS_REPEAT_ANSWER:
-      ui8_tx_buffer[2] = COMM_FRAME_TYPE_CONFIGURATIONS; // change frame type to be configurations
-      ui8_tx_buffer[3] = ui8_m_system_state;
+    case COMM_FRAME_TYPE_ALIVE:
+      // nothing to add
+      break;
+
+    case COMM_FRAME_TYPE_STATUS:
+      ui8_tx_buffer[3] = ui8_m_motor_init_status;
       ui8_len += 1;
       break;
 
