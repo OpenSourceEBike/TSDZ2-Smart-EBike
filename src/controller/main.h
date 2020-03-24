@@ -13,7 +13,7 @@
 
 //#define DEBUG_UART
 
-#define DISABLE_PWM_CHANNELS_1_3
+//#define DISABLE_PWM_CHANNELS_1_3
 
 #define PWM_CYCLES_COUNTER_MAX                    3125    // 5 erps minimum speed; 1/5 = 200ms; 200ms/64us = 3125
 #define PWM_CYCLES_SECOND                         15625L  // 1 / 64us(PWM period)

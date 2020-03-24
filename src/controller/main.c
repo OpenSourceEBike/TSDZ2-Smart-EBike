@@ -58,10 +58,7 @@ int main (void)
 {
   uint16_t ui16_TIM3_counter = 0;
   uint16_t ui16_ebike_app_controller_counter = 0;
-  uint16_t ui16_motor_controller_counter = 0;
-  uint16_t ui16_debug_uart_counter = 0;
-
-  uint16_t ui16_temp = 0, ui16_throttle_value_filtered = 0;
+  uint16_t ui16_motor_controller_counter = 0;;
 
   //set clock at the max 16MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
@@ -100,25 +97,6 @@ int main (void)
       ebike_app_controller();
       continue;
     }
-
-    #ifdef DEBUG_UART
-    
-    ui16_TIM3_counter = TIM3_GetCounter();
-    
-    if((ui16_TIM3_counter - ui16_debug_uart_counter) > 50)
-    {
-      ui16_debug_uart_counter = ui16_TIM3_counter;
-
-      // sugestion: no more than 6 variables printed (takes about 3ms to printf 6 variables)
-      printf "%d,%d,%d,%d\n",
-      ui16_motor_get_motor_speed_erps(),
-      ui8_duty_cycle,
-      ui8_adc_battery_current,
-      ui8_foc_angle
-      );
-    }
-    
-    #endif
   }
 
   return 0;
