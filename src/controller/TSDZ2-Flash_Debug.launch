@@ -2,7 +2,7 @@
 <launchConfiguration type="com.zylin.embeddedcdt.idleNative">
     <booleanAttribute key="com.zylin.embeddedcdt.debugger_app_console" value="false"/>
     <stringAttribute key="com.zylin.embeddedcdt.debugger_init_commands" value="target remote localhost:3333"/>
-    <stringAttribute key="com.zylin.embeddedcdt.debugger_run_commands" value="monitor reset&#10;monitor halt&#10;monitor load_image main.bin 0x8000&#10;monitor reg pc 0x8000"/>
+    <stringAttribute key="com.zylin.embeddedcdt.debugger_run_commands" value="monitor reset halt&#10;monitor load_image main.bin 0x8000&#10;monitor reg pc 0x8000"/>
     <stringAttribute key="org.eclipse.cdt.debug.mi.core.DEBUG_NAME" value="/usr/local/bin/stm8-gdb"/>
     <stringAttribute key="org.eclipse.cdt.debug.mi.core.GDB_INIT" value=""/>
     <booleanAttribute key="org.eclipse.cdt.debug.mi.core.breakpointsFullPath" value="false"/>

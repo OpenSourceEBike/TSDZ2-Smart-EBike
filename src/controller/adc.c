@@ -47,8 +47,8 @@ void adc_init (void)
 
   // 6s delay to wait for voltages stabilize (maybe beause capacitors on the circuit)
   // this was tested on 27.12.2019 by Casainho and lower values like 5s would not work.
-//  ui16_counter = TIM3_GetCounter() + 6000;
-//  while(TIM3_GetCounter() < ui16_counter) ;
+  ui16_counter = TIM3_GetCounter() + 6000;
+  while(TIM3_GetCounter() < ui16_counter) ;
 
   // read and discard few samples of ADC, to make sure the next samples are ok
   for(ui8_i = 0; ui8_i < 64; ui8_i++)

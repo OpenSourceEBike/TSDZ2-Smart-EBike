@@ -46,7 +46,7 @@ volatile struct_config_vars m_config_vars;
 #define ERROR_BRAKE_APPLIED_DURING_POWER_ON     (1 << 4)
 #define ERROR_THROTTLE_APPLIED_DURING_POWER_ON  (1 << 5)
 #define ERROR_NO_SPEED_SENSOR_DETECTED          (1 << 6)
-#define ERROR_NO_LOW_VOLTAGE                    (1 << 7)
+#define ERROR_FATAL                             (1 << 7)
 
 // Motor init state
 #define MOTOR_INIT_STATE_RESET                  0
@@ -182,6 +182,8 @@ uint16_t ui16_torque_sensor_linearize_right[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2
 uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2];
 
 static uint8_t m_ui8_got_configurations_timer = 0;
+
+static uint8_t ui8_comm_error_counter = 0;
 
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
@@ -462,6 +464,8 @@ static void communications_controller(void)
     if (((((uint16_t) ui8_rx_buffer[ui8_len + 1]) << 8) +
           ((uint16_t) ui8_rx_buffer[ui8_len])) == ui16_crc_rx)
     {
+      ui8_comm_error_counter = 0;
+
       if (ui8_m_motor_init_state == MOTOR_INIT_STATE_RESET)
         ui8_m_motor_init_state = MOTOR_INIT_STATE_NO_INIT;
 
@@ -471,7 +475,20 @@ static void communications_controller(void)
     else
     {
       ui8_received_package_flag = 0;
+      ui8_comm_error_counter++;
     }
+  }
+  else
+  {
+    ui8_comm_error_counter++;
+  }
+
+  // check for communications fail or display master fail
+  // can't fail more then 800ms
+  if (ui8_comm_error_counter > 7) {
+    motor_disable_pwm();
+    ui8_m_motor_enabled = 0;
+    ui8_m_system_state |= ERROR_FATAL;
   }
 
   if (ui8_m_motor_init_state == MOTOR_INIT_STATE_RESET)
