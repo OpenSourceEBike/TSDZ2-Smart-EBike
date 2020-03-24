@@ -369,9 +369,11 @@ static void ebike_control_motor(void)
         m_ui8_got_configurations_timer--;
       }
       else
+      {
         ui8_m_motor_init_state = MOTOR_INIT_OK;
         ui8_m_motor_init_status = MOTOR_INIT_STATUS_INIT_OK;
         ui8_m_system_state &= ~ERROR_NOT_INIT;
+      }
       break;
   }
 
@@ -464,10 +466,7 @@ static void communications_controller(void)
         ui8_m_motor_init_state = MOTOR_INIT_STATE_NO_INIT;
 
       ui8_frame_type_to_send = ui8_rx_buffer[2];
-      if (ui8_frame_type_to_send == COMM_FRAME_TYPE_STATUS)
-        communications_process_packages(COMM_FRAME_TYPE_STATUS);
-      else
-        communications_process_packages(ui8_frame_type_to_send);
+      communications_process_packages(ui8_frame_type_to_send);
     }
     else
     {
@@ -757,8 +756,6 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
   // get ready to get next package
   ui8_received_package_flag = 0;
-  // enable UART2 receive interrupt
-  UART2->CR2 |= (1 << 5);
 }
 
 // each 1 unit = 0.156 amps
@@ -1386,13 +1383,11 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
         ui8_rx_buffer[ui8_rx_cnt + 2] = ui8_byte_received;
         ++ui8_rx_cnt;
 
-        // reset if it is the last byte of the package and index is out of bounds
         if (ui8_rx_cnt >= ui8_rx_len)
         {
           ui8_rx_cnt = 0;
           ui8_state_machine = 0;
           ui8_received_package_flag = 1; // signal that we have a full package to be processed
-          UART2->CR2 &= ~(1 << 5); // disable UART2 receive interrupt
         }
         break;
 
@@ -1400,6 +1395,11 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
         break;
       }
     }
+  }
+  else // if there was any error, restart our state machine
+  {
+    ui8_rx_cnt = 0;
+    ui8_state_machine = 0;
   }
 }
 
