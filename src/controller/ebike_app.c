@@ -512,10 +512,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   switch (ui8_frame_type) {
     // periodic data
     case COMM_FRAME_TYPE_PERIODIC:
-
-      // display will send periodic command after init ok, but now reset so the state machine will be ready for next time
-      if (ui8_m_motor_init_status == MOTOR_INIT_STATUS_INIT_OK)
-        ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
+      // display will send periodic command after motor init ok, now reset so the state machine will be ready for next time
+      ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
 
       // assist level
       m_config_vars.ui16_assist_level_factor_x1000 = (((uint16_t) ui8_rx_buffer[4]) << 8) + ((uint16_t) ui8_rx_buffer[3]);
