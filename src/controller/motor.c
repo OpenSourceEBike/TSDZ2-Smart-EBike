@@ -508,7 +508,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       break;
 
       case 1:
-      if ((ui8_half_erps_flag == 1) && (ui8_hall_sensors_state_last == 3))
+      if (ui8_half_erps_flag == 1)
       {
         ui8_half_erps_flag = 0;
         ui16_PWM_cycles_counter_total = ui16_PWM_cycles_counter;
