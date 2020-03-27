@@ -15,36 +15,19 @@
 #include "brake.h"
 #include "motor.h"
 
-// Brake signal
-void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER)
-{
-  if (brake_is_set())
-  {
-    motor_controller_set_state(MOTOR_CONTROLLER_STATE_BRAKE);
-  }
-  else
-  {
-    motor_controller_reset_state(MOTOR_CONTROLLER_STATE_BRAKE);
-  }
-}
+volatile uint8_t ui8_g_brakes_state = 0;
 
 void brake_init(void)
 {
   //brake pin as external input pin interrupt
   GPIO_Init(BRAKE__PORT,
 	    BRAKE__PIN,
-	    GPIO_MODE_IN_FL_IT); // with external interrupt
-
-  //initialize the Interrupt sensitivity
-  EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOC,
-			    EXTI_SENSITIVITY_RISE_FALL);
+	    GPIO_MODE_IN_PU_NO_IT); // input pull-up, no external interrupt
 }
 
-BitStatus brake_is_set(void)
+uint8_t brake_is_set(void)
 {
-  if (GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN) == 0)
-    return 1;
-  else
-    return 0;
+  return (GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN) == 0);
 }
+
 

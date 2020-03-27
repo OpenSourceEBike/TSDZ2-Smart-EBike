@@ -11,7 +11,6 @@
 
 #include <stdint.h>
 #include "main.h"
-#include "common/common.h"
 
 #define EBIKE_APP_STATE_MOTOR_COAST     0
 #define EBIKE_APP_STATE_MOTOR_STOP      1
@@ -64,6 +63,8 @@ extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
 extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;
 
 extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
+
+extern uint8_t ui8_g_brake_is_set;
 
 void ebike_app_controller (void);
 struct_config_vars* get_configuration_variables (void);

@@ -48,7 +48,6 @@ int main (void);
 
 // PWM cycle interrupt
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER);
-void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER);
 void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
 
 /////////////////////////////////////////////////////////////////////////////////////////////

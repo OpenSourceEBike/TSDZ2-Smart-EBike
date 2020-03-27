@@ -84,7 +84,7 @@ uint16_t  ui16_m_adc_motor_temperatured_accumulated = 0;
 uint16_t   ui16_m_adc_target_current;
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 static volatile uint8_t ui8_m_motor_enabled = 0;
-static uint8_t ui8_m_brake_is_set = 0;
+uint8_t ui8_g_brake_is_set = 0;
 volatile uint8_t  ui8_throttle = 0;
 volatile uint16_t  ui16_m_torque_sensor_weight_x10 = 0;
 volatile uint16_t  ui16_m_torque_sensor_weight_raw_x10 = 0;
@@ -213,7 +213,7 @@ static void ebike_control_motor(void)
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage();
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
-  ui8_m_brake_is_set = brake_is_set();
+  ui8_g_brake_is_set = ui8_g_brakes_state;
 
   // make sure this vars are reset to avoid repetion code on next elses
   ui16_m_adc_target_current = 0;
@@ -380,7 +380,7 @@ static void ebike_control_motor(void)
   }
 
   // let's force our target current to 0 if brake is set or if there are errors
-  if(ui8_m_brake_is_set || (ui8_m_system_state != NO_ERROR))
+  if(ui8_g_brake_is_set || (ui8_m_system_state != NO_ERROR))
   {
     ui16_m_adc_target_current = 0;
   }
@@ -420,7 +420,7 @@ static void ebike_control_motor(void)
   }
 
   // set motor PWM target
-  if(m_config_vars.ui8_walk_assist && ui8_m_brake_is_set == 0 && ui8_m_motor_enabled)
+  if(m_config_vars.ui8_walk_assist && ui8_g_brake_is_set == 0 && ui8_m_motor_enabled)
   {
     if(ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
     {
@@ -550,11 +550,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
 
       // brake state
-      ui8_tx_buffer[8] = 0;
-      if(motor_controller_state_is_set(MOTOR_CONTROLLER_STATE_BRAKE))
-      {
-        ui8_tx_buffer[8] |= 1;
-      }
+      ui8_tx_buffer[8] = ui8_g_brake_is_set;
       // add the hall sensors state, that should be 3 bits only, value from 0 to 7
       ui8_tx_buffer[8] |= (ui8_g_hall_sensors_state << 1);
       // add pas pedal position
@@ -1156,7 +1152,7 @@ static void boost_run_statemachine(void)
       // ebike is stopped, wait for throttle signal to startup boost
       case BOOST_STATE_BOOST_DISABLED:
         if(ui16_m_torque_sensor_adc_steps > TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD &&
-            (ui8_m_brake_is_set == 0))
+            (ui8_g_brake_is_set == 0))
         {
           ui8_startup_boost_enable = 1;
           ui8_startup_boost_timer = m_config_vars.ui8_startup_motor_power_boost_time;
@@ -1166,7 +1162,7 @@ static void boost_run_statemachine(void)
 
       case BOOST_STATE_BOOST:
         // braking means reseting
-        if(ui8_m_brake_is_set)
+        if(ui8_g_brake_is_set)
         {
           ui8_startup_boost_enable = 0;
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
@@ -1198,7 +1194,7 @@ static void boost_run_statemachine(void)
 
       case BOOST_STATE_FADE:
         // braking means reseting
-        if(ui8_m_brake_is_set)
+        if(ui8_g_brake_is_set)
         {
           ui8_startup_boost_fade_enable = 0;
           ui8_startup_boost_fade_steps = 0;

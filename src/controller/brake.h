@@ -11,7 +11,9 @@
 
 #include "main.h"
 
+extern volatile uint8_t ui8_g_brakes_state;
+
 void brake_init(void);
-BitStatus brake_is_set(void);
+uint8_t brake_is_set(void);
 
 #endif /* _BRAKE_H */
