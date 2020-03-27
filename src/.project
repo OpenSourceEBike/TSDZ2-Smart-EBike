@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>TSDZ2-Smart-EBike--controller</name>
+	<name>TSDZ2_firmware</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -26,7 +26,7 @@
 	<variableList>
 		<variable>
 			<name>Common</name>
-			<value>file:/home/cas/OpenSource-EBike-firmware/TSDZ2-Smart-EBike/src/common</value>
+			<value>file:src/common</value>
 		</variable>
 	</variableList>
 </projectDescription>

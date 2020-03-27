@@ -419,10 +419,9 @@ uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 uint8_t ui8_pas_tick_counter = 0;
 volatile uint8_t ui8_g_pas_pedal_right = 0;
 
-volatile uint16_t ui16_g_adc_torque_sensor_max_value_per_rotation = 0;
-volatile uint16_t ui16_g_adc_torque_sensor_max = 0;
-volatile uint8_t ui8_g_adc_torque_sensor_max_counter = 0;
-volatile uint16_t ui16_g_adc_torque_sensor_max_temp = 0;
+// for overrun problem
+volatile uint8_t ui8_pas_stop_flag = 0;
+volatile uint16_t ui16_pas_pwm_cycles_ticks_stop = 0;
 
 // wheel speed
 uint8_t ui8_wheel_speed_sensor_state = 1;
@@ -650,6 +649,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - ramp up/down PWM duty_cycle value
 
   if (ui8_g_brakes_state ||
+      ui8_pas_stop_flag ||
       (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) ||
       (ui16_motor_speed_erps > ui16_max_motor_speed_erps))
   {
@@ -815,6 +815,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         {
           ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
           ui16_pas_counter = 0;
+
+          // for overrun problem
+          ui16_pas_pwm_cycles_ticks_stop = (ui16_pas_pwm_cycles_ticks + (ui16_pas_pwm_cycles_ticks >> 4));
         }
 
         // see the direction
@@ -897,40 +900,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     {
       ui8_g_pas_pedal_right = 1;
     }
-
-    /****************************************************************************/
-    // on the next block of code, let's save the torque sensor max value on each pedal full rotation
-
-    ui16_g_adc_torque_sensor_max_temp = UI16_ADC_10_BIT_TORQUE_SENSOR;
-
-    // remove the offset
-    // make sure readed value is higher than the offset
-    if(ui16_g_adc_torque_sensor_max_temp >= ui16_g_adc_torque_sensor_min_value)
-    {
-      ui16_g_adc_torque_sensor_max_temp = ui16_g_adc_torque_sensor_max_temp - ui16_g_adc_torque_sensor_min_value;
-    }
-    // offset is higher, something is wrong so just keep at 0 value
-    else
-    {
-      ui16_g_adc_torque_sensor_max_temp = 0;
-    }
-
-    // store the max value
-    if(ui16_g_adc_torque_sensor_max_temp > ui16_g_adc_torque_sensor_max)
-    {
-      ui16_g_adc_torque_sensor_max = ui16_g_adc_torque_sensor_max_temp;
-    }
-
-    ui8_g_adc_torque_sensor_max_counter++;
-    if(ui8_g_adc_torque_sensor_max_counter >= (PAS_NUMBER_MAGNETS_X2)) // PAS_NUMBER_MAGNETS_X2 means a full pedal rotation
-    {
-      ui8_g_adc_torque_sensor_max_counter = 0;
-      ui16_g_adc_torque_sensor_max_value_per_rotation = ui16_g_adc_torque_sensor_max; // store the max value on the output variable of this algorithm
-      ui16_g_adc_torque_sensor_max = 0;
-      ui16_g_adc_torque_sensor_max_temp = 0; // reset the max value
-    }
-    /****************************************************************************/
   }
+
+  // for overrun problem
+  if(ui16_pas_pwm_cycles_ticks > ui16_pas_pwm_cycles_ticks_stop)
+    ui8_pas_stop_flag = 1;
+  else
+    ui8_pas_stop_flag = 0;
 
   // limit min PAS cadence
   if (ui16_pas_counter > ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
@@ -940,8 +916,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_pas_after_first_pulse = 0;
     ui8_g_pedaling_direction = 0;
 
-    // reset max value when cadence will be 0
-    ui16_g_adc_torque_sensor_max_value_per_rotation = 0;
+    // for overrun problem
+    ui16_pas_pwm_cycles_ticks_stop = ui16_pas_pwm_cycles_ticks;
+    ui8_pas_stop_flag = 0;
   }
   /****************************************************************************/
   
