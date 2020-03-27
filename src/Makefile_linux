@@ -18,8 +18,8 @@ PLATFORM = stm8
 PNAME = main
 
 #Directory for helpers
-IDIR = ../common/STM8S_StdPeriph_Lib/inc
-SDIR = ../common/STM8S_StdPeriph_Lib/src
+IDIR = STM8S_StdPeriph_Lib/inc
+SDIR = STM8S_StdPeriph_Lib/src
 
 # In case you ever want a different name for the main source file
 MAINSRC = $(PNAME).c
