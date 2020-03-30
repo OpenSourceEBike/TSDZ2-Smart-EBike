@@ -72,7 +72,6 @@ volatile uint8_t ui8_m_system_state = ERROR_NOT_INIT; // start with system error
 volatile uint8_t ui8_m_motor_init_state = MOTOR_INIT_STATE_RESET;
 volatile uint8_t ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-volatile uint8_t ui8_g_pedaling_direction = 0;
 uint8_t   ui8_pas_cadence_rpm = 0;
 uint16_t  ui16_m_pedal_torque_x10;
 uint16_t  ui16_m_pedal_torque_x100;
@@ -731,7 +730,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
       ui8_tx_buffer[5] = 56;
-      ui8_tx_buffer[6] = 1;
+      ui8_tx_buffer[6] = 2;
       ui8_len += 4;
       break;
 
@@ -1145,9 +1144,9 @@ static void boost_run_statemachine(void)
 // usually 10 units is between 2 and 4 kgs on the pedals, depending a lot from each torque sensor
 #define TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD 10
 
-  if(m_config_vars.ui8_startup_motor_power_boost_time > 0)
+  if (m_config_vars.ui8_startup_motor_power_boost_time > 0)
   {
-    switch(ui8_m_startup_boost_state_machine)
+    switch (ui8_m_startup_boost_state_machine)
     {
       // ebike is stopped, wait for throttle signal to startup boost
       case BOOST_STATE_BOOST_DISABLED:
@@ -1162,24 +1161,24 @@ static void boost_run_statemachine(void)
 
       case BOOST_STATE_BOOST:
         // braking means reseting
-        if(ui8_g_brake_is_set)
+        if (ui8_g_brake_is_set)
         {
           ui8_startup_boost_enable = 0;
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
         }
 
         // end boost if
-        if(ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD)
+        if (ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD)
         {
           ui8_startup_boost_enable = 0;
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_WAIT_TO_RESTART;
         }
 
         // decrement timer
-        if(ui8_startup_boost_timer > 0) { ui8_startup_boost_timer--; }
+        if (ui8_startup_boost_timer > 0) { ui8_startup_boost_timer--; }
 
         // end boost and start fade if
-        if(ui8_startup_boost_timer == 0)
+        if (ui8_startup_boost_timer == 0)
         {
           ui8_m_startup_boost_state_machine = BOOST_STATE_FADE;
           ui8_startup_boost_enable = 0;
@@ -1194,17 +1193,17 @@ static void boost_run_statemachine(void)
 
       case BOOST_STATE_FADE:
         // braking means reseting
-        if(ui8_g_brake_is_set)
+        if (ui8_g_brake_is_set)
         {
           ui8_startup_boost_fade_enable = 0;
           ui8_startup_boost_fade_steps = 0;
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
         }
 
-        if(ui8_startup_boost_fade_steps > 0) { ui8_startup_boost_fade_steps--; }
+        if (ui8_startup_boost_fade_steps > 0) { ui8_startup_boost_fade_steps--; }
 
         // disable fade if
-        if(ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD ||
+        if (ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD ||
             ui8_startup_boost_fade_steps == 0)
         {
           ui8_startup_boost_fade_enable = 0;
@@ -1216,7 +1215,7 @@ static void boost_run_statemachine(void)
       // restart when user is not pressing the pedals AND/OR wheel speed = 0
       case BOOST_STATE_BOOST_WAIT_TO_RESTART:
         // wheel speed must be 0 as also torque sensor
-        if((m_config_vars.ui8_startup_motor_power_boost_always & 1) == 0)
+        if ((m_config_vars.ui8_startup_motor_power_boost_always & 1) == 0)
         {
           if(ui16_wheel_speed_x10 == 0 &&
               ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD)
@@ -1225,9 +1224,9 @@ static void boost_run_statemachine(void)
           }
         }
         // torque sensor must be 0
-        if((m_config_vars.ui8_startup_motor_power_boost_always & 1) > 0)
+        if ((m_config_vars.ui8_startup_motor_power_boost_always & 1) > 0)
         {
-          if(ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD ||
+          if (ui16_m_torque_sensor_adc_steps < TORQUE_SENSOR_ADC_STEPS_BOOST_THRESHOLD ||
               ui8_pas_cadence_rpm == 0)
           {
             ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
@@ -1279,14 +1278,13 @@ static void apply_boost_fade_out(uint16_t *ui16_adc_target_current)
 
 static void read_pas_cadence(void)
 {
-  // cadence in RPM = 60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
-  if((ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS)) ||
-      (ui8_g_pedaling_direction != 1)) // if not rotating pedals forward
+  if (ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
   { 
     ui8_pas_cadence_rpm = 0; 
   }
   else
   {
+    // cadence in RPM = 60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
     ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064));
   }
 
@@ -1303,7 +1301,7 @@ static void torque_sensor_read(void)
 
   // remove the offset
   // make sure readed value is higher than the offset
-  if(ui16_adc_torque_sensor >= ui16_g_adc_torque_sensor_min_value)
+  if (ui16_adc_torque_sensor >= ui16_g_adc_torque_sensor_min_value)
   {
     ui16_m_torque_sensor_raw = ui16_adc_torque_sensor - ui16_g_adc_torque_sensor_min_value;
   }
@@ -1315,7 +1313,7 @@ static void torque_sensor_read(void)
 
   // next state machine is used to filter out the torque sensor signal
   // when user is resting on the pedals
-  switch(ui8_tstr_state_machine)
+  switch (ui8_tstr_state_machine)
   {
     // ebike is stopped
     case STATE_NO_PEDALLING:
@@ -1338,7 +1336,7 @@ static void torque_sensor_read(void)
   }
 
   // bike is moving but user doesn't pedal, disable torque sensor signal because user can be resting the feet on the pedals
-  if(ui8_tstr_state_machine == STATE_PEDALLING && ui8_pas_cadence_rpm == 0)
+  if (ui8_tstr_state_machine == STATE_PEDALLING && ui8_pas_cadence_rpm == 0)
   {
     ui16_m_torque_sensor_adc_steps = 0;
   }

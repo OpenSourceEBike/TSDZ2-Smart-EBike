@@ -412,16 +412,16 @@ volatile uint16_t ui16_g_adc_current_offset;
 
 volatile uint16_t ui16_g_adc_target_motor_max_current;
 
-uint8_t ui8_pas_state;
-uint8_t ui8_pas_state_old;
-uint8_t ui8_pas_after_first_pulse = 0;
-uint16_t ui16_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-uint8_t ui8_pas_tick_counter = 0;
+static uint8_t ui8_m_pas_state;
+static uint8_t ui8_m_pas_state_old;
+static uint8_t ui8_m_pas_after_first_pulse = 0;
+static uint16_t ui16_m_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+static uint8_t ui8_m_pas_tick_counter = 0;
 volatile uint8_t ui8_g_pas_pedal_right = 0;
+uint8_t ui8_m_pedaling_direction = 0;
 
-// for overrun problem
-volatile uint8_t ui8_pas_stop_flag = 0;
-volatile uint16_t ui16_pas_pwm_cycles_ticks_stop = 0;
+static uint8_t ui8_m_pas_min_cadence_flag = 0;
+static uint16_t ui16_m_pas_min_cadence_pwm_cycles_ticks = 0;
 
 // wheel speed
 uint8_t ui8_wheel_speed_sensor_state = 1;
@@ -620,10 +620,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
   // check brakes state
 
-  #define COASTER_BRAKE_TORQUE_THRESHOLD    40
+  // the next value was tested by plpetrov user on 28.04.2020:
+  #define COASTER_BRAKE_TORQUE_THRESHOLD    15
 
   // check if coaster brake is engaged
-  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_g_adc_torque_sensor_min_value - COASTER_BRAKE_TORQUE_THRESHOLD))
+  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_g_adc_torque_sensor_min_value - ((uint16_t) COASTER_BRAKE_TORQUE_THRESHOLD)))
   {
     ui8_g_brakes_state = 1;
   }
@@ -649,30 +650,23 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - ramp up/down PWM duty_cycle value
 
   if (ui8_g_brakes_state ||
-      ui8_pas_stop_flag ||
-      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off) ||
-      (ui16_motor_speed_erps > ui16_max_motor_speed_erps))
+      ui8_m_pas_min_cadence_flag ||
+      (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
   {
     if (ui8_g_duty_cycle > 0)
-    {
-      // decrement duty cycle
       --ui8_g_duty_cycle;
-    }
   }
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit
   else if (++ui8_current_controller_counter > 12)
   {
-    // reset counter
     ui8_current_controller_counter = 0;
     
-    // if battery max current or motor current ramp up is too much, reduce duty cycle
     if((ui16_g_adc_battery_current > ui16_g_adc_target_battery_max_current) ||
-       (ui16_g_adc_motor_current > ui16_controller_adc_max_current))
+       (ui16_g_adc_motor_current > ui16_controller_adc_max_current) ||
+       (ui16_motor_speed_erps > ui16_max_motor_speed_erps))
     {
       if (ui8_g_duty_cycle > 0)
-      {
         --ui8_g_duty_cycle;
-      }
     }
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
@@ -772,153 +766,118 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // we are not doing a ramp down here, just directly setting to the target value
     ui16_controller_adc_max_current = ui16_g_adc_target_motor_max_current;
   }
-  
   /****************************************************************************/
 
   // calc PAS timming between each positive pulses, in PWM cycles ticks
   // calc PAS on and off timming of each pulse, in PWM cycles ticks
-  ui16_pas_counter++;
+  ui16_m_pas_counter++;
 
   // detect PAS signal changes
-  if((PAS1__PORT->IDR & PAS1__PIN) == 0)
-  {
-    ui8_pas_state = 0;
-  }
+  if ((PAS1__PORT->IDR & PAS1__PIN) == 0)
+    ui8_m_pas_state = 0;
   else
-  {
-    ui8_pas_state = 1;
-  }
+    ui8_m_pas_state = 1;
 
   // PAS signal did change
-  if(ui8_pas_state != ui8_pas_state_old)
+  if (ui8_m_pas_state != ui8_m_pas_state_old)
   {
-    ui8_pas_state_old = ui8_pas_state;
+    ui8_m_pas_state_old = ui8_m_pas_state;
 
     // consider only when PAS signal transition from 0 to 1
-    if(ui8_pas_state == 1)
+    if (ui8_m_pas_state == 1)
     {
       // keep track of first pulse
-      if(!ui8_pas_after_first_pulse)
+      if (!ui8_m_pas_after_first_pulse)
       {
-        ui8_pas_after_first_pulse = 1;
+        ui8_m_pas_after_first_pulse = 1;
         ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
       }
       else
       {
         // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
-        // also PAS cadence should be zero if rotating backwards
-        if(ui16_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
-        {
+        if (ui16_m_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
           ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
-        }
         else
-        {
-          ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
-          ui16_pas_counter = 0;
+          ui16_pas_pwm_cycles_ticks = ui16_m_pas_counter;
 
-          // for overrun problem
-          ui16_pas_pwm_cycles_ticks_stop = (ui16_pas_pwm_cycles_ticks + (ui16_pas_pwm_cycles_ticks >> 4));
-        }
+        ui16_m_pas_min_cadence_pwm_cycles_ticks = (ui16_pas_pwm_cycles_ticks + (ui16_pas_pwm_cycles_ticks >> 3));
+        ui16_m_pas_counter = 0;
 
         // see the direction
         if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
-        {
-          ui8_g_pedaling_direction = 2;
-        }
+          ui8_m_pedaling_direction = 2;
         else
-        {
-          ui8_g_pedaling_direction = 1;
-        }
+          ui8_m_pedaling_direction = 1;
       }
 
       // lef/right
       if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
       {
-        ui8_pas_tick_counter++;
-        if(ui8_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
-        {
-          ui8_pas_tick_counter = 1;
-        }
+        ui8_m_pas_tick_counter++;
+        if (ui8_m_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
+          ui8_m_pas_tick_counter = 1;
       }
       else
       {
-        if(ui8_pas_tick_counter <= 1)
-        {
-          ui8_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
-        }
+        if (ui8_m_pas_tick_counter <= 1)
+          ui8_m_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
         else
-        {
-          ui8_pas_tick_counter--;
-        }
+          ui8_m_pas_tick_counter--;
       }
     }
     else
     {
       // keep track of first pulse
-      if(ui8_pas_after_first_pulse)
+      if (ui8_m_pas_after_first_pulse)
       {
         // see the direction
         if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
-        {
-          ui8_g_pedaling_direction = 2;
-        }
+          ui8_m_pedaling_direction = 2;
         else
-        {
-          ui8_g_pedaling_direction = 1;
-        }
+          ui8_m_pedaling_direction = 1;
       }
 
 
       // lef/right
       if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
       {
-        ui8_pas_tick_counter++;
-        if(ui8_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
-        {
-          ui8_pas_tick_counter = 1;
-        }
+        ui8_m_pas_tick_counter++;
+        if (ui8_m_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
+          ui8_m_pas_tick_counter = 1;
       }
       else
       {
-        if(ui8_pas_tick_counter <= 1)
-        {
-          ui8_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
-        }
+        if (ui8_m_pas_tick_counter <= 1)
+          ui8_m_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
         else
-        {
-          ui8_pas_tick_counter--;
-        }
+          ui8_m_pas_tick_counter--;
       }
     }
 
     // define if pedal is right or left
-    if(ui8_pas_tick_counter > PAS_NUMBER_MAGNETS)
-    {
+    if (ui8_m_pas_tick_counter > PAS_NUMBER_MAGNETS)
       ui8_g_pas_pedal_right = 0;
-    }
     else
-    {
       ui8_g_pas_pedal_right = 1;
-    }
   }
 
-  // for overrun problem
-  if(ui16_pas_pwm_cycles_ticks > ui16_pas_pwm_cycles_ticks_stop)
-    ui8_pas_stop_flag = 1;
+  // check for permited relative min cadence value
+  if ((ui8_m_pedaling_direction == 2) || // if rotating pedals backwards
+      (ui16_m_pas_counter > ui16_m_pas_min_cadence_pwm_cycles_ticks))
+    ui8_m_pas_min_cadence_flag = 1;
   else
-    ui8_pas_stop_flag = 0;
+    ui8_m_pas_min_cadence_flag = 0;
 
   // limit min PAS cadence
-  if (ui16_pas_counter > ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
+  if (ui8_m_pas_min_cadence_flag ||
+      ui16_m_pas_counter > ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
   {
     ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-    ui16_pas_counter = 0;
-    ui8_pas_after_first_pulse = 0;
-    ui8_g_pedaling_direction = 0;
-
-    // for overrun problem
-    ui16_pas_pwm_cycles_ticks_stop = ui16_pas_pwm_cycles_ticks;
-    ui8_pas_stop_flag = 0;
+    ui16_m_pas_min_cadence_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+    ui8_m_pas_min_cadence_flag = 0;
+    ui8_m_pas_after_first_pulse = 0;
+    ui8_m_pedaling_direction = 0;
+    ui16_m_pas_counter = 0;
   }
   /****************************************************************************/
   
@@ -937,13 +896,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   {
     // detect wheel speed sensor signal changes
     if (WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN)
-    {
       ui8_wheel_speed_sensor_state = 1;
-    }
     else
-    {
       ui8_wheel_speed_sensor_state = 0;
-    }
 
     if (ui8_wheel_speed_sensor_state != ui8_wheel_speed_sensor_state_old) // wheel speed sensor signal did change
     {

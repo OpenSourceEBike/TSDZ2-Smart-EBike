@@ -56,7 +56,6 @@ extern volatile uint16_t ui16_g_adc_torque_sensor_min_value;
 extern volatile uint8_t ui8_g_ebike_app_state;
 
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
-extern volatile uint8_t ui8_g_pedaling_direction;
 extern uint8_t ui8_pas_cadence_rpm;
 
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
