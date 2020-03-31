@@ -420,6 +420,8 @@ static uint8_t ui8_m_pas_tick_counter = 0;
 volatile uint8_t ui8_g_pas_pedal_right = 0;
 uint8_t ui8_m_pedaling_direction = 0;
 
+volatile uint8_t ui8_g_temp_flag = 0;
+
 static uint8_t ui8_m_pas_min_cadence_flag = 0;
 static uint16_t ui16_m_pas_min_cadence_pwm_cycles_ticks = 0;
 
@@ -593,7 +595,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_g_foc_angle = 0;
     ui8_motor_commutation_type = BLOCK_COMMUTATION;
     ui8_hall_sensors_state_last = 0; // this way we force execution of hall sensors code next time
-//    if (ui8_g_ebike_app_state == EBIKE_APP_STATE_MOTOR_RUNNING) { ui8_g_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP; }
   }
   /****************************************************************************/
   
@@ -861,12 +862,15 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_g_pas_pedal_right = 1;
   }
 
-  // check for permited relative min cadence value
+  // check for permitted relative min cadence value
   if ((ui8_m_pedaling_direction == 2) || // if rotating pedals backwards
       (ui16_m_pas_counter > ui16_m_pas_min_cadence_pwm_cycles_ticks))
     ui8_m_pas_min_cadence_flag = 1;
   else
     ui8_m_pas_min_cadence_flag = 0;
+
+if (ui8_g_temp_flag)
+  ui8_m_pas_min_cadence_flag = 0;
 
   // limit min PAS cadence
   if (ui8_m_pas_min_cadence_flag ||

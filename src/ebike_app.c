@@ -520,6 +520,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // lights state
       m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
+ui8_g_temp_flag = m_config_vars.ui8_lights;
+
       // set lights
       lights_set_state (m_config_vars.ui8_lights);
 
@@ -730,7 +732,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
       ui8_tx_buffer[5] = 56;
-      ui8_tx_buffer[6] = 2;
+      ui8_tx_buffer[6] = 3;
       ui8_len += 4;
       break;
 
