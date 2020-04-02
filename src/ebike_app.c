@@ -269,23 +269,23 @@ static void ebike_control_motor(void)
 
         ui16_adc_max_current_boost_state = ui16_adc_current;
       }
+
+      // 160 is the factor to convert from AMPS_DIV25 to ADC steps
+      // 6.410 = 1 / 0.156 (each ADC step for current)
+      // 6.410 * 25 = 160
+      ui16_adc_max_battery_power_current = (((uint32_t) m_config_vars.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
+
+      // if user is rotating the pedals, force use the min current value
+      if (ui8_pas_cadence_rpm &&
+          ui16_adc_max_battery_power_current < m_config_vars.ui8_battery_current_min_adc)
+      {
+        ui16_adc_max_battery_power_current = m_config_vars.ui8_battery_current_min_adc;
+      }
     }
     else
     {
       // nothing
     }
-
-//    if(m_config_vars.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
-//    {
-//      // 160 is the factor to convert from AMPS_DIV25 to ADC steps
-//      // 6.410 = 1 / 0.156 (each ADC step for current)
-//      // 6.410 * 25 = 160
-//      ui16_adc_max_battery_power_current = (((uint32_t) m_config_vars.ui8_target_battery_max_power_div25) * 160) / ((uint32_t) ui16_battery_voltage_filtered);
-//    }
-//    else
-//    {
-//      // nothing
-//    }
   }
   else
   {
@@ -334,25 +334,19 @@ static void ebike_control_motor(void)
   // speed limit
   apply_speed_limit(ui16_wheel_speed_x10, m_config_vars.ui8_wheel_max_speed, &ui16_m_adc_target_current);
 
-//  // max power
-//  if(m_config_vars.ui8_target_battery_max_power_div25 > 0) //TODO: add real feature toggle for max power feature
-//  {
-//    // limit the current to max value defined by user on LCD max power, if:
-//    // - user defined to make that limitation
-//    // - we are not on boost or fade state
-//    if((m_config_vars.ui8_startup_motor_power_boost_limit_to_max_power == 1) ||
-//        (!((ui8_boost_enabled_and_applied == 1) ||
-//            (ui8_startup_boost_fade_enable == 1))))
-//    {
-//      if (ui16_adc_max_battery_power_current)
-//        ui16_limit_max(&ui16_m_adc_target_current, ui16_adc_max_battery_power_current);
-//      ui16_m_adc_battery_current_max
-//    }
-//    else
-//    {
-//      ui16_adc_max_battery_power_current = 0;
-//    }
-//  }
+  // max power
+  if (m_config_vars.ui8_target_battery_max_power_div25 > 0)
+  {
+    // limit the current to max value defined by user on LCD max power, if:
+    // - user defined to make that limitation
+    // - we are not on boost or fade state
+    if((m_config_vars.ui8_startup_motor_power_boost_limit_to_max_power == 1) ||
+        (!((ui8_boost_enabled_and_applied == 1) ||
+            (ui8_startup_boost_fade_enable == 1))))
+    {
+      ui16_limit_max(&ui16_m_adc_target_current, ui16_adc_max_battery_power_current);
+    }
+  }
 
   // motor over temperature protection
   apply_temperature_limiting(&ui16_m_adc_target_current);
