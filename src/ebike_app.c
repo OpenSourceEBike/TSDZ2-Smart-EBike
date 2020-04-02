@@ -121,7 +121,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   85
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   83
 #define UART_NUMBER_DATA_BYTES_TO_SEND      28
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -528,6 +528,12 @@ ui8_g_temp_flag = m_config_vars.ui8_lights;
       // startup motor power boost
       m_config_vars.ui16_startup_motor_power_boost_assist_level = (((uint16_t) ui8_rx_buffer[8]) << 8) + ((uint16_t) ui8_rx_buffer[7]);
 
+      // wheel max speed
+      m_config_vars.ui8_wheel_max_speed = ui8_rx_buffer[9];
+
+      // motor temperature limit function or throttle
+      m_config_vars.ui8_temperature_limit_feature_enabled = ui8_rx_buffer[10];
+
       // now send data back
       // ADC 10 bits battery voltage
       ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
@@ -636,34 +642,31 @@ ui8_g_temp_flag = m_config_vars.ui8_lights;
       // wheel perimeter
       m_config_vars.ui16_wheel_perimeter = (((uint16_t) ui8_rx_buffer[6]) << 8) + ((uint16_t) ui8_rx_buffer[5]);
 
-      // wheel max speed
-      m_config_vars.ui8_wheel_max_speed = ui8_rx_buffer[7];
-
       // battery max current
-      ebike_app_set_battery_max_current(ui8_rx_buffer[8]);
+      ebike_app_set_battery_max_current(ui8_rx_buffer[7]);
 
-      m_config_vars.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer[9] & 1;
-      m_config_vars.ui8_startup_motor_power_boost_always = (ui8_rx_buffer[9] & 2) >> 1;
-      m_config_vars.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer[9] & 4) >> 2;
-      m_config_vars.ui8_torque_sensor_calibration_feature_enabled = (ui8_rx_buffer[9] & 8) >> 3;
-      m_config_vars.ui8_torque_sensor_calibration_pedal_ground = (ui8_rx_buffer[9] & 16) >> 4;
-      m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer[9] & 32) >> 5;
-      m_config_vars.ui8_motor_type = (ui8_rx_buffer[9] & 64) >> 6;
+      m_config_vars.ui8_startup_motor_power_boost_feature_enabled = ui8_rx_buffer[8] & 1;
+      m_config_vars.ui8_startup_motor_power_boost_always = (ui8_rx_buffer[8] & 2) >> 1;
+      m_config_vars.ui8_startup_motor_power_boost_limit_to_max_power = (ui8_rx_buffer[8] & 4) >> 2;
+      m_config_vars.ui8_torque_sensor_calibration_feature_enabled = (ui8_rx_buffer[8] & 8) >> 3;
+      m_config_vars.ui8_torque_sensor_calibration_pedal_ground = (ui8_rx_buffer[8] & 16) >> 4;
+      m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer[8] & 32) >> 5;
+      m_config_vars.ui8_motor_type = (ui8_rx_buffer[8] & 64) >> 6;
 
       // motor max current
-      ebike_app_set_motor_max_current(ui8_rx_buffer[10]);
+      ebike_app_set_motor_max_current(ui8_rx_buffer[9]);
 
       // startup motor power boost time
-      m_config_vars.ui8_startup_motor_power_boost_time = ui8_rx_buffer[11];
+      m_config_vars.ui8_startup_motor_power_boost_time = ui8_rx_buffer[10];
       // startup motor power boost fade time
-      m_config_vars.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer[12];
+      m_config_vars.ui8_startup_motor_power_boost_fade_time = ui8_rx_buffer[11];
 
       // motor over temperature min value limit
-      m_config_vars.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer[13];
+      m_config_vars.ui8_motor_temperature_min_value_to_limit = ui8_rx_buffer[12];
       // motor over temperature max value limit
-      m_config_vars.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer[14];
+      m_config_vars.ui8_motor_temperature_max_value_to_limit = ui8_rx_buffer[13];
       // ramp up, amps per second
-      m_config_vars.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer[15];
+      m_config_vars.ui8_ramp_up_amps_per_second_x10 = ui8_rx_buffer[14];
 
       // check that value seems correct
       if (m_config_vars.ui8_ramp_up_amps_per_second_x10 < 4 || m_config_vars.ui8_ramp_up_amps_per_second_x10 > 100)
@@ -696,13 +699,10 @@ ui8_g_temp_flag = m_config_vars.ui8_lights;
       ---------------------------------------------------------*/
 
       // received target speed for cruise
-      ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer[16] * 10);
-
-      // motor temperature limit function or throttle
-      m_config_vars.ui8_temperature_limit_feature_enabled = ui8_rx_buffer[17];
+      ui16_received_target_wheel_speed_x10 = (uint16_t) (ui8_rx_buffer[15] * 10);
 
       // torque sensor calibration tables
-      j = 18;
+      j = 16;
       for (i = 0; i < 8; i++) {
         ui16_torque_sensor_linearize_left[i][0] = (uint16_t) ui8_rx_buffer[j++];
         ui16_torque_sensor_linearize_left[i][0] |= ((uint16_t) ui8_rx_buffer[j++]) << 8;
@@ -718,7 +718,7 @@ ui8_g_temp_flag = m_config_vars.ui8_lights;
       }
 
       // battery current min ADC
-      m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[81];
+      m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[79];
       break;
 
     // firmware version
