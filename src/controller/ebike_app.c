@@ -657,7 +657,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       m_config_vars.ui8_torque_sensor_calibration_feature_enabled = (ui8_rx_buffer[9] & 8) >> 3;
       m_config_vars.ui8_torque_sensor_calibration_pedal_ground = (ui8_rx_buffer[9] & 16) >> 4;
       m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer[9] & 32) >> 5;
-      m_config_vars.ui8_motor_type = (ui8_rx_buffer[9] & 64) >> 6;
+      m_config_vars.ui8_motor_type = (ui8_rx_buffer[9] >> 6) & 0x3;
 
       // motor max current
       ebike_app_set_motor_max_current(ui8_rx_buffer[10]);
