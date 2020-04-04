@@ -62,7 +62,7 @@ void ui8_limit_max(uint8_t *ui8_p_value, uint8_t ui8_max_value)
   if (*ui8_p_value > ui8_max_value) { *ui8_p_value = ui8_max_value; }
 }
 
-void ui16_limit_max(uint8_t *ui16_p_value, uint8_t ui16_max_value)
+void ui16_limit_max(uint16_t *ui16_p_value, uint16_t ui16_max_value)
 {
   if (*ui16_p_value > ui16_max_value) { *ui16_p_value = ui16_max_value; }
 }

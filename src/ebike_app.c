@@ -210,6 +210,7 @@ static void ebike_control_motor(void)
   uint8_t ui8_boost_enabled_and_applied = 0;
   uint16_t ui16_adc_max_current_boost_state = 0;
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage();
+  uint16_t ui16_adc_battery_current_max = ui16_m_adc_battery_current_max;
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
   ui8_g_brake_is_set = ui8_g_brakes_state;
@@ -335,17 +336,13 @@ static void ebike_control_motor(void)
   apply_speed_limit(ui16_wheel_speed_x10, m_config_vars.ui8_wheel_max_speed, &ui16_m_adc_target_current);
 
   // max power
-  if (m_config_vars.ui8_target_battery_max_power_div25 > 0)
+  // limit the current to max value defined by user on display max power, if:
+  // - we are not on boost or fade state
+  if((m_config_vars.ui8_startup_motor_power_boost_limit_to_max_power == 1) ||
+      (!((ui8_boost_enabled_and_applied == 1) ||
+          (ui8_startup_boost_fade_enable == 1))))
   {
-    // limit the current to max value defined by user on LCD max power, if:
-    // - user defined to make that limitation
-    // - we are not on boost or fade state
-    if((m_config_vars.ui8_startup_motor_power_boost_limit_to_max_power == 1) ||
-        (!((ui8_boost_enabled_and_applied == 1) ||
-            (ui8_startup_boost_fade_enable == 1))))
-    {
-      ui16_limit_max(&ui16_m_adc_target_current, ui16_adc_max_battery_power_current);
-    }
+    ui16_limit_max(&ui16_adc_battery_current_max, ui16_adc_max_battery_power_current);
   }
 
   // motor over temperature protection
@@ -403,7 +400,7 @@ static void ebike_control_motor(void)
   if(ui8_m_motor_enabled)
   {
     ebike_app_set_target_adc_motor_max_current(ui16_m_adc_target_current);
-    ebike_app_set_target_adc_battery_max_current(ui16_m_adc_battery_current_max);
+    ebike_app_set_target_adc_battery_max_current(ui16_adc_battery_current_max);
   }
   else
   {
@@ -513,8 +510,6 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
       // lights state
       m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
-
-ui8_g_temp_flag = m_config_vars.ui8_lights;
 
       // set lights
       lights_set_state (m_config_vars.ui8_lights);
