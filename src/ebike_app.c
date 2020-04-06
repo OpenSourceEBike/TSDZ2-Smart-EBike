@@ -474,8 +474,8 @@ static void communications_controller(void)
   }
 
   // check for communications fail or display master fail
-  // can't fail more then 800ms
-  if (ui8_comm_error_counter > 7) {
+  // can't fail more then 1000ms
+  if (ui8_comm_error_counter > 10) {
     motor_disable_pwm();
     ui8_m_motor_enabled = 0;
     ui8_m_system_state |= ERROR_FATAL;
