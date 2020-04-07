@@ -210,7 +210,7 @@ static void ebike_control_motor(void)
   uint8_t ui8_boost_enabled_and_applied = 0;
   uint16_t ui16_adc_max_current_boost_state = 0;
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage();
-  uint16_t ui16_adc_battery_current_max = ui16_m_adc_battery_current_max;
+  uint16_t ui16_adc_battery_current_max = 0;
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
   ui8_g_brake_is_set = ui8_g_brakes_state;
@@ -282,6 +282,9 @@ static void ebike_control_motor(void)
       {
         ui16_adc_max_battery_power_current = m_config_vars.ui8_battery_current_min_adc;
       }
+
+      // set here (assist level > 0) our battery max current
+      ui16_adc_battery_current_max = ui16_m_adc_battery_current_max;
     }
     else
     {
@@ -721,7 +724,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
       ui8_tx_buffer[5] = 57;
-      ui8_tx_buffer[6] = 0;
+      ui8_tx_buffer[6] = 1;
       ui8_len += 4;
       break;
 
