@@ -29,8 +29,6 @@ extern volatile uint16_t ui16_g_adc_target_motor_max_current;
 extern volatile uint16_t ui16_g_adc_battery_current_filtered;
 extern volatile uint16_t ui16_g_adc_motor_current_filtered;
 
-extern volatile uint8_t ui8_g_temp_flag;
-
 /***************************************************************************************/
 // Motor interface
 void hall_sensor_init (void); // must be called before using the motor

@@ -420,8 +420,6 @@ static uint8_t ui8_m_pas_tick_counter = 0;
 volatile uint8_t ui8_g_pas_pedal_right = 0;
 uint8_t ui8_m_pedaling_direction = 0;
 
-volatile uint8_t ui8_g_temp_flag = 0;
-
 static uint8_t ui8_m_pas_min_cadence_flag = 0;
 static uint16_t ui16_m_pas_min_cadence_pwm_cycles_ticks = 0;
 
@@ -651,7 +649,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - ramp up/down PWM duty_cycle value
 
   if (ui8_g_brakes_state ||
-      ui8_m_pas_min_cadence_flag ||
+      (ui8_m_pas_min_cadence_flag && (ui8_g_throttle == 0)) ||
       (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
   {
     if (ui8_g_duty_cycle > 0)
@@ -868,9 +866,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_m_pas_min_cadence_flag = 1;
   else
     ui8_m_pas_min_cadence_flag = 0;
-
-if (ui8_g_temp_flag)
-  ui8_m_pas_min_cadence_flag = 0;
 
   // limit min PAS cadence
   if (ui8_m_pas_min_cadence_flag ||

@@ -72,25 +72,25 @@ volatile uint8_t ui8_m_system_state = ERROR_NOT_INIT; // start with system error
 volatile uint8_t ui8_m_motor_init_state = MOTOR_INIT_STATE_RESET;
 volatile uint8_t ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
 volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-uint8_t   ui8_pas_cadence_rpm = 0;
-uint16_t  ui16_m_pedal_torque_x10;
-uint16_t  ui16_m_pedal_torque_x100;
-uint16_t  ui16_m_pedal_power_x10;
-uint16_t  ui16_m_pedal_power_max_x10;
-uint8_t   ui8_m_pedal_human_power = 0;
+uint8_t ui8_pas_cadence_rpm = 0;
+uint16_t ui16_m_pedal_torque_x10;
+uint16_t ui16_m_pedal_torque_x100;
+uint16_t ui16_m_pedal_power_x10;
+uint16_t ui16_m_pedal_power_max_x10;
+uint8_t ui8_m_pedal_human_power = 0;
 uint8_t ui8_pas_pedal_position_right = 0;
-uint16_t  ui16_m_adc_motor_temperatured_accumulated = 0;
-uint16_t   ui16_m_adc_target_current;
+uint16_t ui16_m_adc_motor_temperatured_accumulated = 0;
+uint16_t ui16_m_adc_target_current;
 uint8_t ui8_tstr_state_machine = STATE_NO_PEDALLING;
 static volatile uint8_t ui8_m_motor_enabled = 0;
 uint8_t ui8_g_brake_is_set = 0;
-volatile uint8_t  ui8_throttle = 0;
-volatile uint16_t  ui16_m_torque_sensor_weight_x10 = 0;
-volatile uint16_t  ui16_m_torque_sensor_weight_raw_x10 = 0;
-volatile uint16_t  ui16_m_torque_sensor_weight_raw_with_offset_x10 = 0;
-uint16_t  ui16_m_torque_sensor_weight_offset_x10 = 0;
-uint8_t  ui8_m_first_time_torque_sensor_weight = 1;
-volatile uint8_t  ui8_m_torque_sensor_weight_max = 0;
+volatile uint8_t ui8_g_throttle = 0;
+volatile uint16_t ui16_m_torque_sensor_weight_x10 = 0;
+volatile uint16_t ui16_m_torque_sensor_weight_raw_x10 = 0;
+volatile uint16_t ui16_m_torque_sensor_weight_raw_with_offset_x10 = 0;
+uint16_t ui16_m_torque_sensor_weight_offset_x10 = 0;
+uint8_t ui8_m_first_time_torque_sensor_weight = 1;
+volatile uint8_t ui8_m_torque_sensor_weight_max = 0;
 static volatile uint16_t ui16_m_torque_sensor_adc_steps = 0;
 volatile uint16_t ui16_m_torque_sensor_raw = 0;
 volatile uint16_t ui16_m_adc_torque_sensor_raw = 0;
@@ -309,7 +309,7 @@ static void ebike_control_motor(void)
   }
 
   // throttle
-  apply_throttle(ui8_throttle, &ui16_m_adc_target_current);
+  apply_throttle(ui8_g_throttle, &ui16_m_adc_target_current);
 
   // walk assist or cruise
   if(m_config_vars.ui8_walk_assist)
@@ -564,7 +564,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       else
       {
         // throttle value with offset removed and mapped to 255
-        ui8_tx_buffer[10] = ui8_throttle;
+        ui8_tx_buffer[10] = ui8_g_throttle;
       }
 
       // ADC torque_sensor
@@ -1341,7 +1341,7 @@ static void torque_sensor_read(void)
 static void throttle_read (void)
 {
   // map value from 0 up to 255
-  ui8_throttle =  (uint8_t) (map (UI8_ADC_THROTTLE,
+  ui8_g_throttle =  (uint8_t) (map (UI8_ADC_THROTTLE,
                                  (uint8_t) ADC_THROTTLE_MIN_VALUE,
                                  (uint8_t) ADC_THROTTLE_MAX_VALUE,
                                  (uint8_t) 0,
