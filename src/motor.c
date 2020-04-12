@@ -799,7 +799,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         else
           ui16_pas_pwm_cycles_ticks = ui16_m_pas_counter;
 
-        ui16_m_pas_min_cadence_pwm_cycles_ticks = (ui16_pas_pwm_cycles_ticks + (ui16_pas_pwm_cycles_ticks >> 2));
+        ui16_m_pas_min_cadence_pwm_cycles_ticks = ui16_pas_pwm_cycles_ticks << 1;
         ui16_m_pas_counter = 0;
 
         // see the direction
