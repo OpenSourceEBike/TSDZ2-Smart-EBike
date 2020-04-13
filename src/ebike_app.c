@@ -136,6 +136,9 @@ static uint16_t  ui16_crc_rx;
 static uint16_t  ui16_crc_tx;
 volatile uint8_t ui8_message_ID = 0;
 
+volatile uint8_t ui8_g_debug_time_ms = 0;
+volatile uint8_t ui8_g_debug_time_us = 0;
+
 static void communications_controller(void);
 static void communications_process_packages(uint8_t ui8_frame_type);
 
@@ -575,8 +578,12 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // ADC torque_sensor (higher bits), this bits are shared with wheel speed bits
       ui8_tx_buffer[7] |= (uint8_t) ((ui16_m_adc_torque_sensor_raw & 0x300) >> 2); //xx00 0000
 
+#ifndef DEBUG_TIME
       // weight in kgs with offset
       ui8_tx_buffer[12] = (uint8_t) (ui16_m_torque_sensor_weight_raw_with_offset_x10 / 10);
+#else
+      ui8_tx_buffer[12] = ui8_g_debug_time_ms;
+#endif
 
       // weight in kgs
       ui8_tx_buffer[13] = (uint8_t) (ui16_m_torque_sensor_weight_raw_x10 / 10);
@@ -584,8 +591,12 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // PAS cadence
       ui8_tx_buffer[14] = ui8_pas_cadence_rpm;
 
+#ifndef DEBUG_TIME
       // PWM duty_cycle
       ui8_tx_buffer[15] = ui8_g_duty_cycle;
+#else
+      ui8_tx_buffer[15] = ui8_g_debug_time_us;
+#endif
 
       // motor speed in ERPS
       ui16_temp = ui16_motor_get_motor_speed_erps();

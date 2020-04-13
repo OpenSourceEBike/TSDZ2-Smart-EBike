@@ -11,5 +11,6 @@
 
 void timer2_init (void);
 void timer3_init (void);
+void timer4_init (void);
 
 #endif /* _TIMERS_H_ */

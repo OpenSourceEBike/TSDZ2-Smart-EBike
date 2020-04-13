@@ -453,7 +453,11 @@ void motor_controller(void)
 // Measured on 2020.01.02 by Casainho, the interrupt code takes about 42us which is about 66% of the total 64us
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
-  static uint8_t ui8_temp;
+  uint8_t ui8_temp;
+
+#ifdef DEBUG_TIME
+  TIM4->CNTR = 0;
+#endif
 
   /****************************************************************************/
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
@@ -944,6 +948,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     }
   }
   /****************************************************************************/
+
+#ifdef DEBUG_TIME
+      ui8_g_debug_time_us = (uint8_t) (TIM4->CNTR);
+#endif
 
   // clears the TIM1 interrupt TIM1_IT_UPDATE pending bit
   TIM1->SR1 = (uint8_t)(~(uint8_t)TIM1_IT_CC4);

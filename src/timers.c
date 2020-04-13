@@ -8,10 +8,11 @@
 
 #include "stm8s.h"
 #include "stm8s_tim2.h"
+#include "main.h"
 
 // Timer2 is used to create the pulse signal for excitation of the torque sensor circuit
 // Pulse signal: period of 20us, Ton = 2us, Toff = 18us
-void timer2_init (void)
+void timer2_init(void)
 {
   uint16_t ui16_i;
 
@@ -28,10 +29,10 @@ void timer2_init (void)
   TIM2_Cmd(ENABLE);
 
   // IMPORTANT: this software delay is needed so timer2 work after this
-  for(ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
+  for (ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
 }
 
-void timer3_init (void)
+void timer3_init(void)
 {
   uint16_t ui16_i;
 
@@ -41,5 +42,19 @@ void timer3_init (void)
   TIM3_Cmd(ENABLE); // TIM3 counter enable
 
   // IMPORTANT: this software delay is needed so timer3 work after this
-  for(ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
+  for (ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
 }
+
+#ifdef DEBUG_TIME
+void timer4_init(void)
+{
+  uint16_t ui16_i;
+
+  TIM4_DeInit();
+  TIM4_TimeBaseInit(TIM4_PRESCALER_16, 0xffff); // each incremment at every 1us
+  TIM4_Cmd(ENABLE);
+
+  // IMPORTANT: this software delay is needed so timer4 work after this
+  for (ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
+}
+#endif
