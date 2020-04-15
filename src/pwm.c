@@ -28,7 +28,7 @@ void pwm_init_bipolar_4q (void)
 
   TIM1_TimeBaseInit(0, // TIM1_Prescaler = 0
         TIM1_COUNTERMODE_CENTERALIGNED1,
-        (512 - 1), // clock = 16MHz; counter period = 1024; PWM freq = 16MHz / 1024 = 15.625kHz;
+        (421 - 1), // clock = 16MHz; counter period = 842; PWM freq = 16MHz / 842 = 19kHz;
         //(BUT PWM center aligned mode needs twice the frequency)
         1); // will fire the TIM1_IT_UPDATE at every PWM period cycle
 

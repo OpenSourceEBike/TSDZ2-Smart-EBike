@@ -60,10 +60,6 @@ int main (void)
   uint16_t ui16_ebike_app_controller_counter = 0;
   uint16_t ui16_motor_controller_counter = 0;
 
-#ifdef DEBUG_TIME
-  uint16_t ui16_debug_time_ms_tmp;
-#endif
-
   //set clock at the max 16MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
 
@@ -101,14 +97,7 @@ int main (void)
     if((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 100) // every 100ms
     {
       ui16_ebike_app_controller_counter = ui16_TIM3_counter;
-
-#ifdef DEBUG_TIME
-      ui16_debug_time_ms_tmp = TIM3_GetCounter();
-#endif
       ebike_app_controller();
-#ifdef DEBUG_TIME
-      ui8_g_debug_time_ms = (uint8_t) (TIM3_GetCounter() - ui16_debug_time_ms_tmp);
-#endif
       continue;
     }
   }

@@ -187,9 +187,18 @@ static uint8_t m_ui8_got_configurations_timer = 0;
 
 static uint8_t ui8_comm_error_counter = 0;
 
+#ifdef DEBUG_TIME
+static uint16_t ui16_debug_time_ms_tmp;
+static uint16_t ui16_debug_time_ms_tmp2;
+#endif
+
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
 {
+#ifdef DEBUG_TIME
+  ui16_debug_time_ms_tmp = TIM3_GetCounter();
+#endif
+
   throttle_read();
   torque_sensor_read();
   read_pas_cadence();
@@ -442,7 +451,6 @@ static void ebike_control_motor(void)
 
 static void communications_controller(void)
 {
-#ifndef DEBUG_UART
   uint8_t ui8_frame_type_to_send = 0;
   uint8_t ui8_len;
 
@@ -489,7 +497,6 @@ static void communications_controller(void)
 
   if (ui8_m_motor_init_state == MOTOR_INIT_STATE_RESET)
     communications_process_packages(COMM_FRAME_TYPE_ALIVE);
-#endif
 }
 
 static void communications_process_packages(uint8_t ui8_frame_type)
@@ -768,6 +775,11 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   {
     putchar(ui8_tx_buffer[ui8_i]);
   }
+
+#ifdef DEBUG_TIME
+      ui16_debug_time_ms_tmp2 = TIM3_GetCounter();
+      ui8_g_debug_time_ms = (uint8_t) (ui16_debug_time_ms_tmp2 - ui16_debug_time_ms_tmp);
+#endif
 
   // get ready to get next package
   ui8_received_package_flag = 0;

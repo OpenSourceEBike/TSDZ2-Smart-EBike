@@ -36,8 +36,8 @@
 // Choose PWM ramp up/down step (higher value will make the motor acceleration slower)
 //
 // For a 24V battery, 25 for ramp up seems ok. For an higher voltage battery, this values should be higher
-#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP 20
-#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP 24
+#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP 25
+#define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP 30
 
 // *************************************************************************** //
 // MOTOR

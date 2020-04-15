@@ -660,7 +660,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       --ui8_g_duty_cycle;
   }
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit
-  else if (++ui8_current_controller_counter > 12)
+  else if (++ui8_current_controller_counter > 14)
   {
     ui8_current_controller_counter = 0;
     
@@ -938,7 +938,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
     // if the main loop counteris not reset that it is blocked, so, reset the system
     ++ui16_main_loop_wdt_cnt_1;
-    if (ui16_main_loop_wdt_cnt_1 > 15624) // 1 second
+    if (ui16_main_loop_wdt_cnt_1 > 19061) // 1 second
     {
       // reset system
       //  resets a STM8 microcontroller.
