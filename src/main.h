@@ -11,16 +11,13 @@
 
 #include "config.h"
 
-#define DEBUG_TIME
-#define DISABLE_PWM_CHANNELS_1_3
+//#define DISABLE_PWM_CHANNELS_1_3
 
 #define PWM_CYCLES_COUNTER_MAX                    3800    // 5 erps minimum speed; 1/5 = 200ms; 200ms/52.6us = 3800
 #define PWM_CYCLES_SECOND                         19011L  // 1 / 64us(PWM period)
 #define PWM_DUTY_CYCLE_MAX                        254
 #define PWM_DUTY_CYCLE_MIN                        20
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                 (PWM_DUTY_CYCLE_MAX/2)
-
-
 
 #define MOTOR_ROTOR_ANGLE_90                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
 #define MOTOR_ROTOR_ANGLE_150                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
@@ -29,13 +26,8 @@
 #define MOTOR_ROTOR_ANGLE_330                     (233 + MOTOR_ROTOR_OFFSET_ANGLE)
 #define MOTOR_ROTOR_ANGLE_30                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
-
-
 // motor maximum rotation
-#define MOTOR_OVER_SPEED_ERPS                     635 // motor max speed, protection max value | 30 points for the sinewave at max speed
-#define MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL        855 // experimental motor speed to allow a higher cadence
-
-
+#define MOTOR_OVER_SPEED_ERPS                     700 // motor max speed, protection max value | 27 points for the sinewave at max speed
 
 // throttle
 #define THROTTLE_FILTER_COEFFICIENT               1   // see note below

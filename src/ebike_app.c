@@ -136,9 +136,6 @@ static uint16_t  ui16_crc_rx;
 static uint16_t  ui16_crc_tx;
 volatile uint8_t ui8_message_ID = 0;
 
-volatile uint8_t ui8_g_debug_time_ms = 0;
-volatile uint8_t ui8_g_debug_time_us = 0;
-
 static void communications_controller(void);
 static void communications_process_packages(uint8_t ui8_frame_type);
 
@@ -195,10 +192,6 @@ static uint16_t ui16_debug_time_ms_tmp2;
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
 {
-#ifdef DEBUG_TIME
-  ui16_debug_time_ms_tmp = TIM3_GetCounter();
-#endif
-
   throttle_read();
   torque_sensor_read();
   read_pas_cadence();
@@ -585,12 +578,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // ADC torque_sensor (higher bits), this bits are shared with wheel speed bits
       ui8_tx_buffer[7] |= (uint8_t) ((ui16_m_adc_torque_sensor_raw & 0x300) >> 2); //xx00 0000
 
-#ifndef DEBUG_TIME
       // weight in kgs with offset
       ui8_tx_buffer[12] = (uint8_t) (ui16_m_torque_sensor_weight_raw_with_offset_x10 / 10);
-#else
-      ui8_tx_buffer[12] = ui8_g_debug_time_ms;
-#endif
 
       // weight in kgs
       ui8_tx_buffer[13] = (uint8_t) (ui16_m_torque_sensor_weight_raw_x10 / 10);
@@ -598,12 +587,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // PAS cadence
       ui8_tx_buffer[14] = ui8_pas_cadence_rpm;
 
-#ifndef DEBUG_TIME
       // PWM duty_cycle
       ui8_tx_buffer[15] = ui8_g_duty_cycle;
-#else
-      ui8_tx_buffer[15] = ui8_g_debug_time_us;
-#endif
 
       // motor speed in ERPS
       ui16_temp = ui16_motor_get_motor_speed_erps();
@@ -741,8 +726,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     case COMM_FRAME_TYPE_FIRMWARE_VERSION:
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
-      ui8_tx_buffer[5] = 57;
-      ui8_tx_buffer[6] = 3;
+      ui8_tx_buffer[5] = 58;
+      ui8_tx_buffer[6] = 0;
       ui8_len += 4;
       break;
 
@@ -775,11 +760,6 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   {
     putchar(ui8_tx_buffer[ui8_i]);
   }
-
-#ifdef DEBUG_TIME
-      ui16_debug_time_ms_tmp2 = TIM3_GetCounter();
-      ui8_g_debug_time_ms = (uint8_t) (ui16_debug_time_ms_tmp2 - ui16_debug_time_ms_tmp);
-#endif
 
   // get ready to get next package
   ui8_received_package_flag = 0;
@@ -1302,7 +1282,7 @@ static void read_pas_cadence(void)
   else
   {
     // cadence in RPM = 60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
-    ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064));
+    ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000053));
   }
 
   if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)

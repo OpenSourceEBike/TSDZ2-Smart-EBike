@@ -44,17 +44,3 @@ void timer3_init(void)
   // IMPORTANT: this software delay is needed so timer3 work after this
   for (ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
 }
-
-#ifdef DEBUG_TIME
-void timer4_init(void)
-{
-  uint16_t ui16_i;
-
-  TIM4_DeInit();
-  TIM4_TimeBaseInit(TIM4_PRESCALER_16, 0xffff); // each incremment at every 1us
-  TIM4_Cmd(ENABLE);
-
-  // IMPORTANT: this software delay is needed so timer4 work after this
-  for (ui16_i = 0; ui16_i < (65000); ui16_i++) { ; }
-}
-#endif

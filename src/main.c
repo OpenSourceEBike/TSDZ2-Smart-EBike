@@ -69,9 +69,6 @@ int main (void)
   uart2_init();
   timer2_init();
   timer3_init();
-#ifdef DEBUG_TIME
-  timer4_init();
-#endif
   adc_init();
   torque_sensor_init();
   pas_init();

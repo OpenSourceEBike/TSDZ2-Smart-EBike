@@ -1096,22 +1096,18 @@ void calc_foc_angle(void)
     default:
     case 0:
       ui32_l_x1048576 = 142; // 48 V motor
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
     break;
 
     case 1:
       ui32_l_x1048576 = 80; // 36 V motor
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
     break;
     
     case 2: // experimental high cadence mode for 48 volt motor
       ui32_l_x1048576 = 199;
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL;
     break;
     
     case 3: // experimental high cadence mode for 36 volt motor
       ui32_l_x1048576 = 115; // confirmed working with the 36 V motor (only) by user jbalat so far
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL;
     break;
   }
 
