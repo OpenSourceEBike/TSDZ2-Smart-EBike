@@ -360,7 +360,7 @@ static void ebike_control_motor(void)
   switch (ui8_m_motor_init_state)
   {
     case MOTOR_INIT_STATE_INIT_START_DELAY:
-      m_ui8_got_configurations_timer = 20;
+      m_ui8_got_configurations_timer = 40;
       ui8_m_motor_init_state = MOTOR_INIT_STATE_INIT_WAIT_DELAY;
       // no break to execute next code
 
@@ -1151,7 +1151,7 @@ static void boost_run_statemachine(void)
             (ui8_g_brake_is_set == 0))
         {
           ui8_startup_boost_enable = 1;
-          ui8_startup_boost_timer = m_config_vars.ui8_startup_motor_power_boost_time;
+          ui8_startup_boost_timer = (m_config_vars.ui8_startup_motor_power_boost_time << 1);
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST;
         }
       break;
@@ -1181,7 +1181,7 @@ static void boost_run_statemachine(void)
           ui8_startup_boost_enable = 0;
 
           // setup variables for fade
-          ui8_startup_boost_fade_steps = m_config_vars.ui8_startup_motor_power_boost_fade_time;
+          ui8_startup_boost_fade_steps = (m_config_vars.ui8_startup_motor_power_boost_fade_time << 1);
           ui16_startup_boost_fade_variable_x256 = ((uint16_t) ui16_m_adc_target_current << 8);
           ui16_startup_boost_fade_variable_step_amount_x256 = (ui16_startup_boost_fade_variable_x256 / ((uint16_t) ui8_startup_boost_fade_steps));
           ui8_startup_boost_fade_enable = 1;

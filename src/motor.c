@@ -1042,7 +1042,7 @@ void calc_foc_angle(void)
   uint16_t ui16_iwl_128;
 
   struct_config_vars *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
+  p_configuration_variables = get_configuration_variables();
 
   // FOC implementation by calculating the angle between phase current and rotor magnetic flux (BEMF)
   // 1. phase voltage is calculate
@@ -1117,7 +1117,7 @@ void calc_foc_angle(void)
   ui16_iwl_128 = ui32_temp >> 18;
 
   // calc FOC angle
-  ui8_g_foc_angle = asin_table (ui16_iwl_128 / ui16_e_phase_voltage);
+  ui8_g_foc_angle = asin_table(ui16_iwl_128 / ui16_e_phase_voltage);
 
   // low pass filter FOC angle
   ui16_foc_angle_accumulated -= ui16_foc_angle_accumulated >> 4;

@@ -45,8 +45,8 @@
 
 // walk assist and cruise
 #define WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10    80    // 8.0 km/h
-#define CRUISE_PID_KP                             14    // 48 volt motor: 12, 36 volt motor: 14
-#define CRUISE_PID_KI                             0.7   // 48 volt motor: 1, 36 volt motor: 0.7
+#define CRUISE_PID_KP                             7    // 48 volt motor: 6, 36 volt motor: 7
+#define CRUISE_PID_KI                             0.35   // 48 volt motor: 0.5, 36 volt motor: 0.35
 #define CRUISE_PID_INTEGRAL_LIMIT                 1000
 #define CRUISE_PID_KD                             0
 
@@ -151,7 +151,7 @@
 
 
 // motor temperature filter coefficient 
-#define READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT                 4
+#define READ_MOTOR_TEMPERATURE_FILTER_COEFFICIENT                 5
 
 
 

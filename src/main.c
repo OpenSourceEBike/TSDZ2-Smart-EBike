@@ -91,7 +91,7 @@ int main (void)
     }
 
     ui16_TIM3_counter = TIM3_GetCounter();
-    if((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 100) // every 100ms
+    if((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 50) // every 50ms
     {
       ui16_ebike_app_controller_counter = ui16_TIM3_counter;
       ebike_app_controller();
