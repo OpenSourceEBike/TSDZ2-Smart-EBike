@@ -355,7 +355,7 @@ static void ebike_control_motor(void)
   switch (ui8_m_motor_init_state)
   {
     case MOTOR_INIT_STATE_INIT_START_DELAY:
-      m_ui8_got_configurations_timer = 20;
+      m_ui8_got_configurations_timer = 40;
       ui8_m_motor_init_state = MOTOR_INIT_STATE_INIT_WAIT_DELAY;
       // no break to execute next code
 
@@ -439,7 +439,6 @@ static void ebike_control_motor(void)
 
 static void communications_controller(void)
 {
-#ifndef DEBUG_UART
   uint8_t ui8_frame_type_to_send = 0;
   uint8_t ui8_len;
 
@@ -486,7 +485,6 @@ static void communications_controller(void)
 
   if (ui8_m_motor_init_state == MOTOR_INIT_STATE_RESET)
     communications_process_packages(COMM_FRAME_TYPE_ALIVE);
-#endif
 }
 
 static void communications_process_packages(uint8_t ui8_frame_type)
@@ -723,8 +721,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
     case COMM_FRAME_TYPE_FIRMWARE_VERSION:
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
-      ui8_tx_buffer[5] = 57;
-      ui8_tx_buffer[6] = 3;
+      ui8_tx_buffer[5] = 58;
+      ui8_tx_buffer[6] = 0;
       ui8_len += 4;
       break;
 
@@ -1148,7 +1146,7 @@ static void boost_run_statemachine(void)
             (ui8_g_brake_is_set == 0))
         {
           ui8_startup_boost_enable = 1;
-          ui8_startup_boost_timer = m_config_vars.ui8_startup_motor_power_boost_time;
+          ui8_startup_boost_timer = (m_config_vars.ui8_startup_motor_power_boost_time << 1);
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST;
         }
       break;
@@ -1178,7 +1176,7 @@ static void boost_run_statemachine(void)
           ui8_startup_boost_enable = 0;
 
           // setup variables for fade
-          ui8_startup_boost_fade_steps = m_config_vars.ui8_startup_motor_power_boost_fade_time;
+          ui8_startup_boost_fade_steps = (m_config_vars.ui8_startup_motor_power_boost_fade_time << 1);
           ui16_startup_boost_fade_variable_x256 = ((uint16_t) ui16_m_adc_target_current << 8);
           ui16_startup_boost_fade_variable_step_amount_x256 = (ui16_startup_boost_fade_variable_x256 / ((uint16_t) ui8_startup_boost_fade_steps));
           ui8_startup_boost_fade_enable = 1;
@@ -1279,7 +1277,7 @@ static void read_pas_cadence(void)
   else
   {
     // cadence in RPM = 60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
-    ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000064));
+    ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000053));
   }
 
   if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)

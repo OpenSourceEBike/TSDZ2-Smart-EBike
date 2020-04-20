@@ -453,7 +453,7 @@ void motor_controller(void)
 // Measured on 2020.01.02 by Casainho, the interrupt code takes about 42us which is about 66% of the total 64us
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
-  static uint8_t ui8_temp;
+  uint8_t ui8_temp;
 
   /****************************************************************************/
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
@@ -656,7 +656,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       --ui8_g_duty_cycle;
   }
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit
-  else if (++ui8_current_controller_counter > 12)
+  else if (++ui8_current_controller_counter > 14)
   {
     ui8_current_controller_counter = 0;
     
@@ -934,7 +934,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
     // if the main loop counteris not reset that it is blocked, so, reset the system
     ++ui16_main_loop_wdt_cnt_1;
-    if (ui16_main_loop_wdt_cnt_1 > 15624) // 1 second
+    if (ui16_main_loop_wdt_cnt_1 > 19061) // 1 second
     {
       // reset system
       //  resets a STM8 microcontroller.
@@ -1034,7 +1034,7 @@ void calc_foc_angle(void)
   uint16_t ui16_iwl_128;
 
   struct_config_vars *p_configuration_variables;
-  p_configuration_variables = get_configuration_variables ();
+  p_configuration_variables = get_configuration_variables();
 
   // FOC implementation by calculating the angle between phase current and rotor magnetic flux (BEMF)
   // 1. phase voltage is calculate
@@ -1088,22 +1088,18 @@ void calc_foc_angle(void)
     default:
     case 0:
       ui32_l_x1048576 = 142; // 48 V motor
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
     break;
 
     case 1:
       ui32_l_x1048576 = 80; // 36 V motor
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS;
     break;
     
     case 2: // experimental high cadence mode for 48 volt motor
       ui32_l_x1048576 = 199;
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL;
     break;
     
     case 3: // experimental high cadence mode for 36 volt motor
       ui32_l_x1048576 = 115; // confirmed working with the 36 V motor (only) by user jbalat so far
-      ui16_max_motor_speed_erps = (uint16_t) MOTOR_OVER_SPEED_ERPS_EXPERIMENTAL;
     break;
   }
 
@@ -1113,7 +1109,7 @@ void calc_foc_angle(void)
   ui16_iwl_128 = ui32_temp >> 18;
 
   // calc FOC angle
-  ui8_g_foc_angle = asin_table (ui16_iwl_128 / ui16_e_phase_voltage);
+  ui8_g_foc_angle = asin_table(ui16_iwl_128 / ui16_e_phase_voltage);
 
   // low pass filter FOC angle
   ui16_foc_angle_accumulated -= ui16_foc_angle_accumulated >> 4;

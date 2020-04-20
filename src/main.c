@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "main.h"
 #include "interrupts.h"
 #include "stm8s.h"
 #include "pins.h"
@@ -57,7 +58,7 @@ int main (void)
 {
   uint16_t ui16_TIM3_counter = 0;
   uint16_t ui16_ebike_app_controller_counter = 0;
-  uint16_t ui16_motor_controller_counter = 0;;
+  uint16_t ui16_motor_controller_counter = 0;
 
   //set clock at the max 16MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
@@ -90,7 +91,7 @@ int main (void)
     }
 
     ui16_TIM3_counter = TIM3_GetCounter();
-    if((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 100) // every 100ms
+    if((ui16_TIM3_counter - ui16_ebike_app_controller_counter) > 50) // every 50ms
     {
       ui16_ebike_app_controller_counter = ui16_TIM3_counter;
       ebike_app_controller();
