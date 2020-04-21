@@ -615,15 +615,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_svm_table_index = ui8_motor_rotor_absolute_angle + ui8_g_foc_angle;
   }
 
-
   /****************************************************************************/
   // check brakes state
 
-  // the next value was tested by plpetrov user on 28.04.2020:
-  #define COASTER_BRAKE_TORQUE_THRESHOLD    15
-
   // check if coaster brake is engaged
-  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_g_adc_torque_sensor_min_value - ((uint16_t) COASTER_BRAKE_TORQUE_THRESHOLD)))
+  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_g_adc_torque_sensor_min_value - ((uint16_t) ui8_g_adc_coast_brake_torque_threshold)))
   {
     ui8_g_brakes_state = 1;
   }
@@ -799,7 +795,11 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         else
           ui16_pas_pwm_cycles_ticks = ui16_m_pas_counter;
 
-        ui16_m_pas_min_cadence_pwm_cycles_ticks = ui16_pas_pwm_cycles_ticks << 1;
+        if (ui8_g_pedal_cadence_fast_stop)
+          ui16_m_pas_min_cadence_pwm_cycles_ticks = (ui16_pas_pwm_cycles_ticks + (ui16_pas_pwm_cycles_ticks >> 2));
+        else
+          ui16_m_pas_min_cadence_pwm_cycles_ticks = ui16_pas_pwm_cycles_ticks << 1;
+
         ui16_m_pas_counter = 0;
 
         // see the direction

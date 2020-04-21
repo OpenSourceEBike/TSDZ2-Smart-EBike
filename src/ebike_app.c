@@ -99,7 +99,8 @@ volatile uint8_t ui8_g_ebike_app_state = EBIKE_APP_STATE_MOTOR_STOP;
 uint16_t ui16_m_adc_battery_current_max;
 uint16_t ui16_m_adc_motor_current_max;
 volatile uint16_t ui16_g_current_ramp_up_inverse_step;
-
+volatile uint8_t ui8_g_adc_coast_brake_torque_threshold;
+volatile uint8_t ui8_g_pedal_cadence_fast_stop;
 
 // variables for walk assist
 uint8_t ui8_m_walk_assist_target_duty_cycle = 0;
@@ -121,7 +122,7 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   83
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   85
 #define UART_NUMBER_DATA_BYTES_TO_SEND      28
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -489,6 +490,7 @@ static void communications_controller(void)
 
 static void communications_process_packages(uint8_t ui8_frame_type)
 {
+  uint8_t ui8_temp;
   uint16_t ui16_temp;
   uint32_t ui32_temp;
   uint8_t ui8_len = 3; // 3 bytes: 1 type of frame + 2 CRC bytes
@@ -715,6 +717,20 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[79];
+
+      ui8_g_pedal_cadence_fast_stop = ui8_rx_buffer[80];
+
+      ui8_temp = ui8_rx_buffer[81];
+      if ((ui8_temp + 5) > ui16_g_adc_torque_sensor_min_value)
+      {
+        ui8_temp = ui16_g_adc_torque_sensor_min_value - 5;
+      }
+      else if (ui8_temp < 5)
+      {
+        ui8_temp = 5;
+      }
+      ui8_g_adc_coast_brake_torque_threshold = ui8_temp;
+
       break;
 
     // firmware version
