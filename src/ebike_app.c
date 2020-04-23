@@ -514,6 +514,9 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // lights state
       m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
+ui8_g_field_weakening_enable = m_config_vars.ui8_lights;
+
+
       // set lights
       lights_set_state (m_config_vars.ui8_lights);
 
@@ -545,8 +548,11 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[5] = (uint8_t) ((ui16_g_adc_battery_current_filtered * 78) / 100);
 
       // wheel speed
-      ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
-      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
+//      ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
+//      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
+
+ui8_tx_buffer[6] = ui8_g_field_weakening_angle;
+ui8_tx_buffer[7] = 0;
 
       // brake state
       ui8_tx_buffer[8] = ui8_g_brake_is_set;

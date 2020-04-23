@@ -28,6 +28,9 @@ extern volatile uint16_t ui16_g_adc_current_offset;
 extern volatile uint16_t ui16_g_adc_target_motor_max_current;
 extern volatile uint16_t ui16_g_adc_battery_current_filtered;
 extern volatile uint16_t ui16_g_adc_motor_current_filtered;
+extern volatile uint8_t ui8_g_field_weakening_angle;
+extern volatile uint8_t ui8_g_field_weakening_enable;
+extern volatile uint8_t ui8_g_field_weakening_enable_state;
 
 /***************************************************************************************/
 // Motor interface

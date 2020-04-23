@@ -39,6 +39,10 @@
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP 25
 #define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP 30
 
+// The following value were tested by Casainho on 2020.04.23 
+#define FIELD_WEAKENING_RAMP_UP_INVERSE_STEP 1800
+#define FIELD_WEAKENING_RAMP_DOWN_INVERSE_STEP 1800
+
 // *************************************************************************** //
 // MOTOR
 

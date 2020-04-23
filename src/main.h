@@ -18,6 +18,7 @@
 #define PWM_DUTY_CYCLE_MAX                        254
 #define PWM_DUTY_CYCLE_MIN                        20
 #define MIDDLE_PWM_DUTY_CYCLE_MAX                 (PWM_DUTY_CYCLE_MAX/2)
+#define FIELD_WEAKENING_ANGLE_MAX                 8 // 18 * 1.4 = 25 | tested by Casainho on 2020.04.23 and gives up to 125% more motor speed
 
 #define MOTOR_ROTOR_ANGLE_90                      (63  + MOTOR_ROTOR_OFFSET_ANGLE)
 #define MOTOR_ROTOR_ANGLE_150                     (106 + MOTOR_ROTOR_OFFSET_ANGLE)
@@ -27,7 +28,7 @@
 #define MOTOR_ROTOR_ANGLE_30                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 // motor maximum rotation
-#define MOTOR_OVER_SPEED_ERPS                     700 // motor max speed, protection max value | 27 points for the sinewave at max speed
+#define MOTOR_OVER_SPEED_ERPS                     775 // motor max speed, protection max value | 24 points for the sinewave at max speed
 
 // throttle
 #define THROTTLE_FILTER_COEFFICIENT               1   // see note below
