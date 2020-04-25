@@ -412,11 +412,14 @@ volatile uint16_t ui16_g_adc_motor_current_filtered;
 volatile uint16_t ui16_g_adc_battery_current;
 volatile uint16_t ui16_g_adc_motor_current;
 uint8_t ui8_current_controller_counter = 0;
+uint16_t ui16_motor_speed_controller_counter = 0;
 
 volatile uint16_t ui16_g_adc_target_battery_max_current;
+volatile uint16_t ui16_g_adc_target_battery_max_current_fw;
 volatile uint16_t ui16_g_adc_current_offset;
 
 volatile uint16_t ui16_g_adc_target_motor_max_current;
+volatile uint16_t ui16_g_adc_target_motor_max_current_fw;
 
 static uint8_t ui8_m_pas_state;
 static uint8_t ui8_m_pas_state_old;
@@ -460,6 +463,7 @@ void motor_controller(void)
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   uint8_t ui8_temp;
+  uint16_t ui16_adc_target_motor_max_current;
 
   /****************************************************************************/
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
@@ -652,10 +656,12 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - ramp up/down PWM duty_cycle value
 
   // check to enable field weakening state
-  if (ui8_g_field_weakening_enable)
+  if (ui8_g_field_weakening_enable &&
+      (ui16_motor_speed_erps > MOTOR_SPEED_FIELD_WEAKEANING_MIN)) // do not enable at low motor speed / low cadence
     ui8_g_field_weakening_enable_state = 1;
 
   ++ui8_current_controller_counter;
+  ++ui16_motor_speed_controller_counter;
 
   if (ui8_g_brakes_state ||
       (ui8_m_pas_min_cadence_flag && (ui8_g_throttle == 0)) ||
@@ -673,8 +679,19 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit
   else if ((ui8_current_controller_counter > 14) &&
       ((ui16_g_adc_battery_current > ui16_g_adc_target_battery_max_current) ||
-       (ui16_g_adc_motor_current > ui16_controller_adc_max_current) ||
-       (ui16_motor_speed_erps > ui16_max_motor_speed_erps)))
+       (ui16_g_adc_motor_current > ui16_controller_adc_max_current)))
+  {
+    if (ui8_g_field_weakening_angle)
+    {
+      --ui8_g_field_weakening_angle;
+    }
+    else if (ui8_g_duty_cycle)
+    {
+      --ui8_g_duty_cycle;
+    }
+  }
+  else if ((ui16_motor_speed_controller_counter > 2000) && // test about every 100ms
+       (ui16_motor_speed_erps > ui16_max_motor_speed_erps))
   {
     if (ui8_g_field_weakening_angle)
     {
@@ -810,18 +827,23 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
   // ramp up ADC battery current
-  if (ui16_g_adc_target_motor_max_current > ui16_controller_adc_max_current)
+
+  // field weakening has a higher current value to provide the same torque
+  if (ui8_g_field_weakening_enable_state)
+    ui16_adc_target_motor_max_current = ui16_g_adc_target_motor_max_current_fw;
+  else
+    ui16_adc_target_motor_max_current = ui16_g_adc_target_motor_max_current;
+
+  // now ramp up
+  if (ui16_adc_target_motor_max_current > ui16_controller_adc_max_current)
   {
     if (ui16_counter_adc_current_ramp_up++ >= ui16_g_current_ramp_up_inverse_step)
     {
-      // reset counter
       ui16_counter_adc_current_ramp_up = 0;
-      
-      // increment current
       ui16_controller_adc_max_current++;
     }
   }
-  else if (ui16_g_adc_target_motor_max_current < ui16_controller_adc_max_current)
+  else if (ui16_adc_target_motor_max_current < ui16_controller_adc_max_current)
   {
     // we are not doing a ramp down here, just directly setting to the target value
     ui16_controller_adc_max_current = ui16_g_adc_target_motor_max_current;

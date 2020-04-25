@@ -514,9 +514,6 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // lights state
       m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
-ui8_g_field_weakening_enable = m_config_vars.ui8_lights;
-
-
       // set lights
       lights_set_state (m_config_vars.ui8_lights);
 
@@ -548,11 +545,8 @@ ui8_g_field_weakening_enable = m_config_vars.ui8_lights;
       ui8_tx_buffer[5] = (uint8_t) ((ui16_g_adc_battery_current_filtered * 78) / 100);
 
       // wheel speed
-//      ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
-//      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
-
-ui8_tx_buffer[6] = ui8_g_field_weakening_angle;
-ui8_tx_buffer[7] = 0;
+      ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
+      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
 
       // brake state
       ui8_tx_buffer[8] = ui8_g_brake_is_set;
@@ -591,7 +585,15 @@ ui8_tx_buffer[7] = 0;
       ui8_tx_buffer[14] = ui8_pas_cadence_rpm;
 
       // PWM duty_cycle
-      ui8_tx_buffer[15] = ui8_g_duty_cycle;
+      // convert duty-cycle to 0 - 100 %
+      // add field_weakening_angle
+      ui16_temp = (uint16_t) ui8_g_duty_cycle;
+      ui16_temp = (ui16_temp * 100) / PWM_DUTY_CYCLE_MAX;
+      if (ui8_g_field_weakening_enable_state)
+      {
+        ui16_temp += (((uint16_t) ui8_g_field_weakening_angle) * 14) / 10;
+      }
+      ui8_tx_buffer[15] = (uint8_t) ui16_temp;
 
       // motor speed in ERPS
       ui16_temp = ui16_motor_get_motor_speed_erps();
@@ -724,8 +726,11 @@ ui8_tx_buffer[7] = 0;
       // battery current min ADC
       m_config_vars.ui8_battery_current_min_adc = ui8_rx_buffer[79];
 
-      ui8_g_pedal_cadence_fast_stop = ui8_rx_buffer[80];
+      ui8_temp = ui8_rx_buffer[80];
+      ui8_g_pedal_cadence_fast_stop = ui8_temp & 1;
+      ui8_g_field_weakening_enable = (ui8_temp & 2) >> 1;
 
+      // coast brake threshold
       ui8_temp = ui8_rx_buffer[81];
       if ((ui8_temp + 5) > ui16_g_adc_torque_sensor_min_value)
       {
@@ -736,15 +741,14 @@ ui8_tx_buffer[7] = 0;
         ui8_temp = 5;
       }
       ui8_g_adc_coast_brake_torque_threshold = ui8_temp;
-
       break;
 
     // firmware version
     case COMM_FRAME_TYPE_FIRMWARE_VERSION:
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 0;
-      ui8_tx_buffer[5] = 58;
-      ui8_tx_buffer[6] = 0;
+      ui8_tx_buffer[5] = 0;
+      ui8_tx_buffer[6] = 1;
       ui8_len += 4;
       break;
 
@@ -792,6 +796,7 @@ static void ebike_app_set_target_adc_battery_max_current(uint16_t ui16_value)
   }
 
   ui16_g_adc_target_battery_max_current = ui16_g_adc_current_offset + ui16_value;
+  ui16_g_adc_target_battery_max_current_fw = ui16_g_adc_target_battery_max_current + (ui16_g_adc_target_battery_max_current >> 2);
 }
 
 static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value)
@@ -803,6 +808,7 @@ static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value)
   }
 
   ui16_g_adc_target_motor_max_current = ui16_g_adc_current_offset + ui16_value;
+  ui16_g_adc_target_motor_max_current_fw = ui16_g_adc_target_motor_max_current + (ui16_g_adc_target_motor_max_current >> 2);
 }
 
 // in amps
@@ -1298,8 +1304,8 @@ static void read_pas_cadence(void)
   }
   else
   {
-    // cadence in RPM = 60 / (ui16_pas_timer2_ticks * PAS_NUMBER_MAGNETS * 0.000064)
-    ui8_pas_cadence_rpm = (uint8_t) (60 / (((float) ui16_pas_pwm_cycles_ticks) * ((float) PAS_NUMBER_MAGNETS) * 0.000053));
+    // cadence in RPM = 60 / (ui16_pas_pwm_cycles_ticks * PAS_NUMBER_MAGNETS * 0.000053)
+    ui8_pas_cadence_rpm = (uint8_t) (((uint16_t) 56604) / ui16_pas_pwm_cycles_ticks);
   }
 
   if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)
