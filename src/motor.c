@@ -382,6 +382,12 @@ uint16_t ui16_duty_cycle_ramp_down_inverse_step;
 uint16_t ui16_counter_duty_cycle_ramp_up = 0;
 uint16_t ui16_counter_duty_cycle_ramp_down = 0;
 
+volatile uint8_t ui8_g_field_weakening_angle = 0;
+volatile uint8_t ui8_g_field_weakening_enable = 0;
+volatile uint8_t ui8_g_field_weakening_enable_state = 0;
+uint16_t ui16_counter_field_weakening_ramp_up = 0;
+uint16_t ui16_counter_field_weakening_ramp_down = 0;
+
 uint8_t ui8_phase_a_voltage;
 uint8_t ui8_phase_b_voltage;
 uint8_t ui8_phase_c_voltage;
@@ -406,11 +412,14 @@ volatile uint16_t ui16_g_adc_motor_current_filtered;
 volatile uint16_t ui16_g_adc_battery_current;
 volatile uint16_t ui16_g_adc_motor_current;
 uint8_t ui8_current_controller_counter = 0;
+uint16_t ui16_motor_speed_controller_counter = 0;
 
 volatile uint16_t ui16_g_adc_target_battery_max_current;
+volatile uint16_t ui16_g_adc_target_battery_max_current_fw;
 volatile uint16_t ui16_g_adc_current_offset;
 
 volatile uint16_t ui16_g_adc_target_motor_max_current;
+volatile uint16_t ui16_g_adc_target_motor_max_current_fw;
 
 static uint8_t ui8_m_pas_state;
 static uint8_t ui8_m_pas_state_old;
@@ -454,6 +463,7 @@ void motor_controller(void)
 void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 {
   uint8_t ui8_temp;
+  uint16_t ui16_adc_target_motor_max_current;
 
   /****************************************************************************/
   // read battery current ADC value | should happen at middle of the PWM duty_cycle
@@ -607,13 +617,18 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     // TODO: verifiy if (ui16_PWM_cycles_counter_6 << 8) do not overflow
     ui8_interpolation_angle = (ui16_PWM_cycles_counter_6 << 8) / ui16_PWM_cycles_counter_total; // this operations take 4.4us
     ui8_motor_rotor_angle = ui8_motor_rotor_absolute_angle + ui8_interpolation_angle;
-    ui8_svm_table_index = ui8_motor_rotor_angle + ui8_g_foc_angle;
+    ui8_svm_table_index = ui8_motor_rotor_angle;
   }
   else
 #endif
   {
-    ui8_svm_table_index = ui8_motor_rotor_absolute_angle + ui8_g_foc_angle;
+    ui8_svm_table_index = ui8_motor_rotor_absolute_angle;
   }
+
+  ui8_svm_table_index += ui8_g_foc_angle;
+
+  // we need to put phase voltage 90 degrees ahead of rotor position, to get current 90 degrees ahead and have max torque per amp
+  ui8_svm_table_index -= 63;
 
   /****************************************************************************/
   // check brakes state
@@ -629,10 +644,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_g_brakes_state = ((BRAKE__PORT->IDR & (uint8_t)BRAKE__PIN) == 0);
   }
   /****************************************************************************/
-
-
-  // we need to put phase voltage 90 degrees ahead of rotor position, to get current 90 degrees ahead and have max torque per amp
-  ui8_svm_table_index -= 63;
   
   /****************************************************************************/
   // PWM duty_cycle controller:
@@ -644,45 +655,116 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // - limit motor max ERPS
   // - ramp up/down PWM duty_cycle value
 
+  // check to enable field weakening state
+  if (ui8_g_field_weakening_enable &&
+      (ui16_motor_speed_erps > MOTOR_SPEED_FIELD_WEAKEANING_MIN)) // do not enable at low motor speed / low cadence
+    ui8_g_field_weakening_enable_state = 1;
+
+  ++ui8_current_controller_counter;
+  ++ui16_motor_speed_controller_counter;
+
   if (ui8_g_brakes_state ||
       (ui8_m_pas_min_cadence_flag && (ui8_g_throttle == 0)) ||
       (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off))
   {
-    if (ui8_g_duty_cycle > 0)
+    if (ui8_g_field_weakening_angle)
+    {
+      --ui8_g_field_weakening_angle;
+    }
+    else if (ui8_g_duty_cycle)
+    {
       --ui8_g_duty_cycle;
+    }
   }
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit
-  else if (++ui8_current_controller_counter > 14)
+  else if ((ui8_current_controller_counter > 14) &&
+      ((ui16_g_adc_battery_current > ui16_g_adc_target_battery_max_current) ||
+       (ui16_g_adc_motor_current > ui16_controller_adc_max_current)))
   {
-    ui8_current_controller_counter = 0;
-    
-    if((ui16_g_adc_battery_current > ui16_g_adc_target_battery_max_current) ||
-       (ui16_g_adc_motor_current > ui16_controller_adc_max_current) ||
-       (ui16_motor_speed_erps > ui16_max_motor_speed_erps))
+    if (ui8_g_field_weakening_angle)
     {
-      if (ui8_g_duty_cycle > 0)
-        --ui8_g_duty_cycle;
+      --ui8_g_field_weakening_angle;
+    }
+    else if (ui8_g_duty_cycle)
+    {
+      --ui8_g_duty_cycle;
+    }
+  }
+  else if ((ui16_motor_speed_controller_counter > 2000) && // test about every 100ms
+       (ui16_motor_speed_erps > ui16_max_motor_speed_erps))
+  {
+    if (ui8_g_field_weakening_angle)
+    {
+      --ui8_g_field_weakening_angle;
+    }
+    else if (ui8_g_duty_cycle)
+    {
+      --ui8_g_duty_cycle;
     }
   }
   else // nothing to limit, so adjust duty_cycle to duty_cycle_target, including ramping
+       // or adjust field weakening
   {
-    if (ui8_m_duty_cycle_target > ui8_g_duty_cycle)
+    if ((ui8_g_duty_cycle >= PWM_DUTY_CYCLE_MAX) && // max voltage already applied to motor windings, enter or keep in field weakening state
+        ui8_g_field_weakening_enable_state)
     {
-      if (ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
+      if (ui16_g_adc_motor_current < ui16_controller_adc_max_current)
       {
-        ui16_counter_duty_cycle_ramp_up = 0;
-        ++ui8_g_duty_cycle;
+        if (ui16_counter_field_weakening_ramp_up++ >= FIELD_WEAKENING_RAMP_UP_INVERSE_STEP)
+        {
+          ui16_counter_field_weakening_ramp_up = 0;
+
+          if (ui8_g_field_weakening_angle < FIELD_WEAKENING_ANGLE_MAX)
+            ++ui8_g_field_weakening_angle;
+        }
+      }
+      else if (ui16_g_adc_motor_current > ui16_controller_adc_max_current)
+      {
+        if (ui16_counter_field_weakening_ramp_down++ >= FIELD_WEAKENING_RAMP_DOWN_INVERSE_STEP)
+        {
+          ui16_counter_field_weakening_ramp_down = 0;
+
+          if (ui8_g_field_weakening_angle)
+          {
+            --ui8_g_field_weakening_angle;
+          }
+          else
+          {
+            --ui8_g_duty_cycle; // exit from field weakening state
+          }
+        }
       }
     }
-    else if (ui8_m_duty_cycle_target < ui8_g_duty_cycle)
+    else
     {
-      if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
+      if (ui8_m_duty_cycle_target > ui8_g_duty_cycle)
       {
-        ui16_counter_duty_cycle_ramp_down = 0;
-        --ui8_g_duty_cycle;
+        if (ui16_counter_duty_cycle_ramp_up++ >= ui16_duty_cycle_ramp_up_inverse_step)
+        {
+          ui16_counter_duty_cycle_ramp_up = 0;
+          ++ui8_g_duty_cycle;
+        }
+      }
+      else if (ui8_m_duty_cycle_target < ui8_g_duty_cycle)
+      {
+        if (ui16_counter_duty_cycle_ramp_down++ >= ui16_duty_cycle_ramp_down_inverse_step)
+        {
+          ui16_counter_duty_cycle_ramp_down = 0;
+          --ui8_g_duty_cycle;
+        }
       }
     }
   }
+
+  ui8_svm_table_index += ui8_g_field_weakening_angle;
+
+  // disable field weakening only after leaving the field weakening state
+  if (ui8_g_field_weakening_enable == 0 &&
+      ui8_g_duty_cycle < PWM_DUTY_CYCLE_MAX)
+    ui8_g_field_weakening_enable_state = 0;
+
+  if (ui8_current_controller_counter > 14)
+    ui8_current_controller_counter = 0;
 
   /****************************************************************************/
   // calculate final PWM duty_cycle values to be applied to TIMER1
@@ -745,18 +827,23 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
   /****************************************************************************/
   // ramp up ADC battery current
-  if (ui16_g_adc_target_motor_max_current > ui16_controller_adc_max_current)
+
+  // field weakening has a higher current value to provide the same torque
+  if (ui8_g_field_weakening_enable_state)
+    ui16_adc_target_motor_max_current = ui16_g_adc_target_motor_max_current_fw;
+  else
+    ui16_adc_target_motor_max_current = ui16_g_adc_target_motor_max_current;
+
+  // now ramp up
+  if (ui16_adc_target_motor_max_current > ui16_controller_adc_max_current)
   {
     if (ui16_counter_adc_current_ramp_up++ >= ui16_g_current_ramp_up_inverse_step)
     {
-      // reset counter
       ui16_counter_adc_current_ramp_up = 0;
-      
-      // increment current
       ui16_controller_adc_max_current++;
     }
   }
-  else if (ui16_g_adc_target_motor_max_current < ui16_controller_adc_max_current)
+  else if (ui16_adc_target_motor_max_current < ui16_controller_adc_max_current)
   {
     // we are not doing a ramp down here, just directly setting to the target value
     ui16_controller_adc_max_current = ui16_g_adc_target_motor_max_current;
@@ -984,12 +1071,12 @@ void motor_set_pwm_duty_cycle_target(uint8_t ui8_value)
   ui8_m_duty_cycle_target = ui8_value;
 }
 
-void motor_set_pwm_duty_cycle_ramp_up_inverse_step (uint16_t ui16_value)
+void motor_set_pwm_duty_cycle_ramp_up_inverse_step(uint16_t ui16_value)
 {
   ui16_duty_cycle_ramp_up_inverse_step = ui16_value;
 }
 
-void motor_set_pwm_duty_cycle_ramp_down_inverse_step (uint16_t ui16_value)
+void motor_set_pwm_duty_cycle_ramp_down_inverse_step(uint16_t ui16_value)
 {
   ui16_duty_cycle_ramp_down_inverse_step = ui16_value;
 }
