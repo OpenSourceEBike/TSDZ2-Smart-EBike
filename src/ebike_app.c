@@ -414,7 +414,7 @@ static void ebike_control_motor(void)
   }
 
   // set motor PWM target
-  if(m_config_vars.ui8_walk_assist && ui8_g_brake_is_set == 0 && ui8_m_motor_enabled)
+  if (m_config_vars.ui8_walk_assist && ui8_g_brake_is_set == 0 && ui8_m_motor_enabled)
   {
     if(ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
     {
@@ -425,7 +425,7 @@ static void ebike_control_motor(void)
       motor_set_pwm_duty_cycle_target(ui8_cruise_target_PWM);
     }
   }
-  else if(ui16_m_adc_target_current)
+  else if (ui16_m_adc_target_current)
   {
     motor_set_pwm_duty_cycle_target(255);
   }
@@ -657,7 +657,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       m_config_vars.ui8_torque_sensor_calibration_feature_enabled = (ui8_rx_buffer[8] & 8) >> 3;
       m_config_vars.ui8_torque_sensor_calibration_pedal_ground = (ui8_rx_buffer[8] & 16) >> 4;
       m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation = (ui8_rx_buffer[8] & 32) >> 5;
-      m_config_vars.ui8_motor_type = (ui8_rx_buffer[8] >> 6) & 0x3;
+      m_config_vars.ui8_motor_type = (ui8_rx_buffer[8] >> 6) & 1;
 
       // motor max current
       ebike_app_set_motor_max_current(ui8_rx_buffer[9]);

@@ -1151,20 +1151,10 @@ void calc_foc_angle(void)
   ui32_w_angular_velocity_x16 = ui16_motor_speed_erps * 101;
 
   // ---------------------------------------------------------------------------------------------------------------------
-  // NOTE: EXPERIMENTAL and may not be good for the brushless motor inside TSDZ2
-  // Original message from jbalat on 28.08.2018, about increasing the limits on 36 V motor -- please see that this seems to go over the recomended values
-  // The ui32_l_x1048576 = 105 is working well so give that a try if you have a 36 V motor.
-  // This is the minimum value that gives me 550 W of power when I have asked for 550 W at level 5 assist, > 36 km/hr
-  //
-  // Remember also to boost the max motor erps in main.h to get higher cadence
-  // #define MOTOR_OVER_SPEED_ERPS 700 // motor max speed, protection max value | 30 points for the sinewave at max speed
-  // ---------------------------------------------------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------------------------------------------------
   // 36 V motor: L = 76uH
   // 48 V motor: L = 135uH
   // ui32_l_x1048576 = 142; // 1048576 = 2^20 | 48V
-  // ui32_l_x1048576 = 80; // 1048576 = 2^20 | 36V
+  // ui32_l_x1048576 = 84; // 1048576 = 2^20 | 36V
   //
   // ui32_l_x1048576 = 142 <--- THIS VALUE WAS verified experimentaly on 2018.07 to be near the best value for a 48V motor
   // Test done with a fixed mechanical load, duty_cycle = 200 and 100 and measured battery current was 16 and 6 (10 and 4 amps)
@@ -1178,15 +1168,7 @@ void calc_foc_angle(void)
     break;
 
     case 1:
-      ui32_l_x1048576 = 80; // 36 V motor
-    break;
-    
-    case 2: // experimental high cadence mode for 48 volt motor
-      ui32_l_x1048576 = 199;
-    break;
-    
-    case 3: // experimental high cadence mode for 36 volt motor
-      ui32_l_x1048576 = 115; // confirmed working with the 36 V motor (only) by user jbalat so far
+      ui32_l_x1048576 = 84; // 36 V motor
     break;
   }
 
