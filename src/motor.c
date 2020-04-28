@@ -416,7 +416,6 @@ uint16_t ui16_motor_speed_controller_counter = 0;
 
 volatile uint16_t ui16_g_adc_target_battery_max_current;
 volatile uint16_t ui16_g_adc_target_battery_max_current_fw;
-volatile uint16_t ui16_g_adc_current_offset;
 
 volatile uint16_t ui16_g_adc_target_motor_max_current;
 volatile uint16_t ui16_g_adc_target_motor_max_current_fw;

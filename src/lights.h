@@ -11,7 +11,7 @@
 
 #include "main.h"
 
-void lights_init (void);
-void lights_set_state (uint8_t ui8_state);
+void lights_init(void);
+void lights_set_state(uint8_t ui8_state);
 
 #endif /* _LIGHTS_H_ */

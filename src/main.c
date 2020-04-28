@@ -28,7 +28,7 @@
 //// Functions prototypes
 
 // main -- start of firmware and main loop
-int main (void);
+int main(void);
 
 // With SDCC, interrupt service routine function prototypes must be placed in the file that contains main ()
 // in order for an vector for the interrupt to be placed in the the interrupt vector space.  It's acceptable
@@ -54,7 +54,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-int main (void)
+int main(void)
 {
   uint16_t ui16_TIM3_counter = 0;
   uint16_t ui16_ebike_app_controller_counter = 0;

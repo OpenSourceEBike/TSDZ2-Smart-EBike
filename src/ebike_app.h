@@ -68,6 +68,8 @@ extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 extern uint8_t ui8_g_brake_is_set;
 extern volatile uint8_t ui8_g_throttle;
 
+extern volatile uint16_t ui16_g_adc_current_offset;
+
 void ebike_app_controller (void);
 struct_config_vars* get_configuration_variables (void);
 

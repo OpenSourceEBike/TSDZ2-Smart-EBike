@@ -122,8 +122,8 @@ volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   85
-#define UART_NUMBER_DATA_BYTES_TO_SEND      28
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   86
+#define UART_NUMBER_DATA_BYTES_TO_SEND      29
 
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
@@ -184,6 +184,9 @@ uint16_t ui16_torque_sensor_linearize_left[TORQUE_SENSOR_LINEARIZE_NR_POINTS][2]
 static uint8_t m_ui8_got_configurations_timer = 0;
 
 static uint8_t ui8_comm_error_counter = 0;
+
+volatile uint16_t ui16_g_adc_current_offset;
+uint8_t ui8_m_adc_lights_current_offset; // lights current are measured on hardware with the same value as battery current
 
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
@@ -496,6 +499,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   uint8_t ui8_len = 3; // 3 bytes: 1 type of frame + 2 CRC bytes
   uint8_t j;
   uint8_t i;
+  uint16_t ui16_adc_battery_current = ui16_g_adc_battery_current;
 
   // start up byte
   ui8_tx_buffer[0] = 0x43;
@@ -515,7 +519,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       m_config_vars.ui8_lights = (ui8_rx_buffer[5] & (1 << 0)) ? 1: 0;
 
       // set lights
-      lights_set_state (m_config_vars.ui8_lights);
+      lights_set_state(m_config_vars.ui8_lights);
 
       // walk assist / cruise function
       m_config_vars.ui8_walk_assist = (ui8_rx_buffer[5] & (1 << 1)) ? 1: 0;
@@ -546,7 +550,10 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
       // wheel speed
       ui8_tx_buffer[6] = (uint8_t) (ui16_wheel_speed_x10 & 0xff);
-      ui8_tx_buffer[7] = (uint8_t) (ui16_wheel_speed_x10 >> 8);
+      ui8_tx_buffer[7] = ((uint8_t) (ui16_wheel_speed_x10 >> 8)) & 0x07;
+
+      // last 2 bits of adc_motor_current
+      ui8_tx_buffer[7] |= ((uint8_t) ((ui16_adc_battery_current & 0x300) >> 5));
 
       // brake state
       ui8_tx_buffer[8] = ui8_g_brake_is_set;
@@ -623,7 +630,10 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[24] = (uint8_t) (ui16_m_pedal_power_max_x10 & 0xff);
       ui8_tx_buffer[25] = (uint8_t) (ui16_m_pedal_power_max_x10 >> 8);
 
-      ui8_len += 23;
+      // first 8 bits of adc_motor_current
+      ui8_tx_buffer[26] = (uint8_t) (ui16_adc_battery_current & 0xff);
+
+      ui8_len += 24;
       break;
 
     // set configurations
@@ -731,24 +741,31 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_g_field_weakening_enable = (ui8_temp & 2) >> 1;
 
       // coast brake threshold
-      ui8_temp = ui8_rx_buffer[81];
-      if ((ui8_temp + 5) > ui16_g_adc_torque_sensor_min_value)
+      ui16_temp = (uint16_t) ui8_rx_buffer[81];
+      if ((ui16_temp + 5) > ui16_g_adc_torque_sensor_min_value)
       {
-        ui8_temp = ui16_g_adc_torque_sensor_min_value - 5;
+        ui16_temp = ui16_g_adc_torque_sensor_min_value - 5;
       }
-      else if (ui8_temp < 5)
+      else if (ui16_temp < 5)
       {
-        ui8_temp = 5;
+        ui16_temp = 5;
       }
-      ui8_g_adc_coast_brake_torque_threshold = ui8_temp;
+      ui8_g_adc_coast_brake_torque_threshold = (uint8_t) ui16_temp;
+
+      // each ADC step is 0.156 amps and seems that the hardware max limit for lights current is 0.4 amps
+      // limit to max of 4 units
+      ui8_m_adc_lights_current_offset = (uint16_t) ui8_rx_buffer[82];
+      if (ui8_m_adc_lights_current_offset > 4)
+        ui8_m_adc_lights_current_offset = 4;
+
       break;
 
     // firmware version
     case COMM_FRAME_TYPE_FIRMWARE_VERSION:
       ui8_tx_buffer[3] = ui8_m_system_state;
-      ui8_tx_buffer[4] = 0;
+      ui8_tx_buffer[4] = 1;
       ui8_tx_buffer[5] = 0;
-      ui8_tx_buffer[6] = 1;
+      ui8_tx_buffer[6] = 0;
       ui8_len += 4;
       break;
 
@@ -796,6 +813,10 @@ static void ebike_app_set_target_adc_battery_max_current(uint16_t ui16_value)
   }
 
   ui16_g_adc_target_battery_max_current = ui16_g_adc_current_offset + ui16_value;
+
+  if (m_config_vars.ui8_lights)
+    ui16_g_adc_target_battery_max_current += ((uint16_t) ui8_m_adc_lights_current_offset);
+
   ui16_g_adc_target_battery_max_current_fw = ui16_g_adc_target_battery_max_current + (ui16_g_adc_target_battery_max_current >> 2);
 }
 
@@ -808,6 +829,10 @@ static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value)
   }
 
   ui16_g_adc_target_motor_max_current = ui16_g_adc_current_offset + ui16_value;
+
+  if (m_config_vars.ui8_lights)
+    ui16_g_adc_target_motor_max_current += ((uint16_t) ui8_m_adc_lights_current_offset);
+
   ui16_g_adc_target_motor_max_current_fw = ui16_g_adc_target_motor_max_current + (ui16_g_adc_target_motor_max_current >> 2);
 }
 
