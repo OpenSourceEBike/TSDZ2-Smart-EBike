@@ -47,6 +47,7 @@ typedef struct
   uint8_t ui8_torque_sensor_calibration_pedal_ground;
   uint8_t ui8_torque_sensor_calibration_feature_enabled;
   uint8_t ui8_battery_current_min_adc;
+  uint8_t ui8_throttle_virtual;
 } struct_config_vars;
 
 
@@ -55,6 +56,7 @@ extern volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 extern volatile uint16_t ui16_g_adc_torque_sensor_min_value;
 extern volatile uint8_t ui8_g_ebike_app_state;
 extern volatile uint8_t ui8_g_adc_coast_brake_torque_threshold;
+extern volatile uint8_t ui8_g_coast_brake_enable;
 extern volatile uint8_t ui8_g_pedal_cadence_fast_stop;
 
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;

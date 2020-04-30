@@ -632,15 +632,16 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
   // check brakes state
 
-  // check if coaster brake is engaged
-  if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_g_adc_torque_sensor_min_value - ((uint16_t) ui8_g_adc_coast_brake_torque_threshold)))
+  // if brake sensors are active
+  ui8_g_brakes_state = ((BRAKE__PORT->IDR & (uint8_t)BRAKE__PIN) == 0);
+
+  if (ui8_g_coast_brake_enable)
   {
-    ui8_g_brakes_state = 1;
-  }
-  else
-  {
-    // set only if brake sensors are active
-    ui8_g_brakes_state = ((BRAKE__PORT->IDR & (uint8_t)BRAKE__PIN) == 0);
+    // check if coaster brake is engaged
+    if (UI16_ADC_10_BIT_TORQUE_SENSOR < (ui16_g_adc_torque_sensor_min_value - ((uint16_t) ui8_g_adc_coast_brake_torque_threshold)))
+    {
+      ui8_g_brakes_state = 1;
+    }
   }
   /****************************************************************************/
   

@@ -100,6 +100,7 @@ uint16_t ui16_m_adc_battery_current_max;
 uint16_t ui16_m_adc_motor_current_max;
 volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 volatile uint8_t ui8_g_adc_coast_brake_torque_threshold;
+volatile uint8_t ui8_g_coast_brake_enable;
 volatile uint8_t ui8_g_pedal_cadence_fast_stop;
 
 // variables for walk assist
@@ -161,7 +162,7 @@ static void apply_speed_limit(uint16_t ui16_speed_x10, uint8_t ui8_max_speed, ui
 static void apply_temperature_limiting(uint16_t *ui16_target_current);
 static void apply_walk_assist(uint16_t *ui16_p_adc_target_current);
 static void apply_cruise(uint16_t *ui16_target_current);
-static void apply_throttle(uint8_t ui8_throttle_value, uint16_t *ui16_target_current);
+static void apply_throttle(uint16_t *ui16_target_current, uint8_t ui8_assist_enable);
 
 
 // BOOST
@@ -215,6 +216,7 @@ static void ebike_control_motor(void)
   uint16_t ui16_adc_max_current_boost_state = 0;
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage();
   uint16_t ui16_adc_battery_current_max = 0;
+  uint8_t ui8_assist_enable = 0;
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
   ui8_g_brake_is_set = ui8_g_brakes_state;
@@ -227,6 +229,8 @@ static void ebike_control_motor(void)
   {
     if (m_config_vars.ui16_assist_level_factor_x1000 > 0)
     {
+      ui8_assist_enable = 1;
+
       ui32_assist_level_factor_x1000 = (uint32_t) m_config_vars.ui16_assist_level_factor_x1000;
       // force a min of 10 RPM cadence
       ui32_pedal_power_no_cadence_x10 = (((uint32_t) ui16_m_pedal_torque_x100 * 10) / (uint32_t) 96);
@@ -316,7 +320,7 @@ static void ebike_control_motor(void)
   }
 
   // throttle
-  apply_throttle(ui8_g_throttle, &ui16_m_adc_target_current);
+  apply_throttle(&ui16_m_adc_target_current, ui8_assist_enable);
 
   // walk assist or cruise
   if(m_config_vars.ui8_walk_assist)
@@ -536,6 +540,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       // motor temperature limit function or throttle
       m_config_vars.ui8_temperature_limit_feature_enabled = ui8_rx_buffer[10];
 
+      m_config_vars.ui8_throttle_virtual = ui8_rx_buffer[11];
+
       // now send data back
       // ADC 10 bits battery voltage
       ui16_temp = motor_get_adc_battery_voltage_filtered_10b();
@@ -739,6 +745,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_temp = ui8_rx_buffer[80];
       ui8_g_pedal_cadence_fast_stop = ui8_temp & 1;
       ui8_g_field_weakening_enable = (ui8_temp & 2) >> 1;
+      ui8_g_coast_brake_enable = (ui8_temp & 4) >> 2;
 
       // coast brake threshold
       ui16_temp = (uint16_t) ui8_rx_buffer[81];
@@ -1045,15 +1052,24 @@ static void apply_speed_limit(uint16_t ui16_speed_x10, uint8_t ui8_max_speed, ui
 }
 
 
-static void apply_throttle(uint8_t ui8_throttle_value, uint16_t *ui16_target_current)
+static void apply_throttle(uint16_t *ui16_target_current, uint8_t ui8_assist_enable)
 {
-  // apply throttle if it is enabled and the motor temperature limit function is not enabled instead
-  if (m_config_vars.ui8_temperature_limit_feature_enabled == 2)
+  uint8_t ui8_throttle;
+
+  if (ui8_assist_enable)
   {
-    // overide ui8_adc_battery_current_max with throttle value only when user is using throttle
-    if (ui8_throttle_value)
+    ui8_throttle = m_config_vars.ui8_throttle_virtual;
+
+    // apply throttle if it is enabled and the motor temperature limit function is not enabled instead
+    if (m_config_vars.ui8_temperature_limit_feature_enabled == 2)
     {
-      uint16_t ui16_temp = (uint16_t) (map((uint32_t) ui8_throttle_value,
+      // use the value that is max
+      ui8_throttle = ui8_max(ui8_throttle, ui8_g_throttle);
+    }
+
+    if (ui8_throttle)
+    {
+      uint16_t ui16_temp = (uint16_t) (map((uint32_t) ui8_throttle,
                                          (uint32_t) 0,
                                          (uint32_t) 255,
                                          (uint32_t) 0,
