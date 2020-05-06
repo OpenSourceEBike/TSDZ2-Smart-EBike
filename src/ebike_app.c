@@ -131,6 +131,7 @@ volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
 volatile uint8_t ui8_rx_cnt = 0;
 volatile uint8_t ui8_rx_len = 0;
 volatile uint8_t ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND];
+static volatile uint8_t ui8_tx_buffer_index;
 volatile uint8_t ui8_i;
 volatile uint8_t ui8_byte_received;
 volatile uint8_t ui8_state_machine = 0;
@@ -800,11 +801,17 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   ui8_tx_buffer[ui8_len] = (uint8_t) (ui16_crc_tx & 0xff);
   ui8_tx_buffer[ui8_len + 1] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
 
+  //UART2_ITConfig(UART2_IT_TXE, DISABLE);
+  // should be an atomic operation already
+  ui8_tx_buffer_index = 0;
+  // start transmition
+  UART2_ITConfig(UART2_IT_TXE, ENABLE);
+
   // send the full package to UART
-  for (ui8_i = 0; ui8_i < (ui8_len + 2); ui8_i++)
-  {
-    putchar(ui8_tx_buffer[ui8_i]);
-  }
+  //for (ui8_i = 0; ui8_i < (ui8_len + 2); ui8_i++)
+  //{
+  //  putchar(ui8_tx_buffer[ui8_i]);
+  //}
 
   // get ready to get next package
   ui8_received_package_flag = 0;
@@ -1422,7 +1429,7 @@ static void throttle_read (void)
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
 // we do: receive every byte and assembly as a package, finally, signal that we have a package to process (on main slow loop)
 // and disable the interrupt. The interrupt should be enable again on main loop, after the package being processed
-void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
+void UART2_RX_IRQHandler(void) __interrupt(UART2_RX_IRQHANDLER)
 {
   if (UART2_GetFlagStatus(UART2_FLAG_RXNE) == SET)
   {
@@ -1473,6 +1480,31 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
   }
 }
 
+void UART2_TX_IRQHandler(void) __interrupt(UART2_TX_IRQHANDLER)
+{
+  if (UART2_GetFlagStatus(UART2_FLAG_TXE) == SET)
+  {
+    if(ui8_tx_buffer_index < UART_NUMBER_DATA_BYTES_TO_SEND)  // bytes to send
+    {
+      // clearing the TXE bit is always performed by a write to the data register
+      UART2_SendData8(ui8_tx_buffer[ui8_tx_buffer_index]);
+      ++ui8_tx_buffer_index;
+      if(ui8_tx_buffer_index == UART_NUMBER_DATA_BYTES_TO_SEND)
+      {
+        // buffer empty
+        // disable TIEN (TXE)
+        UART2_ITConfig(UART2_IT_TXE, DISABLE);
+      }
+    }
+  }
+  else
+  {
+    // TXE interrupt should never occur if there is nothing to send in the buffer
+    // send a zero to clear TXE and disable the interrupt
+    UART2_SendData8(0);
+    UART2_ITConfig(UART2_IT_TXE, DISABLE);
+  }
+}
 
 struct_config_vars* get_configuration_variables (void)
 {
