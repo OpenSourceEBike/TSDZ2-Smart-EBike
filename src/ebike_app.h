@@ -59,7 +59,7 @@ extern volatile uint8_t ui8_g_adc_coast_brake_torque_threshold;
 extern volatile uint8_t ui8_g_coast_brake_enable;
 extern volatile uint8_t ui8_g_pedal_cadence_fast_stop;
 
-extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
+extern volatile uint16_t ui16_g_pas_pwm_cycles_ticks;
 extern uint8_t ui8_pas_cadence_rpm;
 
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
