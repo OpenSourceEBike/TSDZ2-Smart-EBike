@@ -476,7 +476,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // start ADC1 conversion
   ADC1->CR1 |= ADC1_CR1_ADON;
   while (!(ADC1->CSR & ADC1_FLAG_EOC)) ;
-  ui16_g_adc_battery_current = (((uint16_t) ADC1->DRH) << 2) | ((uint16_t) ADC1->DRL);
+  ui16_g_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
+//  ui16_g_adc_battery_current = (((uint16_t) ADC1->DRH) << 2) | ((uint16_t) ADC1->DRL);
 
   // calculate motor current ADC value
   if (ui8_g_duty_cycle > 0)
@@ -946,6 +947,14 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       ui8_g_pas_pedal_right = 0;
     else
       ui8_g_pas_pedal_right = 1;
+
+    // save torque sensor ADC value when pedals are on horizontal
+    if ((ui8_g_pas_tick_counter == PAS_NUMBER_MAGNETS_1_4) ||
+        (ui8_g_pas_tick_counter == PAS_NUMBER_MAGNETS_3_4))
+    {
+      ui16_g_adc_torque_sensor_raw_horizontal = UI16_ADC_10_BIT_TORQUE_SENSOR;
+      ui8_g_torque_sensor_horizontal_flag = 1;
+    }
   }
 
   // check for permitted relative min cadence value
@@ -965,6 +974,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     ui8_m_pas_after_first_pulse = 0;
     ui8_m_pedaling_direction = 0;
     ui16_m_pas_counter = 0;
+    ui8_g_torque_sensor_horizontal_flag = 0;
   }
   /****************************************************************************/
   

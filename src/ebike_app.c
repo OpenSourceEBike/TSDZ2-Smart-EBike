@@ -102,6 +102,8 @@ volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 volatile uint8_t ui8_g_adc_coast_brake_torque_threshold;
 volatile uint8_t ui8_g_coast_brake_enable;
 volatile uint8_t ui8_g_pedal_cadence_fast_stop;
+volatile uint16_t ui16_g_adc_torque_sensor_raw_horizontal;
+volatile uint8_t ui8_g_torque_sensor_horizontal_flag;
 
 // variables for walk assist
 uint8_t ui8_m_walk_assist_target_duty_cycle = 0;
@@ -125,7 +127,7 @@ uint8_t ui8_m_temp_pas_tick_counter = 0;
 
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   86
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   87
 #define UART_NUMBER_DATA_BYTES_TO_SEND      29
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -425,7 +427,7 @@ static void ebike_control_motor(void)
   // set motor PWM target
   if (m_config_vars.ui8_walk_assist && ui8_g_brake_is_set == 0 && ui8_m_motor_enabled)
   {
-    if(ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
+    if (ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
     {
       motor_set_pwm_duty_cycle_target(ui8_m_walk_assist_target_duty_cycle);
     }
@@ -769,6 +771,8 @@ ui8_tx_buffer[9] = ui8_m_temp_pas_tick_counter;
       if (ui8_m_adc_lights_current_offset > 4)
         ui8_m_adc_lights_current_offset = 4;
 
+      // torque sensor filter value
+      m_config_vars.ui8_torque_sensor_filter = ui8_rx_buffer[83];
       break;
 
     // firmware version
@@ -1372,6 +1376,15 @@ static void torque_sensor_read(void)
     ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 0: 1;
 
 ui8_m_temp_pas_tick_counter = ui8_g_pas_tick_counter;
+
+  // filter only if torque sensor calibration is enable and pedal cranks went already over horizontal position
+  if (m_config_vars.ui8_torque_sensor_calibration_feature_enabled &&
+      ui8_g_torque_sensor_horizontal_flag)
+  {
+    // filter torque sensor value
+     ui16_m_adc_torque_sensor_raw = ((((uint32_t) ui16_g_adc_torque_sensor_raw_horizontal) * ((uint32_t) m_config_vars.ui8_torque_sensor_filter)) / 100) +
+         (((uint32_t) ui16_m_adc_torque_sensor_raw) * ((uint32_t) (100 - m_config_vars.ui8_torque_sensor_filter))) / 100;
+  }
 
   ui16_adc_torque_sensor = ui16_m_adc_torque_sensor_raw;
 
