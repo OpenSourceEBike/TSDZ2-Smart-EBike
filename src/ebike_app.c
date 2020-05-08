@@ -71,7 +71,7 @@ volatile struct_config_vars m_config_vars;
 volatile uint8_t ui8_m_system_state = ERROR_NOT_INIT; // start with system error because configurations are empty at startup
 volatile uint8_t ui8_m_motor_init_state = MOTOR_INIT_STATE_RESET;
 volatile uint8_t ui8_m_motor_init_status = MOTOR_INIT_STATUS_RESET;
-volatile uint16_t ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+volatile uint16_t ui16_g_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
 uint8_t ui8_pas_cadence_rpm = 0;
 uint16_t ui16_m_pedal_torque_x10;
 uint16_t ui16_m_pedal_torque_x100;
@@ -102,6 +102,8 @@ volatile uint16_t ui16_g_current_ramp_up_inverse_step;
 volatile uint8_t ui8_g_adc_coast_brake_torque_threshold;
 volatile uint8_t ui8_g_coast_brake_enable;
 volatile uint8_t ui8_g_pedal_cadence_fast_stop;
+volatile uint16_t ui16_g_adc_torque_sensor_raw_horizontal;
+volatile uint8_t ui8_g_torque_sensor_horizontal_cnt;
 
 // variables for walk assist
 uint8_t ui8_m_walk_assist_target_duty_cycle = 0;
@@ -113,7 +115,6 @@ static uint8_t    ui8_initialize_cruise_PID = 1;
 static uint16_t   ui16_received_target_wheel_speed_x10 = 0;
 static uint16_t   ui16_target_wheel_speed_x10 = 0;
 
-
 // variables for wheel speed
 volatile uint16_t   ui16_wheel_speed_sensor_pwm_cycles_ticks = (uint16_t) WHEEL_SPEED_SENSOR_MAX_PWM_CYCLE_TICKS;
 uint8_t             ui8_wheel_speed_max = 0;
@@ -121,9 +122,8 @@ float               f_wheel_speed_x10;
 static uint16_t     ui16_wheel_speed_x10;
 volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
-
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   86
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   87
 #define UART_NUMBER_DATA_BYTES_TO_SEND      29
 
 volatile uint8_t ui8_received_package_flag = 0;
@@ -423,7 +423,7 @@ static void ebike_control_motor(void)
   // set motor PWM target
   if (m_config_vars.ui8_walk_assist && ui8_g_brake_is_set == 0 && ui8_m_motor_enabled)
   {
-    if(ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
+    if (ui16_wheel_speed_x10 < WALK_ASSIST_CRUISE_THRESHOLD_SPEED_X10)
     {
       motor_set_pwm_duty_cycle_target(ui8_m_walk_assist_target_duty_cycle);
     }
@@ -765,6 +765,8 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       if (ui8_m_adc_lights_current_offset > 4)
         ui8_m_adc_lights_current_offset = 4;
 
+      // torque sensor filter value
+      m_config_vars.ui8_torque_sensor_filter = ui8_rx_buffer[83];
       break;
 
     // firmware version
@@ -869,36 +871,41 @@ static void ebike_app_set_motor_max_current(uint8_t ui8_value)
 
 static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint16_t *ui16_weight_x10, uint8_t *ui8_pedal_right)
 {
+#define TS_ADC_VALUE           0
+#define TS_ADC_INTERVAL_STEPS  1
+
   uint16_t ui16_array_sum[TORQUE_SENSOR_LINEARIZE_NR_POINTS];
   uint8_t ui8_i;
-  uint16_t ui16_adc_absolute_steps;
+  uint16_t ui16_adc_absolute;
   uint16_t (*ui16_array_linear)[2];
   uint32_t ui32_temp = 0;
+  uint16_t _ui16_adc_steps = *ui16_adc_steps;
+  uint8_t _ui8_pedal_right = *ui8_pedal_right;
 
   memset(ui16_array_sum, 0, sizeof(ui16_array_sum));
 
-  if(*ui8_pedal_right)
+  if (_ui8_pedal_right)
     ui16_array_linear = ui16_torque_sensor_linearize_right;
   else
     ui16_array_linear = ui16_torque_sensor_linearize_left;
 
-  if(*ui16_adc_steps > 0)
+  if (_ui16_adc_steps > 0)
   {
-    ui16_adc_absolute_steps = *ui16_adc_steps + ui16_g_adc_torque_sensor_min_value;
+    ui16_adc_absolute = _ui16_adc_steps + ui16_g_adc_torque_sensor_min_value;
 
-    for(ui8_i = 0; ui8_i < (TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1); ui8_i++)
+    for (ui8_i = 0; ui8_i < (TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1); ui8_i++)
     {
-      // current value is under interval max value
-      if(ui16_adc_absolute_steps < ui16_array_linear[ui8_i + 1][0])
+      // value is under interval max value
+      if (ui16_adc_absolute < ui16_array_linear[ui8_i + 1][TS_ADC_VALUE])
       {
-        // first interval
-        if(ui8_i == 0)
+        // first
+        if (ui8_i == 0)
         {
-          ui16_array_sum[ui8_i] = *ui16_adc_steps;
+          ui16_array_sum[ui8_i] = _ui16_adc_steps;
         }
         else
         {
-          ui16_array_sum[ui8_i] = ui16_adc_absolute_steps - ui16_array_linear[ui8_i][0];
+          ui16_array_sum[ui8_i] = ui16_adc_absolute - ui16_array_linear[ui8_i][TS_ADC_VALUE];
         }
 
         // exit the for loop as this was the last interval
@@ -907,26 +914,26 @@ static void linearize_torque_sensor_to_kgs(uint16_t *ui16_adc_steps, uint16_t *u
       // current value is over current interval
       else
       {
-        ui16_array_sum[ui8_i] = ui16_array_linear[ui8_i + 1][0] - ui16_array_linear[ui8_i][0];
+        ui16_array_sum[ui8_i] = ui16_array_linear[ui8_i + 1][TS_ADC_VALUE] - ui16_array_linear[ui8_i][TS_ADC_VALUE];
       }
     }
 
     // count values under min value of array linear
-    if (ui16_g_adc_torque_sensor_min_value < ui16_array_linear[0][0])
-      ui16_array_sum[0] += (ui16_array_linear[0][0] - ui16_g_adc_torque_sensor_min_value);
+    if (ui16_g_adc_torque_sensor_min_value < ui16_array_linear[0][TS_ADC_VALUE])
+      ui16_array_sum[0] += (ui16_array_linear[0][TS_ADC_VALUE] - ui16_g_adc_torque_sensor_min_value);
 
     // count with the values over max value of array linear
-    if (ui16_adc_absolute_steps > ui16_array_linear[7][0])
-      ui16_array_sum[7] = ui16_adc_absolute_steps - ui16_array_linear[7][0];
+    if (ui16_adc_absolute > ui16_array_linear[7][TS_ADC_VALUE])
+      ui16_array_sum[7] = ui16_adc_absolute - ui16_array_linear[7][TS_ADC_VALUE];
 
     // sum the total parcels
-    for(ui8_i = 0; ui8_i < TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1; ui8_i++)
+    for (ui8_i = 0; ui8_i < TORQUE_SENSOR_LINEARIZE_NR_POINTS - 1; ui8_i++)
     {
-      ui32_temp += ((uint32_t) ui16_array_sum[ui8_i] * (uint32_t) ui16_array_linear[ui8_i + 1][1]);
+      ui32_temp += ((uint32_t) ui16_array_sum[ui8_i] * (uint32_t) ui16_array_linear[ui8_i + 1][TS_ADC_INTERVAL_STEPS]);
     }
 
     // sum the last parcel
-    ui32_temp += ((uint32_t) ui16_array_sum[7] * (uint32_t) ui16_array_linear[7][1]);
+    ui32_temp += ((uint32_t) ui16_array_sum[7] * (uint32_t) ui16_array_linear[7][TS_ADC_INTERVAL_STEPS]);
 
     *ui16_weight_x10 = (uint16_t) (ui32_temp / 10);
   }
@@ -1339,26 +1346,39 @@ static void apply_boost_fade_out(uint16_t *ui16_adc_target_current)
 
 static void read_pas_cadence(void)
 {
-  if (ui16_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
+  if (ui16_g_pas_pwm_cycles_ticks >= ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
   { 
     ui8_pas_cadence_rpm = 0; 
   }
   else
   {
-    // cadence in RPM = 60 / (ui16_pas_pwm_cycles_ticks * PAS_NUMBER_MAGNETS * 0.000053)
-    ui8_pas_cadence_rpm = (uint8_t) (((uint16_t) 56604) / ui16_pas_pwm_cycles_ticks);
+    // cadence in RPM = 60 / (ui16_g_pas_pwm_cycles_ticks * PAS_NUMBER_MAGNETS * 0.000053)
+    ui8_pas_cadence_rpm = (uint8_t) (((uint16_t) 56604) / ui16_g_pas_pwm_cycles_ticks);
   }
-
-  if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)
-    ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 1: 0;
-  else
-    ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 0: 1;
 }
 
 
 static void torque_sensor_read(void)
 {
-  uint16_t ui16_adc_torque_sensor = ui16_m_adc_torque_sensor_raw = UI16_ADC_10_BIT_TORQUE_SENSOR;
+  uint16_t ui16_adc_torque_sensor;
+
+  ui16_m_adc_torque_sensor_raw = UI16_ADC_10_BIT_TORQUE_SENSOR;
+
+  if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)
+    ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 1: 0;
+  else
+    ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 0: 1;
+
+  // filter only if torque sensor calibration is enable and pedal cranks went already over horizontal position
+  if (m_config_vars.ui8_torque_sensor_calibration_feature_enabled &&
+      ui8_g_torque_sensor_horizontal_cnt >= 2)
+  {
+    // filter torque sensor value
+     ui16_m_adc_torque_sensor_raw = ((((uint32_t) ui16_g_adc_torque_sensor_raw_horizontal) * ((uint32_t) m_config_vars.ui8_torque_sensor_filter)) / 100) +
+         (((uint32_t) ui16_m_adc_torque_sensor_raw) * ((uint32_t) (100 - m_config_vars.ui8_torque_sensor_filter))) / 100;
+  }
+
+  ui16_adc_torque_sensor = ui16_m_adc_torque_sensor_raw;
 
   // remove the offset
   // make sure readed value is higher than the offset

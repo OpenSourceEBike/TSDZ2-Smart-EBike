@@ -424,7 +424,8 @@ static uint8_t ui8_m_pas_state;
 static uint8_t ui8_m_pas_state_old;
 static uint8_t ui8_m_pas_after_first_pulse = 0;
 static uint16_t ui16_m_pas_counter = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
-static uint8_t ui8_m_pas_tick_counter = 0;
+volatile uint8_t ui8_g_pas_tick_counter = 0;
+
 volatile uint8_t ui8_g_pas_pedal_right = 0;
 uint8_t ui8_m_pedaling_direction = 0;
 
@@ -476,6 +477,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   ADC1->CR1 |= ADC1_CR1_ADON;
   while (!(ADC1->CSR & ADC1_FLAG_EOC)) ;
   ui16_g_adc_battery_current = UI16_ADC_10_BIT_BATTERY_CURRENT;
+
+  // this shoud work but does not.......
+//  ui16_g_adc_battery_current = (((uint16_t) ADC1->DRH) << 8) | ((uint16_t) ADC1->DRL);
 
   // calculate motor current ADC value
   if (ui8_g_duty_cycle > 0)
@@ -872,20 +876,20 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       if (!ui8_m_pas_after_first_pulse)
       {
         ui8_m_pas_after_first_pulse = 1;
-        ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+        ui16_g_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
       }
       else
       {
         // limit PAS cadence to be less than PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS
         if (ui16_m_pas_counter < ((uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS))
-          ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
+          ui16_g_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS;
         else
-          ui16_pas_pwm_cycles_ticks = ui16_m_pas_counter;
+          ui16_g_pas_pwm_cycles_ticks = ui16_m_pas_counter;
 
         if (ui8_g_pedal_cadence_fast_stop)
-          ui16_m_pas_min_cadence_pwm_cycles_ticks = (ui16_pas_pwm_cycles_ticks + (ui16_pas_pwm_cycles_ticks >> 2));
+          ui16_m_pas_min_cadence_pwm_cycles_ticks = (ui16_g_pas_pwm_cycles_ticks + (ui16_g_pas_pwm_cycles_ticks >> 2));
         else
-          ui16_m_pas_min_cadence_pwm_cycles_ticks = ui16_pas_pwm_cycles_ticks << 1;
+          ui16_m_pas_min_cadence_pwm_cycles_ticks = ui16_g_pas_pwm_cycles_ticks << 1;
 
         ui16_m_pas_counter = 0;
 
@@ -899,16 +903,16 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       // lef/right
       if ((PAS2__PORT->IDR & PAS2__PIN) == 0)
       {
-        ui8_m_pas_tick_counter++;
-        if (ui8_m_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
-          ui8_m_pas_tick_counter = 1;
+        ui8_g_pas_tick_counter++;
+        if (ui8_g_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
+          ui8_g_pas_tick_counter = 1;
       }
       else
       {
-        if (ui8_m_pas_tick_counter <= 1)
-          ui8_m_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
+        if (ui8_g_pas_tick_counter <= 1)
+          ui8_g_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
         else
-          ui8_m_pas_tick_counter--;
+          ui8_g_pas_tick_counter--;
       }
     }
     else
@@ -927,24 +931,34 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
       // lef/right
       if ((PAS2__PORT->IDR & PAS2__PIN) != 0)
       {
-        ui8_m_pas_tick_counter++;
-        if (ui8_m_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
-          ui8_m_pas_tick_counter = 1;
+        ui8_g_pas_tick_counter++;
+        if (ui8_g_pas_tick_counter > PAS_NUMBER_MAGNETS_X2)
+          ui8_g_pas_tick_counter = 1;
       }
       else
       {
-        if (ui8_m_pas_tick_counter <= 1)
-          ui8_m_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
+        if (ui8_g_pas_tick_counter <= 1)
+          ui8_g_pas_tick_counter = PAS_NUMBER_MAGNETS_X2;
         else
-          ui8_m_pas_tick_counter--;
+          ui8_g_pas_tick_counter--;
       }
     }
 
     // define if pedal is right or left
-    if (ui8_m_pas_tick_counter > PAS_NUMBER_MAGNETS)
+    if (ui8_g_pas_tick_counter > PAS_NUMBER_MAGNETS)
       ui8_g_pas_pedal_right = 0;
     else
       ui8_g_pas_pedal_right = 1;
+
+    // save torque sensor ADC value when pedals are on horizontal
+    if ((ui8_g_pas_tick_counter == PAS_NUMBER_MAGNETS_1_4) ||
+        (ui8_g_pas_tick_counter == PAS_NUMBER_MAGNETS_3_4))
+    {
+      ui16_g_adc_torque_sensor_raw_horizontal = UI16_ADC_10_BIT_TORQUE_SENSOR;
+
+      if (ui8_g_torque_sensor_horizontal_cnt < 2)
+        ui8_g_torque_sensor_horizontal_cnt++;
+    }
   }
 
   // check for permitted relative min cadence value
@@ -958,12 +972,13 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   if (ui8_m_pas_min_cadence_flag ||
       ui16_m_pas_counter > ((uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS))
   {
-    ui16_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
+    ui16_g_pas_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
     ui16_m_pas_min_cadence_pwm_cycles_ticks = (uint16_t) PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS;
     ui8_m_pas_min_cadence_flag = 0;
     ui8_m_pas_after_first_pulse = 0;
     ui8_m_pedaling_direction = 0;
     ui16_m_pas_counter = 0;
+    ui8_g_torque_sensor_horizontal_cnt = 0;
   }
   /****************************************************************************/
   
