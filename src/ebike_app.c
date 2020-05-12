@@ -131,7 +131,7 @@ volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
 volatile uint8_t ui8_rx_cnt = 0;
 volatile uint8_t ui8_rx_len = 0;
 volatile uint8_t ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND];
-static volatile uint8_t ui8_tx_buffer_index;
+static volatile uint8_t ui8_m_tx_buffer_index;
 volatile uint8_t ui8_i;
 volatile uint8_t ui8_byte_received;
 volatile uint8_t ui8_state_machine = 0;
@@ -803,17 +803,10 @@ static void communications_process_packages(uint8_t ui8_frame_type)
   ui8_tx_buffer[ui8_len] = (uint8_t) (ui16_crc_tx & 0xff);
   ui8_tx_buffer[ui8_len + 1] = (uint8_t) (ui16_crc_tx >> 8) & 0xff;
 
-  //UART2_ITConfig(UART2_IT_TXE, DISABLE);
-  // should be an atomic operation already
-  ui8_tx_buffer_index = 0;
+
+  ui8_m_tx_buffer_index = 0;
   // start transmition
   UART2_ITConfig(UART2_IT_TXE, ENABLE);
-
-  // send the full package to UART
-  //for (ui8_i = 0; ui8_i < (ui8_len + 2); ui8_i++)
-  //{
-  //  putchar(ui8_tx_buffer[ui8_i]);
-  //}
 
   // get ready to get next package
   ui8_received_package_flag = 0;
@@ -1504,12 +1497,12 @@ void UART2_TX_IRQHandler(void) __interrupt(UART2_TX_IRQHANDLER)
 {
   if (UART2_GetFlagStatus(UART2_FLAG_TXE) == SET)
   {
-    if(ui8_tx_buffer_index < UART_NUMBER_DATA_BYTES_TO_SEND)  // bytes to send
+    if (ui8_m_tx_buffer_index < UART_NUMBER_DATA_BYTES_TO_SEND)  // bytes to send
     {
       // clearing the TXE bit is always performed by a write to the data register
-      UART2_SendData8(ui8_tx_buffer[ui8_tx_buffer_index]);
-      ++ui8_tx_buffer_index;
-      if(ui8_tx_buffer_index == UART_NUMBER_DATA_BYTES_TO_SEND)
+      UART2_SendData8(ui8_tx_buffer[ui8_m_tx_buffer_index]);
+      ++ui8_m_tx_buffer_index;
+      if (ui8_m_tx_buffer_index == UART_NUMBER_DATA_BYTES_TO_SEND)
       {
         // buffer empty
         // disable TIEN (TXE)
