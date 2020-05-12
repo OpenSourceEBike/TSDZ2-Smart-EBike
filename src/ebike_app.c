@@ -76,6 +76,7 @@ uint8_t ui8_pas_cadence_rpm = 0;
 uint16_t ui16_m_pedal_torque_x10;
 uint16_t ui16_m_pedal_torque_x100;
 uint16_t ui16_m_pedal_power_x10;
+uint16_t ui16_m_pedal_power_fixed_cadence_x10;
 uint16_t ui16_m_pedal_power_max_x10;
 uint8_t ui8_m_pedal_human_power = 0;
 uint8_t ui8_pas_pedal_position_right = 0;
@@ -209,7 +210,6 @@ static void ebike_control_motor(void)
   uint32_t ui32_temp = 0;
   uint32_t ui32_pedal_power_no_cadence_x10 = 0;
   uint32_t ui32_assist_level_factor_x1000;
-  uint32_t ui32_current_amps_x10 = 0;
   uint8_t ui8_tmp_pas_cadence_rpm;
   uint16_t ui16_adc_current;
   uint16_t ui16_adc_max_battery_power_current = 0;
@@ -218,6 +218,10 @@ static void ebike_control_motor(void)
   uint16_t ui16_battery_voltage_filtered = calc_filtered_battery_voltage();
   uint16_t ui16_adc_battery_current_max = 0;
   uint8_t ui8_assist_enable = 0;
+  uint32_t ui32_current_amps_x10_final;
+  uint32_t ui32_current_amps_x10;
+  uint32_t ui32_current_amps_fixed_cadence_x10;
+  uint32_t ui32_current_amps_no_cadence_x10;
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
   ui8_g_brake_is_set = ui8_g_brakes_state;
@@ -236,19 +240,29 @@ static void ebike_control_motor(void)
       // force a min of 10 RPM cadence
       ui32_pedal_power_no_cadence_x10 = (((uint32_t) ui16_m_pedal_torque_x100 * 10) / (uint32_t) 96);
 
+      ui32_current_amps_x10_final = 0;
+      ui32_current_amps_x10 = ((uint32_t) ui16_m_pedal_power_x10 * ui32_assist_level_factor_x1000) / 1000;
+      ui32_current_amps_fixed_cadence_x10 = ((uint32_t) ui16_m_pedal_power_fixed_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
+      ui32_current_amps_no_cadence_x10 = (ui32_pedal_power_no_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
       if (m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation == 0 ||
           ui8_pas_cadence_rpm)
       {
-        ui32_current_amps_x10 = ((uint32_t) ui16_m_pedal_power_x10 * ui32_assist_level_factor_x1000) / 1000;
+        if (m_config_vars.ui8_motor_current_control_mode == 0)
+          ui32_current_amps_x10_final = ui32_current_amps_x10;
+        else
+          ui32_current_amps_x10_final = ui32_current_amps_fixed_cadence_x10;
       }
       else
       {
-        ui32_current_amps_x10 = (ui32_pedal_power_no_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
+        if (m_config_vars.ui8_motor_current_control_mode == 0)
+          ui32_current_amps_x10_final = ui32_current_amps_no_cadence_x10;
+        else
+          ui32_current_amps_x10_final = ui32_current_amps_fixed_cadence_x10;
       }
 
       // 6.410 = 1 / 0.156 (each ADC step for current)
       // 6.410 * 8 = ~51
-      ui16_adc_current = (uint16_t) ((ui32_current_amps_x10 * 51) / 80);
+      ui16_adc_current = (uint16_t) ((ui32_current_amps_x10_final * 51) / 80);
       ui16_limit_max(&ui16_adc_current, ui16_m_adc_motor_current_max);
 
       // if user is rotating the pedals, force use the min current value
@@ -747,6 +761,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_g_pedal_cadence_fast_stop = ui8_temp & 1;
       ui8_g_field_weakening_enable = (ui8_temp & 2) >> 1;
       ui8_g_coast_brake_enable = (ui8_temp & 4) >> 2;
+      m_config_vars.ui8_motor_current_control_mode = (ui8_temp & 8) >> 3;
 
       // coast brake threshold
       ui16_temp = (uint16_t) ui8_rx_buffer[81];
@@ -1007,6 +1022,7 @@ static void calc_pedal_force_and_torque(void)
 
   ui16_m_pedal_torque_x10 = ui16_m_pedal_torque_x100 / 10;
   ui16_m_pedal_power_x10 = (uint16_t) (((uint32_t) ui16_m_pedal_torque_x100 * (uint32_t) ui8_pas_cadence_rpm) / (uint32_t) 96);
+  ui16_m_pedal_power_fixed_cadence_x10 = (uint16_t) (((uint32_t) ui16_m_pedal_torque_x100 * 70) / (uint32_t) 96);
   ui16_m_pedal_power_max_x10 = ui16_m_pedal_power_x10;
 }
 
