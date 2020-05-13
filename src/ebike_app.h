@@ -50,6 +50,7 @@ typedef struct
   uint8_t ui8_battery_current_min_adc;
   uint8_t ui8_throttle_virtual;
   uint8_t ui8_torque_sensor_filter;
+  uint8_t ui8_torque_sensor_adc_threshold;
 } struct_config_vars;
 
 
