@@ -28,7 +28,7 @@
 #define MOTOR_ROTOR_ANGLE_30                      (20  + MOTOR_ROTOR_OFFSET_ANGLE)
 
 // motor maximum rotation
-#define MOTOR_OVER_SPEED_ERPS                     700 // 675 is equal to 120 cadence, as TSDZ2 has a reduciton ratio of 41.8
+#define MOTOR_OVER_SPEED_ERPS                     700 // 675 is equal to 120 cadence, as TSDZ2 has a reduction ratio of 41.8
 #define MOTOR_SPEED_FIELD_WEAKEANING_MIN          250
 
 // throttle

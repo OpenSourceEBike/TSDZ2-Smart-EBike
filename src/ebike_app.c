@@ -76,6 +76,7 @@ uint8_t ui8_pas_cadence_rpm = 0;
 uint16_t ui16_m_pedal_torque_x100;
 uint16_t ui16_m_pedal_power_x10;
 uint16_t ui16_m_pedal_power_fixed_cadence_x10;
+uint8_t ui8_m_torque_sensor_startup_threshold_ok;
 uint8_t ui8_m_pedal_human_power = 0;
 uint8_t ui8_pas_pedal_position_right = 0;
 uint16_t ui16_m_adc_motor_temperatured_accumulated = 0;
@@ -219,7 +220,6 @@ static void ebike_control_motor(void)
   uint32_t ui32_current_amps_x10_final;
   uint32_t ui32_current_amps_x10;
   uint32_t ui32_current_amps_fixed_cadence_x10;
-  uint32_t ui32_current_amps_no_cadence_x10;
 
   // the ui8_m_brake_is_set is updated here only and used all over ebike_control_motor()
   ui8_g_brake_is_set = ui8_g_brakes_state;
@@ -234,33 +234,57 @@ static void ebike_control_motor(void)
     {
       ui8_assist_enable = 1;
 
+      // calc regular assist level
       ui32_assist_level_factor_x1000 = (uint32_t) m_config_vars.ui16_assist_level_factor_x1000;
-      // force a min of 10 RPM cadence
-      ui32_pedal_power_no_cadence_x10 = (((uint32_t) ui16_m_pedal_torque_x100 * 10) / (uint32_t) 96);
 
-      // if torque sensor >= torque_sensor_adc_threshold
-      if (ui16_m_torque_sensor_adc_steps >= m_config_vars.ui8_torque_sensor_adc_threshold)
-      {
-        ui32_current_amps_x10 = ((uint32_t) ui16_m_pedal_power_x10 * ui32_assist_level_factor_x1000) / 1000;
-        ui32_current_amps_fixed_cadence_x10 = ((uint32_t) ui16_m_pedal_power_fixed_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
-        ui32_current_amps_no_cadence_x10 = (ui32_pedal_power_no_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
-      }
-      else
-      {
-        ui32_current_amps_x10 = 0;
-        ui32_current_amps_fixed_cadence_x10 = 0;
-        ui32_current_amps_no_cadence_x10 = 0;
-      }
-
-      ui32_current_amps_x10_final = 0;
-      if (m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation == 0 ||
-          ui8_pas_cadence_rpm)
-        ui32_current_amps_x10_final = ui32_current_amps_x10;
-      else
-        ui32_current_amps_x10_final = ui32_current_amps_no_cadence_x10;
-
+      // current mode
       if (m_config_vars.ui8_motor_current_control_mode)
+      {
+        ui32_current_amps_fixed_cadence_x10 = ((uint32_t) ui16_m_pedal_power_fixed_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
+
         ui32_current_amps_x10_final = ui32_current_amps_fixed_cadence_x10;
+
+        // conditions for reseting the current value
+        if ((ui8_m_torque_sensor_startup_threshold_ok == 0) || // not enough torque
+            (ui8_pas_cadence_rpm == 0)) // no cadence
+        {
+          ui32_current_amps_x10_final = 0;
+        }
+
+        // if startup_without_pedal_rotation, then set current if there is enough torque
+        if ((m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation) &&
+            ui8_m_torque_sensor_startup_threshold_ok)
+        {
+          ui32_current_amps_x10_final = ui32_current_amps_fixed_cadence_x10;
+        }
+      }
+      else // power mode
+      {
+        if (ui8_pas_cadence_rpm) // if cadence
+        {
+          ui32_current_amps_x10_final = ((uint32_t) ui16_m_pedal_power_x10 * ui32_assist_level_factor_x1000) / 1000;;
+        }
+        else
+        {
+          ui32_current_amps_x10_final = 0;
+        }
+
+        // conditions for reseting the current value
+        if (ui8_m_torque_sensor_startup_threshold_ok == 0) // not enough torque
+        {
+          ui32_current_amps_x10_final = 0;
+        }
+
+        // if startup_without_pedal_rotation, then set current if there is enough torque
+        if (m_config_vars.ui8_motor_assistance_startup_without_pedal_rotation &&
+            ui8_m_torque_sensor_startup_threshold_ok)
+        {
+          // assist level used for when startup_without_pedal_rotation (force a min of 10 RPM cadence)
+          ui32_pedal_power_no_cadence_x10 = (((uint32_t) ui16_m_pedal_torque_x100 * 10) / (uint32_t) 96);
+
+          ui32_current_amps_x10_final = (ui32_pedal_power_no_cadence_x10 * ui32_assist_level_factor_x1000) / 1000;
+        }
+      }
 
       // 6.410 = 1 / 0.156 (each ADC step for current)
       // 6.410 * 8 = ~51
@@ -833,7 +857,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 // each 1 unit = 0.156 amps
 static void ebike_app_set_target_adc_battery_max_current(uint16_t ui16_value)
 {
-  // limit max
+  // limit max adc_battery_current_max
   if (ui16_value > ui16_m_adc_battery_current_max)
   {
     ui16_value = ui16_m_adc_battery_current_max;
@@ -845,6 +869,10 @@ static void ebike_app_set_target_adc_battery_max_current(uint16_t ui16_value)
     ui16_g_adc_target_battery_max_current += ((uint16_t) ui8_m_adc_lights_current_offset);
 
   ui16_g_adc_target_battery_max_current_fw = ui16_g_adc_target_battery_max_current + (ui16_g_adc_target_battery_max_current >> 2);
+
+  // limit max adc_target_battery_max_current_fw
+  if (ui16_g_adc_target_battery_max_current_fw > ui16_g_adc_target_battery_max_current)
+    ui16_g_adc_target_battery_max_current_fw = ui16_g_adc_target_battery_max_current;
 }
 
 static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value)
@@ -861,6 +889,10 @@ static void ebike_app_set_target_adc_motor_max_current(uint16_t ui16_value)
     ui16_g_adc_target_motor_max_current += ((uint16_t) ui8_m_adc_lights_current_offset);
 
   ui16_g_adc_target_motor_max_current_fw = ui16_g_adc_target_motor_max_current + (ui16_g_adc_target_motor_max_current >> 2);
+
+  // limit max adc_target_motor_max_current_fw
+  if (ui16_g_adc_target_motor_max_current_fw > ui16_g_adc_target_motor_max_current)
+    ui16_g_adc_target_motor_max_current_fw = ui16_g_adc_target_motor_max_current;
 }
 
 // in amps
@@ -1232,7 +1264,7 @@ static void boost_run_statemachine(void)
     {
       // ebike is stopped, wait for throttle signal to startup boost
       case BOOST_STATE_BOOST_DISABLED:
-        if(ui16_m_torque_sensor_adc_steps > m_config_vars.ui8_torque_sensor_adc_threshold &&
+        if (ui8_m_torque_sensor_startup_threshold_ok &&
             (ui8_g_brake_is_set == 0))
         {
           ui8_startup_boost_enable = 1;
@@ -1250,7 +1282,8 @@ static void boost_run_statemachine(void)
         }
 
         // end boost if
-        if (ui16_m_torque_sensor_adc_steps < m_config_vars.ui8_torque_sensor_adc_threshold)
+        if ((ui16_m_torque_sensor_adc_steps == 0) &&
+            ui8_m_torque_sensor_startup_threshold_ok)
         {
           ui8_startup_boost_enable = 0;
           ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_WAIT_TO_RESTART;
@@ -1285,7 +1318,8 @@ static void boost_run_statemachine(void)
         if (ui8_startup_boost_fade_steps > 0) { ui8_startup_boost_fade_steps--; }
 
         // disable fade if
-        if (ui16_m_torque_sensor_adc_steps < m_config_vars.ui8_torque_sensor_adc_threshold ||
+        if (ui16_m_torque_sensor_adc_steps == 0 ||
+            ui8_m_torque_sensor_startup_threshold_ok == 0 ||
             ui8_startup_boost_fade_steps == 0)
         {
           ui8_startup_boost_fade_enable = 0;
@@ -1300,7 +1334,8 @@ static void boost_run_statemachine(void)
         if ((m_config_vars.ui8_startup_motor_power_boost_always & 1) == 0)
         {
           if (ui16_wheel_speed_x10 == 0 &&
-              ui16_m_torque_sensor_adc_steps < m_config_vars.ui8_torque_sensor_adc_threshold)
+              (ui16_m_torque_sensor_adc_steps == 0 ||
+              ui8_m_torque_sensor_startup_threshold_ok == 0))
           {
             ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
           }
@@ -1308,7 +1343,7 @@ static void boost_run_statemachine(void)
         // torque sensor must be 0
         if ((m_config_vars.ui8_startup_motor_power_boost_always & 1) > 0)
         {
-          if (ui16_m_torque_sensor_adc_steps < m_config_vars.ui8_torque_sensor_adc_threshold ||
+          if (ui8_m_torque_sensor_startup_threshold_ok == 0 ||
               ui8_pas_cadence_rpm == 0)
           {
             ui8_m_startup_boost_state_machine = BOOST_STATE_BOOST_DISABLED;
@@ -1378,6 +1413,12 @@ static void torque_sensor_read(void)
 
   ui16_m_adc_torque_sensor_raw = UI16_ADC_10_BIT_TORQUE_SENSOR;
 
+  if ((ui16_m_torque_sensor_adc_steps >= m_config_vars.ui8_torque_sensor_adc_threshold) ||
+      (ui8_pas_cadence_rpm > 30)) // should be no problem to use cadence value calculated on the previous cycle
+    ui8_m_torque_sensor_startup_threshold_ok = 1;
+  else
+    ui8_m_torque_sensor_startup_threshold_ok = 0;
+
   if (m_config_vars.ui8_torque_sensor_calibration_pedal_ground)
     ui8_pas_pedal_position_right = ui8_g_pas_pedal_right ? 1: 0;
   else
@@ -1412,7 +1453,7 @@ static void torque_sensor_read(void)
   {
     // ebike is stopped
     case STATE_NO_PEDALLING:
-    if (ui16_m_torque_sensor_raw > m_config_vars.ui8_torque_sensor_adc_threshold
+    if (ui8_m_torque_sensor_startup_threshold_ok
         && ui16_wheel_speed_x10)
     {
       ui8_tstr_state_machine = STATE_PEDALLING;
@@ -1422,7 +1463,7 @@ static void torque_sensor_read(void)
     // wait on this state and reset when ebike stops
     case STATE_PEDALLING:
     if (ui16_wheel_speed_x10 == 0 &&
-        ui16_m_torque_sensor_raw < m_config_vars.ui8_torque_sensor_adc_threshold)
+        ui16_m_torque_sensor_raw == 0)
     {
       ui8_tstr_state_machine = STATE_NO_PEDALLING;
     }

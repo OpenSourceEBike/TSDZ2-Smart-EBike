@@ -65,7 +65,6 @@ extern volatile uint16_t ui16_g_adc_torque_sensor_raw_horizontal;
 extern volatile uint8_t ui8_g_torque_sensor_horizontal_cnt;
 
 extern volatile uint16_t ui16_g_pas_pwm_cycles_ticks;
-extern uint8_t ui8_pas_cadence_rpm;
 
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
 extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;

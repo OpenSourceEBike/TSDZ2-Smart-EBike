@@ -32,7 +32,8 @@ void adc_init (void)
   //init ADC1 peripheral
   ADC1_Init(ADC1_CONVERSIONMODE_SINGLE,
       ADC1_CHANNEL_7,
-      ADC1_PRESSEL_FCPU_D3, // ADC max possible frequency is 6MHz @VCC 5V. 16MHz / 3 = 5.33MHz
+      ADC1_PRESSEL_FCPU_D2,  // this always worked
+//      ADC1_PRESSEL_FCPU_D3, // this makes reads battery voltage oscillating and lower from real value: ADC max possible frequency is 6MHz @VCC 5V. 16MHz / 3 = 5.33MHz
       ADC1_EXTTRIG_TIM,
       DISABLE,
       ADC1_ALIGN_LEFT,
