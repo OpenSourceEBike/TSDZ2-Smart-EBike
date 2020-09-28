@@ -484,9 +484,15 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // 0 -  5 --> 0 - 0
   // 5 - 15 --> 0 - 15
   if (ui16_g_adc_battery_current <= 5)
+  {
     ui16_g_adc_battery_current = 0;
+  }  
   else if (ui16_g_adc_battery_current <= 15)
-    ui16_g_adc_battery_current = (ui16_g_adc_battery_current + ui16_g_adc_battery_current >> 1) - 5;
+  {
+    ui16_g_adc_battery_current -= 5; // 5 - 15 --> 0 - 10
+    ui16_g_adc_battery_current += (ui16_g_adc_battery_current >> 1); // multiply by 1.5: 0 - 10 --> 0 - 15
+  }
+
     
   // this shoud work but does not.......
 //  ui16_g_adc_battery_current = (((uint16_t) ADC1->DRH) << 8) | ((uint16_t) ADC1->DRL);
@@ -494,7 +500,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   // calculate motor current ADC value
   if (ui8_g_duty_cycle > 0)
   {
-    ui16_g_adc_motor_current = ((ui16_g_adc_battery_current << 6) / ((uint16_t) ui8_g_duty_cycle));
+    ui16_g_adc_motor_current = ((ui16_g_adc_battery_current << 8) / ((uint16_t) ui8_g_duty_cycle));
   }
   else
   {
