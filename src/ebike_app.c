@@ -817,7 +817,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
       ui8_tx_buffer[3] = ui8_m_system_state;
       ui8_tx_buffer[4] = 1;
       ui8_tx_buffer[5] = 0;
-      ui8_tx_buffer[6] = 0;
+      ui8_tx_buffer[6] = 1;
       ui8_len += 4;
       break;
 
