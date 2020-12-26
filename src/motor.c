@@ -446,7 +446,7 @@ uint8_t asin_table(uint8_t ui8_inverted_angle_x128);
 
 void motor_controller(void)
 {
-  read_battery_voltage();
+  read_battery_voltage(); 
   read_battery_current();
   read_motor_current();
   calc_foc_angle();
