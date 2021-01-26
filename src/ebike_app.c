@@ -138,7 +138,7 @@ volatile uint8_t ui8_state_machine = 0;
 static uint16_t  ui16_crc_rx;
 static uint16_t  ui16_crc_tx;
 volatile uint8_t ui8_message_ID = 0;
-
+volatile uint8_t ui8_packet_len;
 static void communications_controller(void);
 static void communications_process_packages(uint8_t ui8_frame_type);
 
@@ -521,7 +521,7 @@ static void communications_controller(void)
   }
   else
   {
-    ui8_comm_error_counter++;
+    //ui8_comm_error_counter++; // This causes many errors after a single CRC error - as every byte following until we get a start packet byte causes an error.
   }
 
   // check for communications fail or display master fail
@@ -848,6 +848,7 @@ static void communications_process_packages(uint8_t ui8_frame_type)
 
   ui8_m_tx_buffer_index = 0;
   // start transmition
+  ui8_packet_len = ui8_len+2;
   UART2_ITConfig(UART2_IT_TXE, ENABLE);
 
   // get ready to get next package
@@ -1554,12 +1555,12 @@ void UART2_TX_IRQHandler(void) __interrupt(UART2_TX_IRQHANDLER)
 {
   if (UART2_GetFlagStatus(UART2_FLAG_TXE) == SET)
   {
-    if (ui8_m_tx_buffer_index < UART_NUMBER_DATA_BYTES_TO_SEND)  // bytes to send
+    if (ui8_m_tx_buffer_index < ui8_packet_len)  // bytes to send
     {
       // clearing the TXE bit is always performed by a write to the data register
       UART2_SendData8(ui8_tx_buffer[ui8_m_tx_buffer_index]);
       ++ui8_m_tx_buffer_index;
-      if (ui8_m_tx_buffer_index == UART_NUMBER_DATA_BYTES_TO_SEND)
+      if (ui8_m_tx_buffer_index == ui8_packet_len)
       {
         // buffer empty
         // disable TIEN (TXE)
