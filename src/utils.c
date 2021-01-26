@@ -102,14 +102,13 @@ void pi_controller_reset (struct_pi_controller_state *pi_controller)
 void crc16(uint8_t ui8_data, uint16_t* ui16_crc)
 {
     unsigned int i;
-    uint16_t ui16_temp = *ui16_crc;
-    ui16_temp = ui16_temp ^(uint16_t) ui8_data;
+
+    *ui16_crc = *ui16_crc ^(uint16_t) ui8_data;
     for (i = 8; i > 0; i--)
     {
-        if (ui16_temp & 0x0001)
-            ui16_temp = (ui16_temp >> 1) ^ 0xA001;
+        if (*ui16_crc & 0x0001)
+            *ui16_crc = (*ui16_crc >> 1) ^ 0xA001;
         else
-            ui16_temp >>= 1;
+            *ui16_crc >>= 1;
     }
-    *ui16_crc = ui16_temp;
 }
