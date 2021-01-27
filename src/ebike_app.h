@@ -77,6 +77,7 @@ extern volatile uint8_t ui8_g_throttle;
 extern volatile uint16_t ui16_g_adc_current_offset;
 
 void ebike_app_controller (void);
+void reset_rx_buffer(void);
 struct_config_vars* get_configuration_variables (void);
 
 #endif /* _EBIKE_APP_H_ */

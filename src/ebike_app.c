@@ -123,8 +123,13 @@ static uint16_t     ui16_wheel_speed_x10;
 volatile uint32_t   ui32_wheel_speed_sensor_tick_counter = 0;
 
 // UART
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   88
-#define UART_NUMBER_DATA_BYTES_TO_SEND      29
+#define UART_RECEIVE_RINGBUFFER_SIZE   256 // Maximum size - can reduce later
+volatile uint8_t ui8_rx_ringbuffer[UART_RECEIVE_RINGBUFFER_SIZE];
+volatile uint8_t ui8_rx_ringbuffer_read_index = 0;
+volatile uint8_t ui8_rx_ringbuffer_write_index = 0;
+
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   256//88
+#define UART_NUMBER_DATA_BYTES_TO_SEND      256//29
 
 volatile uint8_t ui8_received_package_flag = 0;
 volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE];
@@ -141,6 +146,7 @@ volatile uint8_t ui8_message_ID = 0;
 volatile uint8_t ui8_packet_len;
 static void communications_controller(void);
 static void communications_process_packages(uint8_t ui8_frame_type);
+static void packet_assembler(void);
 
 // system functions
 static void ebike_control_motor(void);
@@ -201,7 +207,16 @@ void ebike_app_controller(void)
   calc_motor_temperature();
   ebike_control_motor();
   communications_controller();
+  packet_assembler();
   check_system();
+}
+
+void reset_rx_buffer(void)
+{
+  ui8_rx_ringbuffer_read_index = 0;
+  ui8_rx_ringbuffer_write_index = 0;
+  ui8_state_machine =0;
+  ui8_received_package_flag =0;
 }
 
 static void ebike_control_motor(void)
@@ -1497,57 +1512,78 @@ static void throttle_read(void)
 }
 
 
-// This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
-// we do: receive every byte and assembly as a package, finally, signal that we have a package to process (on main slow loop)
+// Read the input buffer and assemble data as a package, finally, signal that we have a package to process (on main slow loop)
 // and disable the interrupt. The interrupt should be enable again on main loop, after the package being processed
+static void packet_assembler(void)
+{
+  //if ((uint8_t)ui8_rx_ringbuffer_read_index!=(uint8_t)ui8_rx_ringbuffer_write_index)
+  //{
+    if (ui8_received_package_flag == 0) // only when package were previously processed
+    {
+      while (((uint8_t)(ui8_rx_ringbuffer_read_index+0x1) != (ui8_rx_ringbuffer_write_index)) && ((uint8_t)ui8_rx_ringbuffer_read_index!=(uint8_t)ui8_rx_ringbuffer_write_index))
+      {
+        ui8_byte_received = ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_read_index++)];
+        
+        switch (ui8_state_machine)
+        {
+          case 0:
+          if (ui8_byte_received == 0x59) { // see if we get start package byte
+            ui8_rx_buffer[0] = ui8_byte_received;
+            ui8_state_machine = 1;
+          }
+          else
+            ui8_state_machine = 0;
+          break;
+
+          case 1:
+            ui8_rx_buffer[1] = ui8_byte_received;
+            ui8_rx_len = ui8_byte_received;
+            ui8_state_machine = 2;
+          break;
+
+          case 2:
+          ui8_rx_buffer[ui8_rx_cnt + 2] = ui8_byte_received;
+          ++ui8_rx_cnt;
+
+          if (ui8_rx_cnt >= ui8_rx_len)
+          {
+            ui8_rx_cnt = 0;
+            ui8_state_machine = 0;
+            ui8_received_package_flag = 1; // signal that we have a full package to be processed
+          }
+          break;
+
+          default:
+          break;
+        }
+      }
+    }
+    else // if there was any error, restart our state machine
+    {
+      ui8_rx_cnt = 0;
+      ui8_state_machine = 0;
+    }
+  //}
+}
+
+
+// This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
+// we do: receive every byte and feed into a ringbuffer for the packet assembly routine to consume.
+
 void UART2_RX_IRQHandler(void) __interrupt(UART2_RX_IRQHANDLER)
 {
   if (UART2_GetFlagStatus(UART2_FLAG_RXNE) == SET)
   {
     UART2->SR &= (uint8_t)~(UART2_FLAG_RXNE); // this may be redundant
 
-    if (ui8_received_package_flag == 0) // only when package were previously processed
+    if (((uint8_t)ui8_rx_ringbuffer_write_index + (uint8_t)0x1)!=ui8_rx_ringbuffer_read_index) 
+      ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = UART2_ReceiveData8();
+    else 
     {
-      ui8_byte_received = UART2_ReceiveData8();
-
-      switch (ui8_state_machine)
-      {
-        case 0:
-        if (ui8_byte_received == 0x59) { // see if we get start package byte
-          ui8_rx_buffer[0] = ui8_byte_received;
-          ui8_state_machine = 1;
-        }
-        else
-          ui8_state_machine = 0;
-        break;
-
-        case 1:
-          ui8_rx_buffer[1] = ui8_byte_received;
-          ui8_rx_len = ui8_byte_received;
-          ui8_state_machine = 2;
-        break;
-
-        case 2:
-        ui8_rx_buffer[ui8_rx_cnt + 2] = ui8_byte_received;
-        ++ui8_rx_cnt;
-
-        if (ui8_rx_cnt >= ui8_rx_len)
-        {
-          ui8_rx_cnt = 0;
-          ui8_state_machine = 0;
-          ui8_received_package_flag = 1; // signal that we have a full package to be processed
-        }
-        break;
-
-        default:
-        break;
-      }
+      (uint8_t)ui8_rx_ringbuffer_read_index++;
+      ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = UART2_ReceiveData8();
     }
-  }
-  else // if there was any error, restart our state machine
-  {
-    ui8_rx_cnt = 0;
-    ui8_state_machine = 0;
+  
   }
 }
 
