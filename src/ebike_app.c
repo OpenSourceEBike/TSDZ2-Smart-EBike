@@ -1564,9 +1564,9 @@ void UART2_RX_IRQHandler(void) __interrupt(UART2_RX_IRQHANDLER)
     UART2->SR &= (uint8_t)~(UART2_FLAG_RXNE); // this may be redundant
 
     //Write the recieved data to the ringbuffer at the write index position, move write index forward.
-    ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = UART2_ReceiveData8();
+    ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = ((uint8_t)UART2->DR);//UART2_ReceiveData8(); save a few cycles...
 
-    // If write index hits the read index - move read index forward. Effectively overwrited the oldest data in the buffer.
+    // If write index hits the read index - move read index forward. Effectively overwrites the oldest data in the buffer.
     if (((uint8_t)ui8_rx_ringbuffer_write_index)==(uint8_t)(ui8_rx_ringbuffer_read_index)) ui8_rx_ringbuffer_read_index++;
   
   }
