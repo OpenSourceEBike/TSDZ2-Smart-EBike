@@ -206,17 +206,9 @@ void ebike_app_controller(void)
   calc_wheel_speed();
   calc_motor_temperature();
   ebike_control_motor();
-  communications_controller();
   packet_assembler();
+  communications_controller();
   check_system();
-}
-
-void reset_rx_buffer(void)
-{
-  ui8_rx_ringbuffer_read_index = 0;
-  ui8_rx_ringbuffer_write_index = 0;
-  ui8_state_machine =0;
-  ui8_received_package_flag =0;
 }
 
 static void ebike_control_motor(void)
@@ -533,10 +525,6 @@ static void communications_controller(void)
       ui8_received_package_flag = 0;
       ui8_comm_error_counter++;
     }
-  }
-  else
-  {
-    //ui8_comm_error_counter++; // This causes many errors after a single CRC error - as every byte following until we get a start packet byte causes an error.
   }
 
   // check for communications fail or display master fail
@@ -1512,15 +1500,14 @@ static void throttle_read(void)
 }
 
 
-// Read the input buffer and assemble data as a package, finally, signal that we have a package to process (on main slow loop)
-// and disable the interrupt. The interrupt should be enable again on main loop, after the package being processed
+// Read the input buffer and assemble data as a package and signal that we have a package to process (on main slow loop)
 static void packet_assembler(void)
 {
-  //if ((uint8_t)ui8_rx_ringbuffer_read_index!=(uint8_t)ui8_rx_ringbuffer_write_index)
-  //{
+  if (((uint8_t)ui8_rx_ringbuffer_read_index)!=((uint8_t)ui8_rx_ringbuffer_write_index))
+  {
     if (ui8_received_package_flag == 0) // only when package were previously processed
     {
-      while (((uint8_t)(ui8_rx_ringbuffer_read_index+0x1) != (ui8_rx_ringbuffer_write_index)) && ((uint8_t)ui8_rx_ringbuffer_read_index!=(uint8_t)ui8_rx_ringbuffer_write_index))
+      while (((uint8_t)(ui8_rx_ringbuffer_read_index+0x1) != ((uint8_t)ui8_rx_ringbuffer_write_index)))
       {
         ui8_byte_received = ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_read_index++)];
         
@@ -1563,7 +1550,7 @@ static void packet_assembler(void)
       ui8_rx_cnt = 0;
       ui8_state_machine = 0;
     }
-  //}
+  }
 }
 
 
@@ -1576,13 +1563,11 @@ void UART2_RX_IRQHandler(void) __interrupt(UART2_RX_IRQHANDLER)
   {
     UART2->SR &= (uint8_t)~(UART2_FLAG_RXNE); // this may be redundant
 
-    if (((uint8_t)ui8_rx_ringbuffer_write_index + (uint8_t)0x1)!=ui8_rx_ringbuffer_read_index) 
-      ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = UART2_ReceiveData8();
-    else 
-    {
-      (uint8_t)ui8_rx_ringbuffer_read_index++;
-      ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = UART2_ReceiveData8();
-    }
+    //Write the recieved data to the ringbuffer at the write index position, move write index forward.
+    ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_write_index++)] = UART2_ReceiveData8();
+
+    // If write index hits the read index - move read index forward. Effectively overwrited the oldest data in the buffer.
+    if (((uint8_t)ui8_rx_ringbuffer_write_index)==(uint8_t)(ui8_rx_ringbuffer_read_index)) ui8_rx_ringbuffer_read_index++;
   
   }
 }
