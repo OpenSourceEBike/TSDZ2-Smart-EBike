@@ -78,7 +78,6 @@ int main(void)
   pwm_init_bipolar_4q();
   motor_init();
   enableInterrupts();
-  reset_rx_buffer();
 
   while(1)
   {
