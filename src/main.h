@@ -11,7 +11,7 @@
 
 #include "config.h"
 
-//#define DISABLE_PWM_CHANNELS_1_3
+#define DISABLE_PWM_CHANNELS_1_3
 
 #define PWM_CYCLES_COUNTER_MAX                    3800    // 5 erps minimum speed; 1/5 = 200ms; 200ms/52.6us = 3800
 #define PWM_CYCLES_SECOND                         19011L  // 1 / 64us(PWM period)

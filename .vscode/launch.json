@@ -1,0 +1,35 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "STM8-gdb",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/src/main.elf",
+        "args": [],
+        "stopAtEntry": true,
+        "cwd": "${workspaceRoot}/src",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "miDebuggerPath": "stm8-gdb",
+        "setupCommands": [
+            {
+                "description": "connect to target",
+                "text": "-target-select extended-remote localhost:3333",
+                "ignoreFailures": true
+            },
+        ],
+        "logging": {
+            "moduleLoad": true,
+            "trace": true,
+            "engineLogging": true,
+            "programOutput": true,
+            "exceptions": true
+        },
+      }
+    ]
+}

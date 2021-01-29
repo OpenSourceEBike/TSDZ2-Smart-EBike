@@ -193,15 +193,15 @@ uint8_t ui8_m_adc_lights_current_offset; // lights current are measured on hardw
 // Measured on 2020.01.02 by Casainho, the following function takes about 35ms to execute
 void ebike_app_controller(void)
 {
-  throttle_read();
-  torque_sensor_read();
-  read_pas_cadence();
-  calc_pedal_force_and_torque();
-  calc_wheel_speed();
-  calc_motor_temperature();
+//  throttle_read();
+//  torque_sensor_read();
+//  read_pas_cadence();
+//  calc_pedal_force_and_torque();
+//  calc_wheel_speed();
+//  calc_motor_temperature();
   ebike_control_motor();
   communications_controller();
-  check_system();
+//  check_system();
 }
 
 static void ebike_control_motor(void)
@@ -519,10 +519,10 @@ static void communications_controller(void)
       ui8_comm_error_counter++;
     }
   }
-  else
-  {
-    ui8_comm_error_counter++;
-  }
+//  else
+//  {
+//      ui8_comm_error_counter++;
+//  }
 
   // check for communications fail or display master fail
   // can't fail more then 1000ms
