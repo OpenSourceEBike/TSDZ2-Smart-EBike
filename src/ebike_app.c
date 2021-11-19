@@ -1507,7 +1507,7 @@ static void packet_assembler(void)
   {
     if (ui8_received_package_flag == 0) // only when package were previously processed
     {
-      while (((uint8_t)(ui8_rx_ringbuffer_read_index+0x1) != ((uint8_t)ui8_rx_ringbuffer_write_index)))
+      while (((uint8_t)(ui8_rx_ringbuffer_read_index) != ((uint8_t)ui8_rx_ringbuffer_write_index)))
       {
         ui8_byte_received = ui8_rx_ringbuffer[(uint8_t)(ui8_rx_ringbuffer_read_index++)];
         
@@ -1537,6 +1537,7 @@ static void packet_assembler(void)
             ui8_rx_cnt = 0;
             ui8_state_machine = 0;
             ui8_received_package_flag = 1; // signal that we have a full package to be processed
+            return;
           }
           break;
 
