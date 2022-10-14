@@ -1,4 +1,5 @@
-This ebike motor controller firmware project is to be used with the Tongsheng TSDZ2 mid drive motor.
+This ebike motor controller firmware project is to be used with the Tongsheng TSDZ2 mid drive motor with controller v1.
+*(for motorcontroller v2 see: https://github.com/OpenSourceEBike/TSDZ2_motor_controller_v2 )
 
 It has the following benefits compared to the stock firmware:
 * The motor runs more efficient therefore it becomes more powerful and consumes less energy.
